@@ -1,6 +1,6 @@
 # F26_4495_S2_JiayuL
 
-## Cloud-Native Intelligent Invoice Processing Platform
+## Cloud-Native Distributed Invoice Processing Platform
 
 **Student:** Jiayu Lou \
 **Student ID:** 300398003 \

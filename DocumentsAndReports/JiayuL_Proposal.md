@@ -1,6 +1,6 @@
 # CSIS 4495 Project Proposal
 
-## Agentic Cloud-Native Invoice Processing Platform
+## Cloud-Native Distributed Invoice Processing Platform
 
 **Student:** Jiayu Lou  \
 **Student ID:** 300398003  \
@@ -16,40 +16,43 @@
 
 During my previous work experience, I helped automate several accounting workflows, including invoice processing and financial reporting. Most of the tools were built as Python desktop applications.
 
-Although the automation reduced manual work, I found that a desktop-based solution has some limitations. It is harder to deploy, maintain, scale, and integrate with other systems.
+Although the automation reduced manual work, I found that a desktop-based solution has some limitations. It is harder to deploy, maintain, scale, recover from failures, and integrate with other systems.
 
-For this project, I want to redesign part of the invoice-processing workflow as a **cloud-native, AI-agent-based application**.
+For this project, I want to redesign part of the invoice-processing workflow as a **cloud-native distributed application**, with an **AI agent used as an intelligent validation component** rather than as the entire system.
 
-The main goal is to build a system that can receive an invoice, extract important information, validate the extracted data, and decide whether the invoice can be processed automatically or requires human review.
+The main goal is to build a system that can receive an invoice, process it asynchronously, extract important information, validate the extracted data, and decide whether the result can be accepted automatically or requires human review.
 
 The system should be able to identify information such as:
 
 * Vendor name
 * Invoice number
 * Invoice date
+* Due date
 * Purchase order number
-* Line item / Item number
+* Line item / item number
 * Item description
 * Item quantity
+* Unit of measure (UOM)
 * Item unit price
-* Item total
+* Item total / extended amount
 * Subtotal
-* Tax
+* Tax type and tax amount
 * Total amount
 
-Instead of treating OCR or Amazon Textract as the complete solution, document extraction will be one of the tools available to an **AI agent**.
+The project will focus on two areas:
 
-The agent will be responsible for deciding which tools to call and what action should be taken based on the invoice data and validation results.
+1. **Distributed invoice processing** — asynchronous messaging, worker services, retries, idempotency, failure recovery, and horizontal scaling.
+2. **Agentic validation** — using an AI agent and validation tools to interpret ambiguous or inconsistent invoice data and determine when human review is required.
 
-The project will focus on **intelligent invoice processing and validation**, rather than building a complete accounting or ERP system.
+The project will not attempt to build a complete accounting or ERP system.
 
 ---
 
 ## 2. Problem
 
-Invoices normally arrive as PDF files.
+Invoices normally arrive as PDF files and must be converted into structured data before they can be used by accounting systems.
 
-Accounting staff need to manually open the document, identify important information, verify that the information is correct, and enter it into another system.
+Accounting staff often need to manually open the document, identify important information, verify that the information is correct, and enter it into another system.
 
 This process has several problems:
 
@@ -59,6 +62,8 @@ This process has several problems:
 * OCR results may be incomplete or incorrect.
 * High OCR confidence does not always mean that the extracted business data is valid.
 * Some extracted values may be ambiguous even when the OCR result is technically correct.
+* Long-running document processing can make synchronous APIs slow and difficult to scale.
+* Temporary failures can cause invoice-processing jobs to be lost or duplicated if retry and idempotency are not handled correctly.
 * Traditional desktop automation is difficult to scale and maintain.
 
 A simple OCR system can extract text, but it does not necessarily understand whether the extracted result is logically correct or how the data should be interpreted.
@@ -100,52 +105,74 @@ July 8, 2026
 
 depending on whether the vendor uses the `MM/DD/YYYY` or `DD/MM/YYYY` format.
 
-The OCR result may therefore be completely accurate while the system still interprets the date incorrectly.
+Line-item information can also require contextual interpretation. For example, a unit price may be expressed per kilometre while the quantity is represented in metres. In that case, directly multiplying quantity by unit price would produce an incorrect result unless the unit is normalized first.
 
-To handle these cases, the system needs more than text extraction. It also needs contextual validation and decision-making, such as checking vendor information, known date formats, invoice values, and other available business data before accepting the result.
+The system therefore needs more than document extraction. It also needs reliable distributed processing, contextual validation, and controlled human review.
 
+The main research questions are:
+
+> How can an asynchronous distributed architecture improve the reliability and scalability of invoice-processing workloads?
+
+and
+
+> Can agentic validation improve the interpretation of ambiguous or inconsistent invoice data while keeping the false acceptance rate low?
 
 ---
 
 ## 3. Proposed Solution
 
-The proposed solution is an **AI-agent-based invoice-processing platform**.
+The proposed solution is a **cloud-native distributed invoice-processing platform**.
 
-The basic workflow will be:
+The core workflow will be:
 
 ```text
 Invoice PDF
-        ↓
-Upload through Web/API
-        ↓
-Store Document
-        ↓
-Invoice Processing Agent
-        ↓
-Extract Invoice Information
-        ↓
-Validate Data
-        ↓
-Agent Decision
-      ↙       ↘
-Auto Accept   Human Review
-        ↓
-Store Result
+    ↓
+Web / REST API
+    ↓
+Store Document in S3
+    ↓
+Create Processing Job
+    ↓
+Amazon SQS
+    ↓
+Invoice Worker Service
+    ↓
+Document Extraction
+    ↓
+Agentic Validation
+    ↓
+Auto Accept / Human Review
+    ↓
+Store Result in PostgreSQL
 ```
 
-The AI agent will have access to tools such as:
+The API will not wait for the full invoice-processing workflow to finish. Instead, it will store the invoice, create a processing job, publish a message to the queue, and return an acknowledgement to the user.
+
+Worker services will consume jobs from the queue and process invoices independently. The distributed design will include:
+
+* Asynchronous message processing
+* Idempotency
+* Retry handling
+* Dead-letter queue (DLQ)
+* Processing-state tracking
+* Worker failure recovery
+* Horizontal worker scaling
+* Logging and monitoring
+
+After document extraction, an AI agent will be used for cases that require contextual validation or interpretation.
+
+The agent may use tools such as:
 
 ```text
-extract_invoice()
-lookup_vendor()
-lookup_purchase_order()
+normalize_date()
+normalize_unit()
+validate_line_items()
 validate_amounts()
+validate_tax()
 check_duplicate()
-save_invoice()
 request_human_review()
 ```
-
-For example, if the extracted total amount does not match the subtotal and tax, the agent may call the validation tool, retry extraction if necessary, and then decide to send the invoice for human review.
 
 The backend will mainly be developed using **Java and Spring Boot**.
 
@@ -158,40 +185,39 @@ The first version will be a private deployment for one organization rather than 
 The planned architecture is:
 
 ```text
-                    Invoice
-                       ↓
-                Web / REST API
-                       ↓
-                 Spring Boot
-                       ↓
-                Invoice Agent
-                       ↓
-        ┌──────────────┼───────────────┐
-        ↓              ↓               ↓
-   Document        Date / Field     Line Item
-   Extraction      Normalization     Parsing
-   (Textract)          Tool            Tool
-        ↓              ↓               ↓
-        └──────────────┼───────────────┘
-                       ↓
-                Validation Tools
-                       ↓
-          ┌────────────┼────────────┐
-          ↓            ↓            ↓
-     Amount / Tax   Duplicate    Consistency
-      Validation      Check        Check
-          └────────────┼────────────┘
-                       ↓
-                  Agent Decision
-                  ↙            ↘
-             Auto Accept    Human Review
-                  ↓
-              PostgreSQL
+                    Client / Web
+                         ↓
+                Spring Boot REST API
+                         ↓
+             ┌───────────┴───────────┐
+             ↓                       ↓
+        Amazon S3               PostgreSQL
+      Store Invoice            Job Metadata
+             ↓
+             └───────────┬───────────┘
+                         ↓
+                    Amazon SQS
+                         ↓
+               Invoice Worker Service
+                         ↓
+                  Amazon Textract
+                         ↓
+                 Agentic Validation
+                         ↓
+             Validation / Normalization
+                         ↓
+              ┌──────────┴──────────┐
+              ↓                     ↓
+         Auto Accept           Human Review
+              ↓
+          PostgreSQL
 ```
 
-The AI agent will act as the orchestration layer rather than directly implementing every function.
+The distributed processing layer is the core system architecture. The AI agent is used after extraction as a validation and decision-support component.
 
-The actual business operations will be implemented as tools that the agent can call.
+Amazon SQS will decouple the REST API from the invoice workers. If a worker fails before completing a job, the message can become available again for another worker. Idempotency controls will be used to prevent duplicate processing from creating duplicate invoice records.
+
+Messages that repeatedly fail processing can be moved to a dead-letter queue for later investigation or replay.
 
 ---
 
@@ -199,78 +225,100 @@ The actual business operations will be implemented as tools that the agent can c
 
 The current planned technology stack is:
 
-| Area               | Technology                      |
-| ------------------ | ------------------------------- |
-| Backend            | Java 17, Spring Boot            |
-| AI Integration     | Spring AI                       |
-| Agent Tools        | MCP / Spring-based tools        |
-| Frontend           | React / TypeScript (Optional)   |
-| Database           | PostgreSQL                      |
-| Document Storage   | Amazon S3                       |
-| Invoice Extraction | Tesseract OCR / Amazon Textract |
-| Messaging          | Amazon SQS                      |
-| Container          | Docker                          |
-| Deployment         | Kubernetes                      |
-| Infrastructure     | Terraform                       |
-| CI/CD              | GitHub Actions                  |
-| Cloud Platform     | AWS                             |
+| Area               | Technology                                    |
+| ------------------ | --------------------------------------------- |
+| Backend            | Java 17, Spring Boot                          |
+| REST API           | Spring Web                                    |
+| Database           | PostgreSQL                                    |
+| Database Access    | Spring Data JPA                               |
+| Document Storage   | Amazon S3                                     |
+| Messaging          | Amazon SQS                                    |
+| Invoice Extraction | Amazon Textract                               |
+| AI Integration     | Spring AI / LLM API                           |
+| Agent Tools        | Spring-based tools / MCP where useful         |
+| Frontend           | React / TypeScript (Optional)                 |
+| Container          | Docker                                        |
+| Orchestration      | Kubernetes                                    |
+| Infrastructure     | Terraform                                     |
+| CI/CD              | GitHub Actions                                |
+| Monitoring         | Spring Boot Actuator / Cloud monitoring tools |
+| Cloud Platform     | AWS                                           |
 
-Some technologies may be adjusted during implementation depending on the complexity and project timeline.
+Some technologies may be adjusted during implementation depending on project complexity and timeline.
 
 ---
 
 ## 6. Research and Evaluation
 
-This project will not only build the application but also evaluate whether an agentic workflow provides practical benefits compared with a traditional fixed workflow.
+The project will evaluate both the **distributed system design** and the **agentic validation layer**.
 
-I plan to prepare a small dataset of invoices with different layouts and compare the processing results with manually labelled correct values.
+### 6.1 Distributed Processing Evaluation
 
-The main fields I will evaluate include:
+The first experiment will compare a synchronous processing approach with the proposed asynchronous distributed architecture.
 
-* Invoice number
-* Vendor name
-* Invoice date
-* PO number
-* Subtotal
-* Tax
-* Total amount
-
-I plan to compare three approaches.
-
-### Approach 1 — Traditional OCR
+#### Baseline — Synchronous Processing
 
 ```text
-Invoice
-→ Tesseract OCR
-→ Text
-→ Fixed Rules
-→ Invoice Data
+POST Invoice
+→ Extract
+→ Validate
+→ Store
+→ Return Response
 ```
 
-### Approach 2 — Managed Document Processing
+#### Proposed — Asynchronous Processing
 
 ```text
-Invoice
-→ Amazon Textract
-→ Structured Data
+POST Invoice
+→ Store to S3
+→ Create Job
+→ Publish to SQS
+→ Return Accepted
+
+Worker
+→ Consume Job
+→ Extract
+→ Validate
+→ Store Result
+```
+
+The evaluation will consider:
+
+* API response latency
+* End-to-end processing time
+* Throughput under concurrent submissions
+* Queue depth under load
+* Worker failure recovery
+* Retry behaviour
+* Duplicate-message handling
+* Horizontal scaling of workers
+
+### 6.2 Agentic Validation Evaluation
+
+The second experiment will compare deterministic validation with agentic validation using the same extracted invoice data.
+
+#### Approach A — Fixed Validation
+
+```text
+Textract
+→ Normalization
 → Fixed Validation Rules
-→ Result
+→ Accept / Review
 ```
 
-### Approach 3 — Agentic Processing
+#### Approach B — Agentic LLM Validation
 
 ```text
-Invoice
-→ AI Agent
-→ Document Extraction
+Textract
+→ AI Validation Agent
 → Select Validation Tools
-→ Retry / Verify if Needed
-→ Auto Accept or Human Review
+→ Verify / Retry if Needed
+→ Accept / Human Review
 ```
 
 The evaluation will mainly consider:
 
-* Extraction accuracy
+* Field interpretation accuracy
 * Final decision accuracy
 * False acceptance rate
 * Automation rate
@@ -278,23 +326,79 @@ The evaluation will mainly consider:
 * Processing time
 * Number of agent tool calls
 * API / LLM cost
-* Reliability
 
-One important measurement will be the **false acceptance rate**.
+One important measurement will be the **false acceptance rate**, which represents cases where the system automatically accepts an invoice even though important extracted or interpreted data is incorrect.
 
-This represents cases where the system automatically accepts an invoice even though the extracted data is incorrect.
+Another measurement will be the **automation rate**, which represents how many invoices can be completed without human review.
 
-Another measurement will be the **automation rate**, which represents how many invoices can be processed without human review.
-
-The research will evaluate whether the agentic approach can increase automation without significantly increasing incorrect automatic decisions.
+The research will evaluate whether agentic validation provides a measurable improvement over fixed validation rules without introducing unacceptable cost or error risk.
 
 ---
 
-## 7. Human-in-the-Loop Validation
+## 7. Reliability and Failure Handling
 
-The system will not assume that every AI-generated result is correct.
+The distributed architecture will be designed for failure rather than assuming that every operation succeeds on the first attempt.
 
-Invoices with uncertain or inconsistent results will be sent for human review.
+Important reliability mechanisms will include:
+
+### Idempotency
+
+The same queue message may be delivered more than once. Each invoice-processing job will therefore have a unique identifier or idempotency key so that duplicate deliveries do not create duplicate results.
+
+```text
+Message Received
+      ↓
+Check Job / Idempotency Key
+      ↓
+Already Completed?
+   ↙           ↘
+ Yes            No
+ Skip          Process
+```
+
+### Retry and Dead-Letter Queue
+
+Temporary failures such as external API errors can be retried. Jobs that repeatedly fail will be moved to a dead-letter queue.
+
+```text
+SQS
+ ↓
+Worker
+ ↓
+Temporary Failure
+ ↓
+Retry
+ ↓
+Repeated Failure
+ ↓
+Dead-Letter Queue
+```
+
+### Worker Failure Recovery
+
+If a worker crashes before completing a message, the job should be available for another worker after the message visibility timeout expires.
+
+### Horizontal Scaling
+
+Multiple worker instances can consume jobs from the same queue.
+
+```text
+              SQS
+               ↓
+      ┌────────┼────────┐
+      ↓        ↓        ↓
+  Worker 1  Worker 2  Worker 3
+```
+
+This architecture will allow the project to evaluate distributed processing behaviour under varying workloads and failure conditions.
+
+---
+
+## 8. Human-in-the-Loop Validation
+
+The system will not assume that every extracted or AI-generated result is correct.
+
+Invoices with uncertain, ambiguous, or inconsistent results will be sent for human review.
 
 For example:
 
@@ -302,8 +406,8 @@ For example:
 Invoice A
 
 Extraction Confidence: High
-PO exists: Yes
-Vendor exists: Yes
+Date interpretation: Unambiguous
+Line item totals: Valid
 Subtotal + Tax = Total: Yes
 
 → AUTO ACCEPT
@@ -315,20 +419,20 @@ Compared with:
 Invoice B
 
 Extraction Confidence: High
-PO exists: Yes
-Vendor exists: Yes
-Subtotal + Tax = Total: No
+Date: 08/07/2026
+Date interpretation: Ambiguous
+Line item totals: Inconsistent
 
 → HUMAN REVIEW
 ```
 
-This allows the system to combine AI automation with deterministic business validation.
+This allows the system to combine AI-assisted interpretation with deterministic validation and human oversight.
 
 The goal is not to eliminate human review completely, but to reduce unnecessary manual work while maintaining reliable results.
 
 ---
 
-## 8. Project Scope
+## 9. Project Scope
 
 ### In Scope
 
@@ -336,20 +440,24 @@ The project will include:
 
 * Invoice upload
 * REST API
-* User authentication
-* AI agent orchestration
-* Agent tool calling
+* Amazon S3 document storage
+* PostgreSQL job and invoice data
+* Amazon SQS asynchronous processing
+* Worker service implementation
+* Idempotency
+* Retry handling and DLQ
+* Processing-state tracking
 * Invoice information extraction
-* Business validation
+* Agentic validation
 * Human-in-the-loop review
-* PostgreSQL database
-* Asynchronous processing
 * Basic review interface
 * Docker
 * Kubernetes
 * Terraform
 * CI/CD
-* Testing and evaluation
+* Logging and monitoring
+* Load and failure testing
+* Research evaluation
 
 ### Out of Scope
 
@@ -359,21 +467,34 @@ To keep the project manageable, I will not implement:
 * Invoice payment
 * Full three-way matching
 * Automatic ERP posting
+* Production integration with a real corporate ERP
 * Multi-tenant SaaS architecture
 * Custom machine-learning model training
 * Complex multi-agent architecture
 
-The project will initially use a **single agent with multiple tools** instead of multiple specialized agents.
+The project will use a **single validation agent with multiple tools** if agentic validation is implemented.
 
-The main goal is to increase the technical and research depth of the system rather than adding many business features.
+The main goal is to increase technical depth in distributed backend engineering while using AI as a focused enhancement.
 
 ---
 
-## 9. Expected Result
+## 10. Expected Result
 
-At the end of the project, I expect to have a working prototype where a user can submit an invoice and the AI agent can process it using different tools.
+At the end of the project, I expect to have a working prototype where a user can submit an invoice and immediately receive a processing-job identifier.
 
 For example:
+
+```json
+{
+  "invoiceId": "INV-10021",
+  "jobId": "JOB-8f21a4",
+  "status": "QUEUED"
+}
+```
+
+The invoice will then be processed asynchronously by a worker service.
+
+A completed result may look like:
 
 ```json
 {
@@ -388,134 +509,180 @@ For example:
 }
 ```
 
-If the system identifies an inconsistency, the result may instead be:
+If the system identifies an ambiguity or inconsistency, the result may instead be:
 
 ```json
 {
   "invoiceNumber": "INV-10021",
   "status": "REVIEW_REQUIRED",
-  "reason": "Invoice total does not match subtotal and tax"
+  "reason": "Ambiguous date format or inconsistent invoice values"
 }
 ```
 
 The application should also demonstrate:
 
-* AI agent tool calling
+* Asynchronous distributed processing
+* Queue-based workload decoupling
+* Retry and dead-letter handling
+* Idempotency
+* Worker failure recovery
+* Horizontal scaling
+* AI-assisted validation
 * Cloud deployment
-* Asynchronous processing
 * Automated testing
 * Infrastructure as Code
 * CI/CD
-* Basic monitoring and error handling
+* Monitoring and error handling
 
-The final report will compare the traditional and agentic approaches and evaluate whether the AI agent provides measurable benefits.
-
----
-
-## 10. Project Timeline
-
-| Phase       | Main Work                            |
-| ----------- | ------------------------------------ |
-| Weeks 1–2   | Research, requirements, architecture |
-| Weeks 3–5   | Spring Boot backend and database     |
-| Weeks 6–7   | Invoice extraction and validation    |
-| Weeks 8–9   | AI agent and tool integration        |
-| Weeks 10–11 | Frontend, Docker and AWS deployment  |
-| Weeks 12–13 | Kubernetes and Terraform             |
-| Week 14     | CI/CD and testing                    |
-| Week 15     | Research evaluation                  |
-| Week 16     | Final report and presentation        |
-
-The first priority will be to complete the invoice-processing workflow and validation tools.
-
-The AI agent will then be added as an orchestration layer after the core tools are working.
-
-Cloud infrastructure and advanced features will be added after the core workflow is stable.
+The final report will evaluate both the distributed architecture and the agentic validation component.
 
 ---
 
-## 11. Optional Extension — Email Integration
+## 11. Project Timeline
 
-If the core project is completed early, I would like to integrate the system with email.
+| Phase     | Main Work                                  |
+| --------- | ------------------------------------------ |
+| Weeks 1–2 | Research, requirements, architecture       |
+| Weeks 3–4 | Spring Boot REST API and PostgreSQL        |
+| Week 5    | Amazon S3 document storage and job model   |
+| Week 6    | Amazon SQS and worker service              |
+| Week 7    | Retry, DLQ, idempotency, processing states |
+| Week 8    | Amazon Textract integration                |
+| Week 9    | Agentic validation and validation tools    |
+| Week 10   | Docker and local integration testing       |
+| Week 11   | Kubernetes deployment                      |
+| Week 12   | Terraform and AWS infrastructure           |
+| Week 13   | CI/CD and observability                    |
+| Week 14   | Load testing and failure testing           |
+| Week 15   | Research evaluation and result analysis    |
+| Week 16   | Final report and presentation              |
+
+The first priority will be to complete the distributed invoice-processing pipeline.
+
+The AI validation agent will be added after the asynchronous processing, reliability, and extraction components are working.
+
+This keeps the core project useful even if some advanced AI features need to be reduced due to time constraints.
+
+---
+
+## 12. Optional Extension — Outlook Email Integration
+
+If the core project is completed early, I would like to integrate the system with Microsoft Outlook.
 
 The final workflow could be:
 
 ```text
-Sender
-   ↓
+Vendor / Sender
+      ↓
 Send Invoice Email
-   ↓
-Gmail
-   ↓
-New Email Event
-   ↓
-Invoice Processing Platform
-   ↓
-Invoice Agent
-   ↓
+      ↓
+Microsoft Outlook
+      ↓
+Microsoft Graph Change Notification
+      ↓
+Spring Boot Backend
+      ↓
+Create Invoice Processing Job
+      ↓
+Amazon SQS
+      ↓
+Invoice Worker
+      ↓
 Extract + Validate + Decide
-   ↓
+      ↓
 Database / Human Review
 ```
 
-For example, during the final demonstration, an invoice PDF could be sent to a dedicated outlook inbox.
+For example, during the final demonstration, an invoice PDF could be sent to a dedicated Outlook mailbox.
 
-The application could detect the new email and automatically trigger the invoice-processing workflow.
+The application could detect the new email, retrieve the invoice attachment, and automatically submit it to the same distributed invoice-processing pipeline used by the web/API interface.
 
 A possible architecture would be:
 
 ```text
-Outlook
-   ↓
-Graph API / Pub/Sub
-   ↓
+Microsoft Outlook
+      ↓
+Microsoft Graph
+      ↓
+Webhook / Change Notification
+      ↓
 Spring Boot
-   ↓
-Invoice Agent
-   ↓
-Agent Tools
+      ↓
+Invoice Processing Job
+      ↓
+SQS / Worker Pipeline
 ```
 
-MCP may also be used to allow the AI agent to interact with external systems through standardized tools.
+MCP may also be explored as a standardized interface for selected tools available to the AI validation agent.
 
-However, outlook and MCP integration will remain an **optional extension** so that they do not block completion of the main research project.
+However, Outlook integration and MCP will remain **optional extensions** so that they do not block completion of the main distributed-system project.
 
 ---
 
-## 12. Expected Learning Outcomes
+## 13. Expected Learning Outcomes
 
 Through this project, I want to improve my understanding of:
 
 * Java and Spring Boot backend development
-* AI agents and tool calling
-* Model Context Protocol (MCP)
-* Human-in-the-loop AI systems
+* Distributed systems concepts
 * Asynchronous and event-driven architecture
-* Cloud-native application design
+* Message queues and at-least-once delivery
+* Idempotency and retry strategies
+* Failure recovery and dead-letter queues
+* Horizontal scaling
 * AWS services
 * Docker and Kubernetes
 * Infrastructure as Code
 * CI/CD
 * Automated testing
 * System reliability and observability
+* AI agents and tool calling
+* Human-in-the-loop AI systems
 * Evaluation of AI-assisted systems
 
 The project will also allow me to apply these technologies to a business problem that I have previously encountered in a real working environment.
 
+---
 
-## 13. Work Date / Hours Log
+## 14. AI Use Section
+
+AI tools will be used during the project for research support, software development, debugging, documentation, and design discussion. AI-generated outputs will be reviewed and validated before they are included in the project.
+
+| AI Tool Name         | Version / Account Type                         | Specific Feature / Use                                       | Value Addition by Student                                    |
+| -------------------- | ---------------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| ChatGPT              | GPT-5.6 Sol / ChatGPT Plus                     | Used for project brainstorming, architecture discussion, research-question refinement, technical explanations and proposal drafting. And gramma check. | I defined the original business problem and project scope based on my work experience. I reviewed and modified the proposed architecture, selected the technologies, refined the research methodology, and verified that the solution is realistic for the project. |
+
+
+The following work will remain my responsibility:
+
+* Defining project requirements and scope
+* Designing the distributed system architecture
+* Implementing and integrating backend services
+* Designing idempotency, retry, and failure-handling strategies
+* Designing invoice validation tools
+* Reviewing and modifying AI-generated code
+* Creating test data and ground-truth results
+* Running experiments and evaluating results
+* Analyzing failures and limitations
+* Making final technical and research conclusions
+
+All major AI prompts used during the project will be recorded and included in the appendix as required by the course.
+
+---
+
+## 15. Work Date / Hours Log
 
 **Student Name:** Jiayu Lou
 
 The work log will be updated regularly throughout the project. Each entry will record the actual work completed on that day, together with the time spent and the related project output.
 
-| Date | Number of Hours | Description of Work Done |
-|---|---:|---|
-| Sep. 22, 2026 | 1 | Defined the project as an agentic cloud-native invoice-processing platform and reviewed the initial project scope. |
-| Sep. 22, 2026 | 3 | Drafted the project proposal, including problem definition, proposed solution, technology stack, research evaluation, project scope, and optional Outlook integration. |
-|  |  |  |
-|  |  |  |
-|  |  |  |
-|  |  |  |
-|  |  |  |
+| Date          | Number of Hours | Description of Work Done                                     |
+| ------------- | --------------: | ------------------------------------------------------------ |
+| Sep. 22, 2026 |               1 | Refined the project topic and scope from a general invoice-processing application into a cloud-native distributed invoice-processing platform with agentic validation. |
+| Sep. 22, 2026 |               3 | Drafted and revised the proposal, including the distributed architecture, research questions, invoice-validation problems, technology stack, evaluation plan, project scope, and optional Outlook integration. |
+|               |                 |                                                              |
+|               |                 |                                                              |
+|               |                 |                                                              |
+|               |                 |                                                              |
+|               |                 |                                                              |
 
