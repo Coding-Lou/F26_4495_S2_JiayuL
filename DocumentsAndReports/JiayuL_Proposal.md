@@ -14,11 +14,9 @@
 
 ## 1. Introduction
 
-During my previous work experience, I helped automate several accounting workflows, including invoice processing and financial reporting. Most of the tools were built as Python desktop applications.
+During my current internship experience, I helped automate several accounting workflows, including invoice processing and financial reporting.
 
 Although the automation reduced manual work, I found that a desktop-based solution has some limitations. It is harder to deploy, maintain, scale, recover from failures, and integrate with other systems.
-
-For this project, I want to redesign part of the invoice-processing workflow as a **cloud-native distributed application**, with an **AI agent used as an intelligent validation component** rather than as the entire system.
 
 The main goal is to build a system that can receive an invoice, process it asynchronously, extract important information, validate the extracted data, and decide whether the result can be accepted automatically or requires human review.
 
@@ -64,7 +62,6 @@ This process has several problems:
 * Some extracted values may be ambiguous even when the OCR result is technically correct.
 * Long-running document processing can make synchronous APIs slow and difficult to scale.
 * Temporary failures can cause invoice-processing jobs to be lost or duplicated if retry and idempotency are not handled correctly.
-* Traditional desktop automation is difficult to scale and maintain.
 
 A simple OCR system can extract text, but it does not necessarily understand whether the extracted result is logically correct or how the data should be interpreted.
 
