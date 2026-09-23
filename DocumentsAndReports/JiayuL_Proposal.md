@@ -652,22 +652,6 @@ AI tools will be used during the project for research support, software developm
 | -------------------- | ---------------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
 | ChatGPT              | GPT-5.6 Sol / ChatGPT Plus                     | Used for project brainstorming, architecture discussion, research-question refinement, technical explanations and proposal drafting. And gramma check. | I defined the original business problem and project scope based on my work experience. I reviewed and modified the proposed architecture, selected the technologies, refined the research methodology, and verified that the solution is realistic for the project. |
 
-
-The following work will remain my responsibility:
-
-* Defining project requirements and scope
-* Designing the distributed system architecture
-* Implementing and integrating backend services
-* Designing idempotency, retry, and failure-handling strategies
-* Designing invoice validation tools
-* Reviewing and modifying AI-generated code
-* Creating test data and ground-truth results
-* Running experiments and evaluating results
-* Analyzing failures and limitations
-* Making final technical and research conclusions
-
-All major AI prompts used during the project will be recorded and included in the appendix as required by the course.
-
 ---
 
 ## 15. Work Date / Hours Log
