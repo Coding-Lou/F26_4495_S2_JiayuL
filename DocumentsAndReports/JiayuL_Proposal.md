@@ -1,647 +1,280 @@
 # CSIS 4495 Project Proposal
 
-## Cloud-Native Distributed Invoice Processing Platform
-
-**Student:** Jiayu Lou  \
-**Student ID:** 300398003  \
-**Course:** CSIS 4495  \
-**Section:** Section 2  \
-**Instructor:** Padmapriya Arasanipalai Kandhadai  \
-**Team Lead:** Jiayu Lou — Individual Project  \
-**Date:** September 2026
+## AI-Powered Outdoor Trip Companion
+### Personalized Hiking Planning, Packing Assistance, Live Trail Activity, and Trip Memory Generation
 
 ---
 
-## 1. Introduction
+**Student:** Jiayu Lou 
+**Student ID:** 300398003 
+**Course:** CSIS 4495 – Applied Research Project 
+**Section:** 002 
+**Team Lead:** Jiayu Lou 
+**Project Type:** Individual Project 
 
-During my current internship experience, I helped automate several accounting workflows, including invoice processing and financial reporting.
+<div style="page-break-after: always;"></div>
 
-Although the automation reduced manual work, I found that a desktop-based solution has some limitations. It is harder to deploy, maintain, scale, recover from failures, and integrate with other systems.
 
-The main goal is to build a system that can receive an invoice, process it asynchronously, extract important information, validate the extracted data, and decide whether the result can be accepted automatically or requires human review.
+# 1. Introduction
 
-The system should be able to identify information such as:
+Outdoor activities such as hiking are very popular in Vancouver and it's my favourite activity in my spare time. However, planning a hiking trip usually requires users to check information from different websites or applications. For example, users may need to check the trail information, weather forecast, driving distance, and their own equipment separately before deciding where to go.
 
-* Vendor name
-* Invoice number
-* Invoice date
-* Due date
-* Purchase order number
-* Line item / item number
-* Item description
-* Item quantity
-* Unit of measure (UOM)
-* Item unit price
-* Item total / extended amount
-* Subtotal
-* Tax type and tax amount
-* Total amount
+For people who are not very familiar with the local trails, this process can take more time. Weather is also an important factor for outdoor activities. A trail may be suitable in good weather but may become less suitable when there is heavy rain, snow, strong wind, or low temperature. Because of this, only searching for a trail based on difficulty or popularity may not always give a suitable recommendation.
 
-The project will focus on two areas:
+This project proposes an AI-powered web application for outdoor trip planning and experience. The main concept of the application is:
 
-1. **Distributed invoice processing** — asynchronous messaging, worker services, retries, idempotency, failure recovery, and horizontal scaling.
-2. **Agentic validation** — using an AI agent and validation tools to interpret ambiguous or inconsistent invoice data and determine when human review is required.
+**Plan → Pack → Explore → Memory**
 
-The project will not attempt to build a complete accounting or ERP system.
+In the **Plan** stage, users can communicate with an AI assistant and describe what kind of hiking trip they want. The user may provide information such as difficulty, available time, travel distance, and preferred scenery. The system will also use weather information around Vancouver to recommend suitable trails.
 
----
+In the **Pack** stage, users can create and manage their own outdoor gear and clothing list. Based on the selected trail and weather conditions, the system can suggest which items the user may need to bring. The purpose is to make the packing recommendation more personalized instead of only providing a general checklist.
 
-## 2. Problem
+In the **Explore** stage, users can view a map showing hiking activity on different trails. The map can show which trails currently have active hikers and the approximate number of users on each trail. Since it may not be possible to collect enough real-time data from real hikers during this project, simulated user location data can be used to demonstrate this feature.
 
-Invoices normally arrive as PDF files and must be converted into structured data before they can be used by accounting systems.
+In the **Memory** stage, users can upload their GPS track and photos after completing a trip. The system can use this information to create a trip recap, such as a summary page or a short video that shows the route, photos, and some basic trip information.
 
-Accounting staff often need to manually open the document, identify important information, verify that the information is correct, and enter it into another system.
+The main research focus of this project is how different types of information can be combined to provide better outdoor trip recommendations. These information sources may include user preferences, trail information, weather conditions, and the user's own equipment. One research question for this project is:
 
-This process has several problems:
-
-* It is repetitive.
-* Manual entry can introduce errors.
-* Invoice formats are different between vendors.
-* OCR results may be incomplete or incorrect.
-* High OCR confidence does not always mean that the extracted business data is valid.
-* Some extracted values may be ambiguous even when the OCR result is technically correct.
-* Long-running document processing can make synchronous APIs slow and difficult to scale.
-* Temporary failures can cause invoice-processing jobs to be lost or duplicated if retry and idempotency are not handled correctly.
-
-A simple OCR system can extract text, but it does not necessarily understand whether the extracted result is logically correct or how the data should be interpreted.
-
-For example:
-
-```text
-Subtotal: $1,000
-GST: $70
-PST: $50
-Total: $1,170
-```
-
-Even if an OCR service returns high confidence for these fields, the values are inconsistent because:
-
-```text
-1000 + 70 + 50 != 1170
-```
-
-Another challenge is that invoice date formats are not consistent between vendors.
-
-For example:
-
-```text
-08/07/2026
-```
-
-This could mean:
-
-```text
-August 7, 2026
-```
-
-or:
-
-```text
-July 8, 2026
-```
-
-depending on whether the vendor uses the `MM/DD/YYYY` or `DD/MM/YYYY` format.
-
-Line-item information can also require contextual interpretation. For example, a unit price may be expressed per kilometre while the quantity is represented in metres. In that case, directly multiplying quantity by unit price would produce an incorrect result unless the unit is normalized first.
-
-The system therefore needs more than document extraction. It also needs reliable distributed processing, contextual validation, and controlled human review.
-
-The main research questions are:
-
-> How can an asynchronous distributed architecture improve the reliability and scalability of invoice-processing workloads?
-
-and
-
-> Can agentic validation improve the interpretation of ambiguous or inconsistent invoice data while keeping the false acceptance rate low?
+The expected benefit of this project is to provide a single web application that can support different stages of an outdoor trip. It can also provide an opportunity to research the use of AI, real-time information, weather data, location data, and multimedia processing in one practical web application.
 
 ---
 
-## 3. Proposed Solution
+# 2. Proposed Research Project
 
-The proposed solution is a **cloud-native distributed invoice-processing platform**.
+## 2.1 Research Objectives
 
-The core workflow will be:
+The main objective of this project is to design and develop a web application that can support users during different stages of an outdoor hiking trip.
 
-```text
-Invoice PDF
-    ↓
-Web / REST API
-    ↓
-Store Document in S3
-    ↓
-Create Processing Job
-    ↓
-Amazon SQS
-    ↓
-Invoice Worker Service
-    ↓
-Document Extraction
-    ↓
-Agentic Validation
-    ↓
-Auto Accept / Human Review
-    ↓
-Store Result in PostgreSQL
-```
+The project has four main objectives:
 
-The API will not wait for the full invoice-processing workflow to finish. Instead, it will store the invoice, create a processing job, publish a message to the queue, and return an acknowledgement to the user.
+1. Develop an AI-assisted hiking recommendation function that can consider user preferences, trail information, and weather conditions.
+2. Develop a personalized packing assistant based on the selected trail, weather conditions, and the user's own outdoor equipment.
+3. Develop a map-based feature to show current hiking activity on different trails by using simulated user location data.
+4. Develop a trip memory feature that can use uploaded GPS tracks and photos to create a trip summary or a simple trip recap video.
 
-Worker services will consume jobs from the queue and process invoices independently. The distributed design will include:
-
-* Asynchronous message processing
-* Idempotency
-* Retry handling
-* Dead-letter queue (DLQ)
-* Processing-state tracking
-* Worker failure recovery
-* Horizontal worker scaling
-* Logging and monitoring
-
-After document extraction, an AI agent will be used for cases that require contextual validation or interpretation.
-
-The agent may use tools such as:
-
-```text
-normalize_date()
-normalize_unit()
-validate_line_items()
-validate_amounts()
-validate_tax()
-check_duplicate()
-request_human_review()
-```
-
-The backend will mainly be developed using **Java and Spring Boot**.
-
-The first version will be a private deployment for one organization rather than a multi-tenant SaaS product.
+The main research focus will be on the first two objectives, especially how different information can be combined to provide more useful and personalized recommendations.
 
 ---
 
-## 4. System Architecture
+## 2.2 Research Design and Methodology
 
-The planned architecture is:
+The project will use a design and implementation approach. The system will first collect different types of information and then use them together to generate recommendations.
 
-```text
-                    Client / Web
-                         ↓
-                Spring Boot REST API
-                         ↓
-             ┌───────────┴───────────┐
-             ↓                       ↓
-        Amazon S3               PostgreSQL
-      Store Invoice            Job Metadata
-             ↓
-             └───────────┬───────────┘
-                         ↓
-                    Amazon SQS
-                         ↓
-               Invoice Worker Service
-                         ↓
-                  Amazon Textract
-                         ↓
-                 Agentic Validation
-                         ↓
-             Validation / Normalization
-                         ↓
-              ┌──────────┴──────────┐
-              ↓                     ↓
-         Auto Accept           Human Review
-              ↓
-          PostgreSQL
-```
+For the hiking recommendation function, the system will consider information such as:
 
-The distributed processing layer is the core system architecture. The AI agent is used after extraction as a validation and decision-support component.
+- hiking difficulty
+- available time
+- travel distance
+- preferred scenery
+- trail distance and elevation
+- weather forecast
+- temperature
+- rain or snow conditions
 
-Amazon SQS will decouple the REST API from the invoice workers. If a worker fails before completing a job, the message can become available again for another worker. Idempotency controls will be used to prevent duplicate processing from creating duplicate invoice records.
+The user can describe their needs through a conversation with an AI assistant. The AI will help convert the user's natural language request into more structured information. The system can then use this information to search and compare available trails.
 
-Messages that repeatedly fail processing can be moved to a dead-letter queue for later investigation or replay.
+The recommendation should not only depend on the AI language model. Some important conditions, such as trail difficulty, trip duration, or weather risk, can also be checked by the backend system before the recommendation is returned to the user.
+
+For the packing assistant, users will first create a list of outdoor gear and clothes that they own. The system will then use the selected trail and weather information to provide a packing suggestion. For example, if the forecast shows rain and the user owns a rain jacket, the system may recommend bringing the rain jacket.
+
+For the Explore feature, the project will use simulated location data instead of requiring a large number of real hikers. The simulated users can be assigned to different trails and their locations can be updated over time. The web application can then display the number of active users and their approximate positions on the map.
+
+For the Memory feature, users can upload a GPS track and photos after the trip. The system will try to combine the route, trip information, and photos to create a simple trip summary. If there is enough development time, a short automatically generated video can also be created.
 
 ---
 
-## 5. Main Technologies
+## 2.3 Data Collection
 
-The current planned technology stack is:
+The project will use several types of data.
 
-| Area               | Technology                                    |
-| ------------------ | --------------------------------------------- |
-| Backend            | Java 17, Spring Boot                          |
-| REST API           | Spring Web                                    |
-| Database           | PostgreSQL                                    |
-| Database Access    | Spring Data JPA                               |
-| Document Storage   | Amazon S3                                     |
-| Messaging          | Amazon SQS                                    |
-| Invoice Extraction | Amazon Textract                               |
-| AI Integration     | Spring AI / LLM API                           |
-| Agent Tools        | Spring-based tools / MCP where useful         |
-| Frontend           | React / TypeScript (Optional)                 |
-| Container          | Docker                                        |
-| Orchestration      | Kubernetes                                    |
-| Infrastructure     | Terraform                                     |
-| CI/CD              | GitHub Actions                                |
-| Monitoring         | Spring Boot Actuator / Cloud monitoring tools |
-| Cloud Platform     | AWS                                           |
+### Trail Data
 
-Some technologies may be adjusted during implementation depending on project complexity and timeline.
+Trail data will mainly be collected from publicly available geographic
+data sources such as **OpenStreetMap**. For the prototype, the project will
+focus on a limited number of hiking trails around Vancouver.
 
----
+The trail data may include:
 
-## 6. Research and Evaluation
+- trail name
+- location
+- route coordinates
+- distance
+- elevation gain
+- difficulty
+- estimated duration
+- scenery type
+- basic description
 
-The project will evaluate both the **distributed system design** and the **agentic validation layer**.
+Geographic information such as trail routes and coordinates may be
+obtained from OpenStreetMap, while some additional trail attributes may
+be calculated or manually prepared for the research dataset.
 
-### 6.1 Distributed Processing Evaluation
+### Weather Data
 
-The first experiment will compare a synchronous processing approach with the proposed asynchronous distributed architecture.
+Weather forecast data will be collected from the Open-Meteo API. Open-Meteo is selected because it provides free weather forecast data
+for non-commercial and educational use and supports location-based
+queries using latitude and longitude.
 
-#### Baseline — Synchronous Processing
+The system will query weather information based on the geographic
+coordinates of each trail. The weather data may include:
 
-```text
-POST Invoice
-→ Extract
-→ Validate
-→ Store
-→ Return Response
-```
+- temperature
+- precipitation probability
+- precipitation
+- wind speed
+- general weather conditions
+- forecast date and time
 
-#### Proposed — Asynchronous Processing
+The weather information will be combined with trail information and
+user preferences when generating hiking recommendations.
 
-```text
-POST Invoice
-→ Store to S3
-→ Create Job
-→ Publish to SQS
-→ Return Accepted
+For example, if a user prefers to avoid rain, trails with a high
+probability of precipitation may receive a lower recommendation score.
 
-Worker
-→ Consume Job
-→ Extract
-→ Validate
-→ Store Result
-```
 
-The evaluation will consider:
+### User Preference Data
 
-* API response latency
-* End-to-end processing time
-* Throughput under concurrent submissions
-* Queue depth under load
-* Worker failure recovery
-* Retry behaviour
-* Duplicate-message handling
-* Horizontal scaling of workers
+For testing the recommendation system, approximately 30 different hiking request scenarios will be created.
 
-### 6.2 Agentic Validation Evaluation
+Example scenarios may include:
 
-The second experiment will compare deterministic validation with agentic validation using the same extracted invoice data.
+- beginner user looking for a short hike
+- experienced user looking for a difficult hike
+- user who wants mountain views
+- user who wants to avoid rain
+- user with limited available time
+- user who does not have some specific outdoor equipment
 
-#### Approach A — Fixed Validation
+These scenarios will be used to test whether the system can correctly understand the user's requirements and provide suitable recommendations.
 
-```text
-Textract
-→ Normalization
-→ Fixed Validation Rules
-→ Accept / Review
-```
+### Simulated Location Data
 
-#### Approach B — Agentic LLM Validation
+For the live trail activity feature, simulated users will be generated and assigned to several hiking trails.
 
-```text
-Textract
-→ AI Validation Agent
-→ Select Validation Tools
-→ Verify / Retry if Needed
-→ Accept / Human Review
-```
-
-The evaluation will mainly consider:
-
-* Field interpretation accuracy
-* Final decision accuracy
-* False acceptance rate
-* Automation rate
-* Manual review rate
-* Processing time
-* Number of agent tool calls
-* API / LLM cost
-
-One important measurement will be the **false acceptance rate**, which represents cases where the system automatically accepts an invoice even though important extracted or interpreted data is incorrect.
-
-Another measurement will be the **automation rate**, which represents how many invoices can be completed without human review.
-
-The research will evaluate whether agentic validation provides a measurable improvement over fixed validation rules without introducing unacceptable cost or error risk.
+For example, the system may simulate 20 to 50 users moving on different trails. This data will be used to demonstrate how the map can display active hiking activity without requiring real users to continuously share their GPS locations.
 
 ---
 
-## 7. Reliability and Failure Handling
+## 2.4 Project Deliverables
 
-The distributed architecture will be designed for failure rather than assuming that every operation succeeds on the first attempt.
+The main deliverable will be a working web application.
 
-Important reliability mechanisms will include:
+The application will include the following main functions:
 
-### Idempotency
+### Plan
 
-The same queue message may be delivered more than once. Each invoice-processing job will therefore have a unique identifier or idempotency key so that duplicate deliveries do not create duplicate results.
+Users can communicate with an AI assistant and receive hiking recommendations based on their preferences, trail information, and weather conditions.
 
-```text
-Message Received
-      ↓
-Check Job / Idempotency Key
-      ↓
-Already Completed?
-   ↙           ↘
- Yes            No
- Skip          Process
-```
+### Pack
 
-### Retry and Dead-Letter Queue
+Users can manage their own outdoor equipment and receive personalized packing suggestions for a selected trip.
 
-Temporary failures such as external API errors can be retried. Jobs that repeatedly fail will be moved to a dead-letter queue.
+### Explore
 
-```text
-SQS
- ↓
-Worker
- ↓
-Temporary Failure
- ↓
-Retry
- ↓
-Repeated Failure
- ↓
-Dead-Letter Queue
-```
+Users can view hiking trails on a map and see simulated active hikers or the number of active users on each trail.
 
-### Worker Failure Recovery
+### Memory
 
-If a worker crashes before completing a message, the job should be available for another worker after the message visibility timeout expires.
-
-### Horizontal Scaling
-
-Multiple worker instances can consume jobs from the same queue.
-
-```text
-              SQS
-               ↓
-      ┌────────┼────────┐
-      ↓        ↓        ↓
-  Worker 1  Worker 2  Worker 3
-```
-
-This architecture will allow the project to evaluate distributed processing behaviour under varying workloads and failure conditions.
+Users can upload GPS tracks and photos to create a trip summary. A simple video generation function may be implemented as an additional feature if time allows.
 
 ---
 
-## 8. Human-in-the-Loop Validation
+## 2.5 Technologies
 
-The system will not assume that every extracted or AI-generated result is correct.
 
-Invoices with uncertain, ambiguous, or inconsistent results will be sent for human review.
+The current planned technologies for this project are:
 
-For example:
-
-```text
-Invoice A
-
-Extraction Confidence: High
-Date interpretation: Unambiguous
-Line item totals: Valid
-Subtotal + Tax = Total: Yes
-
-→ AUTO ACCEPT
-```
-
-Compared with:
-
-```text
-Invoice B
-
-Extraction Confidence: High
-Date: 08/07/2026
-Date interpretation: Ambiguous
-Line item totals: Inconsistent
-
-→ HUMAN REVIEW
-```
-
-This allows the system to combine AI-assisted interpretation with deterministic validation and human oversight.
-
-The goal is not to eliminate human review completely, but to reduce unnecessary manual work while maintaining reliable results.
+| Area | Technology |
+|---|---|
+| Platform | Web Application / Cloud |
+| Frontend | React, TypeScript |
+| Backend | Java 21, Spring Boot |
+| Database | PostgreSQL, DynamoDB |
+| AI | OpenAI API |
+| Trail Data | OpenStreetMap, Overpass API |
+| Weather Data | Open-Meteo API |
+| Map | Leaflet, OpenStreetMap |
+| Location Data | GPS / GPX data |
+| Real-Time Updates | Spring WebSocket |
+| Media Storage | Amazon S3 |
+| Video / Trip Recap | GPX processing, FFmpeg (if time allows) |
+| Deployment | AWS |
+| Containerization | Docker |
+| CI/CD | GitHub Actions |
+| Source Control | GitHub |
 
 ---
 
-## 9. Project Scope
+## 2.6 Expected Results
 
-### In Scope
+The expected result is a working prototype that demonstrates how AI and different external data sources can support outdoor trip planning.
 
-The project will include:
+The system is expected to provide hiking recommendations that are more personalized than simply searching trails by popularity or difficulty.
 
-* Invoice upload
-* REST API
-* Amazon S3 document storage
-* PostgreSQL job and invoice data
-* Amazon SQS asynchronous processing
-* Worker service implementation
-* Idempotency
-* Retry handling and DLQ
-* Processing-state tracking
-* Invoice information extraction
-* Agentic validation
-* Human-in-the-loop review
-* Basic review interface
-* Docker
-* Kubernetes
-* Terraform
-* CI/CD
-* Logging and monitoring
-* Load and failure testing
-* Research evaluation
+For example, two users may receive different recommendations because they have different hiking experience, available time, preferred scenery, or outdoor equipment.
 
-### Out of Scope
+The packing assistant is also expected to provide more useful suggestions because it can consider both the weather and the equipment that the user already owns.
 
-To keep the project manageable, I will not implement:
+The Explore feature is expected to demonstrate how live outdoor activity can be visualized on a web map using simulated location data.
 
-* Full accounts-payable workflow
-* Invoice payment
-* Full three-way matching
-* Automatic ERP posting
-* Production integration with a real corporate ERP
-* Multi-tenant SaaS architecture
-* Custom machine-learning model training
-* Complex multi-agent architecture
-
-The project will use a **single validation agent with multiple tools** if agentic validation is implemented.
-
-The main goal is to increase technical depth in distributed backend engineering while using AI as a focused enhancement.
+The Memory feature is expected to show how GPS track data and photos can be used together to create a more organized record of a completed hiking trip.
 
 ---
 
-## 10. Expected Result
+# 3. Project Planning and Timeline
 
-At the end of the project, I expect to have a working prototype where a user can submit an invoice and immediately receive a processing-job identifier.
+The project will be developed over approximately 13 weeks. The timeline is mainly based on functional deliverables.
 
-For example:
+| Week | Deliverable |
+|---|---|
+| Week 1 | Basic web application setup with React frontend and Spring Boot backend |
+| Week 2 | User registration, login, and basic user profile |
+| Week 3 | Trail database with PostgreSQL/PostGIS and initial Vancouver-area trail dataset |
+| Week 4 | Interactive trail map using Leaflet and OpenStreetMap |
+| Week 5 | Open-Meteo weather integration for selected trail locations |
+| Week 6 | AI chat interface for collecting user hiking preferences |
+| Week 7 | Hiking recommendation feature using user preferences, trail data, and weather information |
+| Week 8 | User gear and clothing inventory management |
+| Week 9 | AI packing recommendation based on selected trail, weather, and user-owned equipment |
+| Week 10 | Explore feature showing active hikers on trails using simulated location data |
+| Week 11 | DynamoDB integration for temporary hiking activity data and map updates |
+| Week 12 | GPX upload, route parsing, photo upload, and trip recap page |
+| Week 13 | Final integration, AWS deployment, testing, bug fixing, and final demonstration |
 
-```json
-{
-  "invoiceId": "INV-10021",
-  "jobId": "JOB-8f21a4",
-  "status": "QUEUED"
-}
-```
+## Major Functional Deliverables
 
-The invoice will then be processed asynchronously by a worker service.
+The final system is expected to include the following deliverables:
 
-A completed result may look like:
+1. **Plan**
+   - AI conversation interface
+   - Hiking preference extraction
+   - Trail and weather integration
+   - Personalized trail recommendation
 
-```json
-{
-  "vendor": "ABC Supplier",
-  "invoiceNumber": "INV-10021",
-  "invoiceDate": "2026-09-10",
-  "poNumber": "PO-25009",
-  "subtotal": 1000.00,
-  "tax": 120.00,
-  "total": 1120.00,
-  "status": "AUTO_ACCEPTED"
-}
-```
+2. **Pack**
+   - User gear and clothing inventory
+   - Personalized packing recommendation
 
-If the system identifies an ambiguity or inconsistency, the result may instead be:
+3. **Explore**
+   - Interactive hiking map
+   - Simulated active hikers
+   - Trail activity visualization
 
-```json
-{
-  "invoiceNumber": "INV-10021",
-  "status": "REVIEW_REQUIRED",
-  "reason": "Ambiguous date format or inconsistent invoice values"
-}
-```
+4. **Memory**
+   - GPX file upload and parsing
+   - Photo upload
+   - Automatically generated trip recap page
+   - Simple recap video generation if time allows
 
-The application should also demonstrate:
-
-* Asynchronous distributed processing
-* Queue-based workload decoupling
-* Retry and dead-letter handling
-* Idempotency
-* Worker failure recovery
-* Horizontal scaling
-* AI-assisted validation
-* Cloud deployment
-* Automated testing
-* Infrastructure as Code
-* CI/CD
-* Monitoring and error handling
-
-The final report will evaluate both the distributed architecture and the agentic validation component.
+5. **Deployment**
+   - Dockerized application
+   - AWS deployment
+   - GitHub source repository
+   - CI/CD pipeline using GitHub Actions
 
 ---
 
-## 11. Project Timeline
-
-| Phase     | Main Work                                  |
-| --------- | ------------------------------------------ |
-| Weeks 1–2 | Research, requirements, architecture       |
-| Weeks 3–4 | Spring Boot REST API and PostgreSQL        |
-| Week 5    | Amazon S3 document storage and job model   |
-| Week 6    | Amazon SQS and worker service              |
-| Week 7    | Retry, DLQ, idempotency, processing states |
-| Week 8    | Amazon Textract integration                |
-| Week 9    | Agentic validation and validation tools    |
-| Week 10   | Docker and local integration testing       |
-| Week 11   | Kubernetes deployment                      |
-| Week 12   | Terraform and AWS infrastructure           |
-| Week 13   | CI/CD and observability                    |
-| Week 14   | Load testing and failure testing           |
-| Week 15   | Research evaluation and result analysis    |
-| Week 16   | Final report and presentation              |
-
-The first priority will be to complete the distributed invoice-processing pipeline.
-
-The AI validation agent will be added after the asynchronous processing, reliability, and extraction components are working.
-
-This keeps the core project useful even if some advanced AI features need to be reduced due to time constraints.
-
----
-
-## 12. Optional Extension — Outlook Email Integration
-
-If the core project is completed early, I would like to integrate the system with Microsoft Outlook.
-
-The final workflow could be:
-
-```text
-Vendor / Sender
-      ↓
-Send Invoice Email
-      ↓
-Microsoft Outlook
-      ↓
-Microsoft Graph Change Notification
-      ↓
-Spring Boot Backend
-      ↓
-Create Invoice Processing Job
-      ↓
-Amazon SQS
-      ↓
-Invoice Worker
-      ↓
-Extract + Validate + Decide
-      ↓
-Database / Human Review
-```
-
-For example, during the final demonstration, an invoice PDF could be sent to a dedicated Outlook mailbox.
-
-The application could detect the new email, retrieve the invoice attachment, and automatically submit it to the same distributed invoice-processing pipeline used by the web/API interface.
-
-A possible architecture would be:
-
-```text
-Microsoft Outlook
-      ↓
-Microsoft Graph
-      ↓
-Webhook / Change Notification
-      ↓
-Spring Boot
-      ↓
-Invoice Processing Job
-      ↓
-SQS / Worker Pipeline
-```
-
-MCP may also be explored as a standardized interface for selected tools available to the AI validation agent.
-
-However, Outlook integration and MCP will remain **optional extensions** so that they do not block completion of the main distributed-system project.
-
----
-
-## 13. Expected Learning Outcomes
-
-Through this project, I want to improve my understanding of:
-
-* Java and Spring Boot backend development
-* Distributed systems concepts
-* Asynchronous and event-driven architecture
-* Message queues and at-least-once delivery
-* Idempotency and retry strategies
-* Failure recovery and dead-letter queues
-* Horizontal scaling
-* AWS services
-* Docker and Kubernetes
-* Infrastructure as Code
-* CI/CD
-* Automated testing
-* System reliability and observability
-* AI agents and tool calling
-* Human-in-the-loop AI systems
-* Evaluation of AI-assisted systems
-
-The project will also allow me to apply these technologies to a business problem that I have previously encountered in a real working environment.
-
----
-
-## 14. AI Use Section
+## 4. AI Use Section
 
 AI tools will be used during the project for research support, software development, debugging, documentation, and design discussion. AI-generated outputs will be reviewed and validated before they are included in the project.
 
@@ -651,19 +284,16 @@ AI tools will be used during the project for research support, software developm
 
 ---
 
-## 15. Work Date / Hours Log
+## 5. Work Date / Hours Log
 
 **Student Name:** Jiayu Lou
 
 The work log will be updated regularly throughout the project. Each entry will record the actual work completed on that day, together with the time spent and the related project output.
 
-| Date          | Number of Hours | Description of Work Done                                     |
-| ------------- | --------------: | ------------------------------------------------------------ |
-| Sep. 22, 2026 |               1 | Refined the project topic and scope from a general invoice-processing application into a cloud-native distributed invoice-processing platform with agentic validation. |
-| Sep. 22, 2026 |               3 | Drafted and revised the proposal, including the distributed architecture, research questions, invoice-validation problems, technology stack, evaluation plan, project scope, and optional Outlook integration. |
-|               |                 |                                                              |
-|               |                 |                                                              |
-|               |                 |                                                              |
-|               |                 |                                                              |
-|               |                 |                                                              |
+| Date | Number of Hours | Description of Work Done |
+|---|---:|---|
+| Sep. 22, 2026 | 1 | Refined the initial project topic and scope from a general invoice-processing application into a cloud-native distributed invoice-processing platform with agentic validation. |
+| Sep. 22, 2026 | 3 | Drafted and revised the initial proposal, including the system architecture, research questions, validation workflow, technology stack, evaluation plan, project scope, and optional Outlook integration. |
+| Sep. 23, 2026 | 2 | Discussed the project direction and scope with the professor. Reconsidered the original invoice-processing topic and explored alternative project ideas. |
+| Sep. 25, 2026 | 3 | Defined the new outdoor trip companion project around the Plan, Pack, Explore, and Memory stages. Drafted the project proposal, including research objectives, data sources, technologies, evaluation methods, and project timeline. |
 
