@@ -12,11 +12,11 @@ public class User {
     @Id
     private UUID id;
 
+    @Column(name = "identity_subject", unique = true)
+    private String identitySubject;
+
     @Column(nullable = false, unique = true)
     private String email;
-
-    @Column(name = "password_hash", nullable = false)
-    private String passwordHash;
 
     @Column(name = "display_name", nullable = false)
     private String displayName;
@@ -39,12 +39,12 @@ public class User {
         return id;
     }
 
-    public String getEmail() {
-        return email;
+    public String getIdentitySubject() {
+        return identitySubject;
     }
 
-    public String getPasswordHash() {
-        return passwordHash;
+    public String getEmail() {
+        return email;
     }
 
     public String getDisplayName() {
@@ -55,12 +55,12 @@ public class User {
         return createdAt;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
+    public void setIdentitySubject(String identitySubject) {
+        this.identitySubject = identitySubject;
     }
 
-    public void setPasswordHash(String passwordHash) {
-        this.passwordHash = passwordHash;
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public void setDisplayName(String displayName) {
