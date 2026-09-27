@@ -16,5 +16,26 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./docker/postgres/init-databases.sql:/docker-entrypoint-initdb.d/init-databases.sql
 
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.7.4
+    container_name: outdoor-keycloak
+
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak_db
+      KC_DB_USERNAME: ${POSTGRES_USER}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
+
+    ports:
+      - "8180:8080"
+
+    depends_on:
+      - postgres
+
+    command: start-dev
+
 volumes:
   postgres_data:
