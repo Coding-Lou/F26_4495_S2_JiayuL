@@ -1,75 +1,46 @@
-# React + TypeScript + Vite
+# Outdoor Trip Companion — Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A demo-ready React + TypeScript interface for planning, packing, exploring, and remembering outdoor trips around Vancouver.
 
-Currently, two official plugins are available:
+## Run the demo
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Start the supporting services first:
 
-## React Compiler
+- Keycloak: `http://localhost:8180`
+- User Service: `http://localhost:8081`
+- Trail Service (when available): `http://localhost:8082`
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Then run:
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+cd Project/Frontend
+cp .env.example .env
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+Open `http://localhost:5173`. Keycloak redirects unauthenticated visitors to the `outdoor-trip` realm using Authorization Code Flow + PKCE.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Unauthenticated visitors see a welcome screen with three choices: Keycloak login, Keycloak registration, or guest mode. Guest mode can use the Home prototype and browse demo trail experiences but never calls authenticated User Service endpoints; Pack and Profile display a sign-in prompt.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+Home is the default route and the future entry point for the AI hiking assistant. The conversational UI is implemented through reusable `ChatComposer`, `ChatMessage`, `SuggestionPrompt`, and `TrailResultCard` components. `src/services/aiService.ts` defines the future integration boundary, but no AI endpoint is invented or called yet. Submitted messages receive an explicit prototype notice instead of a fabricated AI answer.
 
+The primary navigation includes Home, Plan, Pack, Explore, and Memory. Home remains the default route.
+
+> Keycloak realm user registration must be enabled for the **Create account** button to open the registration form.
+
+The Vite development server proxies `/user-api` and `/trail-api` to the local services. This avoids browser CORS issues without requiring backend changes. All targets remain configurable in `.env`.
+
+## Data sources
+
+- **Real APIs:** profile and all Gear CRUD operations use the User Service with the current Keycloak bearer token.
+- **Temporary demo data:** Dashboard weather/upcoming trip, Memory history, and simulated community activity are visibly marked as demo concepts.
+- **Trails:** the current Trail Service has no controllers or DTOs, so the default `VITE_TRAIL_DATA_MODE=demo` uses isolated data from `src/data/mockTrails.ts`. No API failure ever triggers a mock fallback. Once the Trail Service contract is implemented, set `VITE_TRAIL_DATA_MODE=api` and align DTO mapping/query names only in `src/services/trailService.ts` if necessary.
+- **Memory uploads:** selected photos and GPX filenames are local browser previews only and are not persisted.
+
+## Checks
+
+```bash
+npm run lint
+npm run build
 ```

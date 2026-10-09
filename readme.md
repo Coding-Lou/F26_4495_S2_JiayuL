@@ -29,3 +29,8 @@ The work log will be updated regularly throughout the project. Each entry will r
 | Sep. 26, 2026 | 1 | Researched Keycloak and set up basic authentication with React and Spring Security. |
 | Sep. 26, 2026 | 0.5 | Set up Keycloak with a new realm, React client, PKCE login flow, and test user account. |
 | Sep. 26, 2026 | 0.5 | Connected Keycloak authentication with the User Service using Spring Security and JWT validation. Tested protected APIs and automatic user profile creation. |
+| Sep. 28, 2026 | 1.5 | Worked on the Gear feature and added APIs to create, view, update, and delete gear items. |
+| Sep. 28, 2026 | 0.5 | Added soft delete and made sure users can only manage their own gear. |
+| Sep. 28, 2026 | 1 | Improved error handling for invalid requests, authentication, and missing gear items. |
+| Sep. 28, 2026 | 1.5 | Added tests for the Gear feature and used Testcontainers with PostgreSQL for integration testing. |
+| Sep. 28, 2026 | 0.5 | Fixed some testing issues and checked that all User Service tests passed. |
