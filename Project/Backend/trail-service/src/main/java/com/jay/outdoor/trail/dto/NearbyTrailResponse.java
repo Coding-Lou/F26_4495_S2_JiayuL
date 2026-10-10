@@ -1,5 +1,6 @@
 package com.jay.outdoor.trail.dto;
 
+import java.util.Set;
 import java.util.UUID;
 
 public record NearbyTrailResponse(
@@ -13,6 +14,7 @@ public record NearbyTrailResponse(
         Double latitude,
         Double longitude,
         String source,
-        Double distanceFromUserKm
+        Double distanceFromUserKm,
+        Set<String> scenery
 ) {
 }

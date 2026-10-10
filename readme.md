@@ -34,3 +34,5 @@ The work log will be updated regularly throughout the project. Each entry will r
 | Sep. 28, 2026 | 1 | Improved error handling for invalid requests, authentication, and missing gear items. |
 | Sep. 28, 2026 | 1.5 | Added tests for the Gear feature and used Testcontainers with PostgreSQL for integration testing. |
 | Sep. 28, 2026 | 0.5 | Fixed some testing issues and checked that all User Service tests passed. |
+| Oct. 07, 2026 | 5.5 | Implement trail entity, PostGIS-backed nearby search, filtering, GeoJSON trail details, JWT security, CORS configuration, and demo trail seed data. |
+| Oct. 10, 2026 | 3.5 | Implemented a context-aware trail recommendation flow that ranks the top three nearby trails using user intent, weather, gear readiness, scenery preferences, and proximity.|

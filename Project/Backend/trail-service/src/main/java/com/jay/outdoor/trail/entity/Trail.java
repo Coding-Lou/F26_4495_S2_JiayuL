@@ -5,6 +5,8 @@ import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.Point;
 
 import java.time.OffsetDateTime;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -14,23 +16,38 @@ public class Trail {
     @Id
     private UUID id;
 
-    @Column(nullable = false, length = 200)
+    @Column(
+            nullable = false,
+            length = 200
+    )
     private String name;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(
+            columnDefinition = "TEXT"
+    )
     private String description;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(
+            nullable = false,
+            length = 20
+    )
     private TrailDifficulty difficulty;
 
-    @Column(name = "distance_km", nullable = false)
+    @Column(
+            name = "distance_km",
+            nullable = false
+    )
     private double distanceKm;
 
-    @Column(name = "elevation_gain_m")
+    @Column(
+            name = "elevation_gain_m"
+    )
     private Integer elevationGainM;
 
-    @Column(name = "estimated_duration_min")
+    @Column(
+            name = "estimated_duration_min"
+    )
     private Integer estimatedDurationMin;
 
     @Column(
@@ -44,25 +61,56 @@ public class Trail {
     )
     private Geometry route;
 
-    @Column(length = 100)
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(
+            name = "trail_scenery",
+            joinColumns = @JoinColumn(
+                    name = "trail_id"
+            )
+    )
+    @Column(
+            name = "scenery",
+            nullable = false,
+            length = 30
+    )
+    @Enumerated(EnumType.STRING)
+    private Set<TrailScenery> scenery =
+            new HashSet<>();
+
+    @Column(
+            length = 100
+    )
     private String source;
 
-    @Column(name = "created_at", nullable = false)
+    @Column(
+            name = "created_at",
+            nullable = false
+    )
     private OffsetDateTime createdAt;
 
-    @Column(name = "updated_at", nullable = false)
+    @Column(
+            name = "updated_at",
+            nullable = false
+    )
     private OffsetDateTime updatedAt;
 
-    @Column(nullable = false)
+    @Column(
+            nullable = false
+    )
     private boolean deleted = false;
+
+    public Trail() {
+    }
 
     @PrePersist
     public void prePersist() {
+
         if (id == null) {
             id = UUID.randomUUID();
         }
 
-        OffsetDateTime now = OffsetDateTime.now();
+        OffsetDateTime now =
+                OffsetDateTime.now();
 
         if (createdAt == null) {
             createdAt = now;
@@ -71,6 +119,12 @@ public class Trail {
         if (updatedAt == null) {
             updatedAt = now;
         }
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        updatedAt =
+                OffsetDateTime.now();
     }
 
     public UUID getId() {
@@ -85,7 +139,9 @@ public class Trail {
         return name;
     }
 
-    public void setName(String name) {
+    public void setName(
+            String name
+    ) {
         this.name = name;
     }
 
@@ -93,7 +149,9 @@ public class Trail {
         return description;
     }
 
-    public void setDescription(String description) {
+    public void setDescription(
+            String description
+    ) {
         this.description = description;
     }
 
@@ -101,7 +159,9 @@ public class Trail {
         return difficulty;
     }
 
-    public void setDifficulty(TrailDifficulty difficulty) {
+    public void setDifficulty(
+            TrailDifficulty difficulty
+    ) {
         this.difficulty = difficulty;
     }
 
@@ -109,7 +169,9 @@ public class Trail {
         return distanceKm;
     }
 
-    public void setDistanceKm(double distanceKm) {
+    public void setDistanceKm(
+            double distanceKm
+    ) {
         this.distanceKm = distanceKm;
     }
 
@@ -117,23 +179,31 @@ public class Trail {
         return elevationGainM;
     }
 
-    public void setElevationGainM(Integer elevationGainM) {
-        this.elevationGainM = elevationGainM;
+    public void setElevationGainM(
+            Integer elevationGainM
+    ) {
+        this.elevationGainM =
+                elevationGainM;
     }
 
     public Integer getEstimatedDurationMin() {
         return estimatedDurationMin;
     }
 
-    public void setEstimatedDurationMin(Integer estimatedDurationMin) {
-        this.estimatedDurationMin = estimatedDurationMin;
+    public void setEstimatedDurationMin(
+            Integer estimatedDurationMin
+    ) {
+        this.estimatedDurationMin =
+                estimatedDurationMin;
     }
 
     public Point getTrailhead() {
         return trailhead;
     }
 
-    public void setTrailhead(Point trailhead) {
+    public void setTrailhead(
+            Point trailhead
+    ) {
         this.trailhead = trailhead;
     }
 
@@ -141,15 +211,29 @@ public class Trail {
         return route;
     }
 
-    public void setRoute(Geometry route) {
+    public void setRoute(
+            Geometry route
+    ) {
         this.route = route;
+    }
+
+    public Set<TrailScenery> getScenery() {
+        return scenery;
+    }
+
+    public void setScenery(
+            Set<TrailScenery> scenery
+    ) {
+        this.scenery = scenery;
     }
 
     public String getSource() {
         return source;
     }
 
-    public void setSource(String source) {
+    public void setSource(
+            String source
+    ) {
         this.source = source;
     }
 
@@ -157,7 +241,9 @@ public class Trail {
         return createdAt;
     }
 
-    public void setCreatedAt(OffsetDateTime createdAt) {
+    public void setCreatedAt(
+            OffsetDateTime createdAt
+    ) {
         this.createdAt = createdAt;
     }
 
@@ -165,7 +251,9 @@ public class Trail {
         return updatedAt;
     }
 
-    public void setUpdatedAt(OffsetDateTime updatedAt) {
+    public void setUpdatedAt(
+            OffsetDateTime updatedAt
+    ) {
         this.updatedAt = updatedAt;
     }
 
@@ -173,15 +261,9 @@ public class Trail {
         return deleted;
     }
 
-    public void setDeleted(boolean deleted) {
+    public void setDeleted(
+            boolean deleted
+    ) {
         this.deleted = deleted;
     }
-
-    @PreUpdate
-    public void preUpdate() {
-        updatedAt = OffsetDateTime.now();
-    }
-
-
-
 }
