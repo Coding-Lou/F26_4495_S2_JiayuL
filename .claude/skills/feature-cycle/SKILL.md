@@ -82,11 +82,13 @@ Realtime 3D feature
 
 Agents never edit the same files at the same time. On a specialist path, wait for one agent's report before briefing the next, and pass the next agent the contract or files the previous one produced.
 
+Write scope: the default is the implementing agent's own area, `Project/Frontend/**` for `frontend`. When the approved spec explicitly lists additional write paths for this feature, identify them before implementation starts, put them in the brief exactly as the spec states them, and keep every restriction the spec attaches to them. The implementing agent may change only those exact paths, and any other change outside its own area is a scope failure. An exception belongs to one feature; it never grants general backend or infrastructure access.
+
 Each implementation brief should contain:
 
 - the feature id, the spec path, and which sections to read;
 - on a resume, what is already done and where the last work stopped, with the instruction to audit first and finish only what is missing;
-- the boundaries: writes only in that agent's own area (`Project/Frontend/` for `frontend`), the feature's non-goals, no new runtime dependency without your approval, no git command that changes state;
+- the boundaries: writes only in that agent's own area (`Project/Frontend/**` for `frontend`) plus any additional write paths the approved spec grants for this feature, quoted with their limits; the feature's non-goals; no new runtime dependency without your approval; no git command that changes state;
 - the instruction to report a spec contradiction or a backend contract gap and stop on that item, not to design or invent around it;
 - the required checks: for `frontend`, `npm run build` and `npm run lint` from `Project/Frontend/`; for `backend-api`, `mvn -pl <module> test` on each module it touched;
 - the report: gap list or work done, files changed, deviations from the spec, the exit codes of its checks, and what it could not verify without a browser.
@@ -97,10 +99,11 @@ The implementer may load the page once to see that it renders. Multi-viewport an
 
 A scope check only, a few commands:
 
-- only expected files changed, all inside the areas of the agents that ran: `Project/Frontend/` on the ordinary path (plus docs you changed yourself);
+- only expected files changed, all inside the areas of the agents that ran: `Project/Frontend/**` on the ordinary path, plus the exact additional paths the approved spec grants for this feature (plus docs you changed yourself);
+- a file changed under a granted path stays within the limit the spec states for it (read that file's diff), and nothing else outside the agents' areas changed: no unrelated infrastructure change;
 - no file under `Project/Backend/` is newer than the start of the cycle, unless you approved a `backend-api` change;
 - nothing from the feature's non-goals crept in (search the changed files for the obvious imports and calls);
-- no unrelated refactor, no new dependency.
+- no unrelated refactor, and no runtime dependency that the spec or you did not approve.
 
 Do not open a browser, take screenshots, or rerun build and lint. If scope is acceptable, go straight to QA.
 

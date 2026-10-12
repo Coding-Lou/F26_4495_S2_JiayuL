@@ -27,6 +27,8 @@ During frontend development the main session leads and delegates; it is not the 
 | `three-d` | Realtime 3D scene, avatar, 3D contracts | 3D docs; 3D directories once the lead assigns a 3D feature |
 | `backend-api` | Backend contract gaps found by frontend work | `Project/Backend/`, only after lead approval |
 
+`frontend` normally writes under `Project/Frontend/**`. A feature specification may explicitly grant narrow additional paths for that feature when the lead approves them. Those exceptions do not grant general backend or infrastructure ownership; `Project/Backend/` stays with `backend-api`.
+
 Feature workflow:
 
 1. Lead defines scope and acceptance criteria.
