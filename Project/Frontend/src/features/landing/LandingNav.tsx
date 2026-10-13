@@ -1,4 +1,7 @@
 import { Link } from "react-router-dom"
+import { useAuthControlStates } from "@/features/auth/authBoundary"
+import { AuthActionLabel } from "./AuthActionLabel"
+import { authControlAttributes } from "./authControlAttributes"
 import { landingContent } from "./content"
 
 type LandingNavProps = {
@@ -8,9 +11,12 @@ type LandingNavProps = {
 
 /**
  * The landing's own navigation (FEATURE-001 §11.6): the brand wordmark and
- * Sign in, and nothing else. It links to no authenticated area.
+ * Sign in, and nothing else. It links to no authenticated area and gains no
+ * "Create account" entry (FEATURE-002 D16).
  */
 export function LandingNav({ onSignIn }: LandingNavProps) {
+  const signInState = useAuthControlStates().navigation
+
   return (
     <header className="landing-header">
       <nav aria-label={landingContent.navigationLabel} className="landing-nav">
@@ -21,13 +27,15 @@ export function LandingNav({ onSignIn }: LandingNavProps) {
           </Link>
         </div>
 
-        {/* A button, not a link: in this feature it does not navigate. */}
+        {/* A button, not a link: it starts a redirect built at that moment
+            and has no fixed address (FEATURE-002 §6). */}
         <button
           type="button"
           className="landing-control landing-quiet landing-sign-in"
+          {...authControlAttributes(signInState)}
           onClick={onSignIn}
         >
-          {landingContent.signIn}
+          <AuthActionLabel label={landingContent.signIn} state={signInState} />
         </button>
       </nav>
     </header>

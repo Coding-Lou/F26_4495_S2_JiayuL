@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="robots" content="noindex" />
+    <title>Outdoor Trip Companion</title>
+  </head>
+  <body>
+    <!--
+      Loaded only inside a hidden frame of the application (FEATURE-002 D25).
+      At startup the application asks the identity provider, with prompt=none,
+      whether a session exists; the provider answers by redirecting the frame
+      here. This page hands that answer to the application window that owns
+      the frame, and only to a window of its own origin. It shows nothing and
+      stores nothing.
+    -->
+    <script>
+      parent.postMessage(location.href, location.origin)
+    </script>
+  </body>
+</html>

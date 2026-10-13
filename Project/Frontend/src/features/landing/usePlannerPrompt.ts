@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import {
   dismissAuthBoundaryNotice,
+  presentAuthBoundaryArrival,
   requestAuthentication,
 } from "@/features/auth/authBoundary"
 import {
@@ -33,7 +34,9 @@ export type PlannerPromptController = {
  *
  * It lives above the form because two places act on the same prompt: the
  * primary action inside the form and Sign in in the navigation. Both save a
- * valid prompt first and then go through the one auth boundary.
+ * valid prompt first and then go through the one auth boundary: the primary
+ * action to the authentication gate, Sign in straight to the login page
+ * (FEATURE-002 §6).
  */
 export function usePlannerPrompt(): PlannerPromptController {
   // A prompt saved before a reload is restored, with no message (§11.11).
@@ -41,8 +44,11 @@ export function usePlannerPrompt(): PlannerPromptController {
   const [emptyRefused, setEmptyRefused] = useState(false)
   const [refusals, setRefusals] = useState(0)
 
-  // A notice belongs to this visit to the page, not to the next one.
-  useEffect(() => dismissAuthBoundaryNotice, [])
+  // A notice that arrived with the visitor (a closed route, a failed sign-in,
+  // an ended session, a sign-out) is shown once the landing has rendered, so
+  // that it is announced. Whatever is shown belongs to this visit to the page
+  // and is withdrawn when the landing goes away.
+  useEffect(() => presentAuthBoundaryArrival(), [])
 
   const check = checkPlanningPrompt(value)
 

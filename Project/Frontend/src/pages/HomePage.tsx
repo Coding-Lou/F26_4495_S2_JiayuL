@@ -1,11 +1,10 @@
-import { Button } from "@/components/ui/button"
+import { AuthenticatedHome } from "@/features/home/AuthenticatedHome"
 
+/**
+ * Route `/home`: the Authenticated Home, the conversational trip planner over
+ * the Home media (FEATURE-003). Protected, and rendered outside the
+ * application layout.
+ */
 export function HomePage() {
-  return (
-    <section className="space-y-4">
-      <h1 className="text-2xl font-semibold">Outdoor Trip Companion</h1>
-      <p className="text-muted-foreground">Home</p>
-      <Button type="button">Frontend ready</Button>
-    </section>
-  )
+  return <AuthenticatedHome />
 }

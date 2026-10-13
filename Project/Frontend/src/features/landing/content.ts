@@ -2,8 +2,10 @@ import { PLANNING_PROMPT_MAX_LENGTH } from "@/features/planning/planningPrompt"
 
 /**
  * Every user-facing string on the Public Landing (FEATURE-001 §11.1, §11.4,
- * §11.5, §11.10, §11.11). Scene captions are the one exception: they belong
- * to the scene definitions in hero-media/scenes.
+ * §11.5, §11.10, §11.11). Two exceptions: scene captions belong to the scene
+ * definitions in hero-media/scenes, and the authentication gate and notices
+ * (FEATURE-002) belong to features/auth and reach the landing through the
+ * auth boundary.
  */
 
 const characterCount = new Intl.NumberFormat("en-US")
@@ -39,23 +41,6 @@ export const landingContent = {
     overLimit: `Your request is over the ${promptLimit}-character limit. Shorten it to continue.`,
     counter: (length: number) =>
       `${characterCount.format(length)} of ${promptLimit} characters`,
-  },
-
-  /**
-   * Auth-boundary notices are assembled from these sentences:
-   *   N1 = signInToPlan + promptSaved
-   *   N2 = signInUnavailable + promptSaved
-   *   N3 = signInUnavailable
-   *   N4 = signInToPlan or signInUnavailable, then promptNotSaved
-   */
-  notice: {
-    signInToPlan:
-      "You'll need to sign in to plan a trip, but sign-in isn't available yet.",
-    signInUnavailable:
-      "Sign-in isn't available yet. You'll need it to plan a trip.",
-    promptSaved: "Your request is saved in this tab.",
-    promptNotSaved:
-      "Your request is still in the box above, but it couldn't be saved in this browser.",
   },
 
   sceneControl: {

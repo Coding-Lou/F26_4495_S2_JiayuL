@@ -1,12 +1,14 @@
 /*
- * FEATURE-001 — Public Landing foreground.
+ * FEATURE-001 — Public Landing foreground, with the authentication gate
+ * and control states that FEATURE-002 adds to it (marked "FEATURE-002").
  *
  * Imported by src/index.css so Tailwind resolves the theme breakpoints.
  * Every rule is scoped to .landing; no other page is affected.
  *
  * Values come from docs/DESIGN_SYSTEM.md Version 2 (tokens) and from
  * docs/features/001-public-landing.md section 11 (feature-level values).
- * Section numbers in comments refer to the feature specification.
+ * Section numbers in comments refer to that specification; those marked
+ * FEATURE-002 refer to docs/features/002-authentication.md section 21.
  */
 
 @layer components {
@@ -296,6 +298,12 @@
     cursor: auto;
   }
 
+  /* FEATURE-002 §21.2.5: the heading takes focus from script when the
+     landing replaces another route. It is not operable, so it shows no ring. */
+  .landing-heading:focus {
+    outline: none;
+  }
+
   .landing-supporting {
     grid-area: 2 / 1;
     max-width: min(100%, var(--landing-supporting-max));
@@ -523,11 +531,68 @@
   }
 
   .landing-sign-in {
+    position: relative;
     flex: none;
     min-height: 44px;
     padding-inline: var(--landing-sign-in-pad);
     font-weight: 600;
     white-space: nowrap;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * FEATURE-002 §21.2.3: states of the controls that lead to
+   * authentication (Sign in in the navigation and the gate's two actions)
+   * while the browser is leaving for the sign-in page.
+   *
+   * Working: the label is hidden but keeps its width and stays the
+   * accessible name; a 16px spinner turns in its place.
+   * Unavailable: another control was activated.
+   * Both stay focusable; neither reacts to hover or press.
+   * ------------------------------------------------------------------ */
+  .landing-auth-spinner {
+    position: absolute;
+    inset: 0;
+    width: 16px;
+    height: 16px;
+    margin: auto;
+    animation: landing-auth-spin 900ms linear infinite;
+  }
+
+  .landing-control[data-state="working"] {
+    cursor: progress;
+  }
+
+  .landing-control[data-state="working"] > .landing-auth-label {
+    opacity: 0;
+  }
+
+  .landing-control[data-state="unavailable"] {
+    opacity: 0.56;
+    cursor: default;
+  }
+
+  .landing-quiet[aria-disabled="true"] {
+    --landing-edge: 0 0 0 0 transparent;
+
+    background-color: var(--landing-scrim);
+  }
+
+  /* Reduced motion: no spinner. The label stays and the control takes its
+     pressed fill. */
+  @media (prefers-reduced-motion: reduce) {
+    .landing-auth-spinner {
+      display: none;
+    }
+
+    .landing-control[data-state="working"] > .landing-auth-label {
+      opacity: 1;
+    }
+
+    .landing-quiet[data-state="working"] {
+      --landing-edge: inset 0 0 0 1px var(--color-snow);
+
+      background-color: var(--color-ink);
+    }
   }
 
   /* ------------------------------------------------------------------ *
@@ -650,8 +715,38 @@
     margin-top: 12px;
   }
 
+  /*
+   * FEATURE-002 §21.2.1: the gate. One block centred in the slot holding the
+   * message and, when the notice offers them, its two actions. Below 768px
+   * the actions are a row of two equal columns under the message, as wide as
+   * the slot; from 768px they sit beside it and the block is as wide as its
+   * content. Without actions it is the message alone, as in FEATURE-001.
+   */
+  .landing-gate {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    max-width: 100%;
+    /* The margin kept when the gate is scrolled into view (§21.2.4). */
+    scroll-margin-block: 16px;
+  }
+
+  .landing-gate[data-actions] {
+    width: 100%;
+  }
+
+  @variant md {
+    .landing-gate[data-actions] {
+      flex-direction: row;
+      gap: 16px;
+      width: fit-content;
+    }
+  }
+
   /* One block centred in the slot; its lines start on a shared edge. */
   .landing-message-block {
+    min-width: 0;
     max-width: 100%;
     color: var(--color-snow);
     font-size: 0.875rem;
@@ -687,10 +782,89 @@
     animation: none;
   }
 
+  /* FEATURE-002 §21.2.1: Sign in and Create account. They enter with the
+     message (§21.2.5). */
+  .landing-gate-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+    animation: landing-message-in var(--duration-base) var(--ease-ui) both;
+  }
+
+  /* Compact, with the 12px auth radius: visibly not one of the pill chips.
+     Below 768px each takes half the row; a label too wide for its half wraps
+     the row and each action takes the full width. */
+  .landing-gate-action {
+    position: relative;
+    flex: 1 1 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: max-content;
+    min-height: 44px;
+    padding-inline: 16px;
+    border-radius: 12px;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  @variant md {
+    .landing-gate-actions {
+      flex: none;
+      flex-wrap: nowrap;
+      width: auto;
+    }
+
+    .landing-gate-action {
+      flex: none;
+    }
+  }
+
+  /* 36px with a fine pointer from 1024px; 44px on any coarse pointer. */
+  @variant lg {
+    .landing-gate-action {
+      min-height: 36px;
+    }
+  }
+
+  @media (pointer: coarse) {
+    .landing-gate-action {
+      min-height: 44px;
+    }
+  }
+
+  /* Sign in: filled. `paper` with `ink` text, no border, no shadow. Neither
+     gate action is `conifer`; the planner's own action stays the only one. */
+  .landing-gate-filled {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  @media (hover: hover) {
+    .landing-gate-filled:not([aria-disabled="true"]):hover {
+      background-color: var(--color-snow);
+    }
+  }
+
+  /* Pressed: `paper` 88% mixed with `ink` 12% (feature-level value). */
+  .landing-gate-filled:not([aria-disabled="true"]):active {
+    background-color: #dbdbd6;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .landing-message-line,
-    .landing-message-counter {
+    .landing-message-counter,
+    .landing-gate-actions {
       animation: none;
+    }
+
+    .landing-gate-filled[data-state="working"] {
+      background-color: #dbdbd6;
     }
   }
 
@@ -815,5 +989,12 @@
   from {
     opacity: 0;
     transform: translateY(4px);
+  }
+}
+
+/* FEATURE-002 §21.2.3: one turn per 900ms, linear. */
+@keyframes landing-auth-spin {
+  to {
+    transform: rotate(360deg);
   }
 }

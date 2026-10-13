@@ -53,7 +53,7 @@ The product is organized around four major stages:
 The product presents these capabilities through two clearly separated experiences:
 
 1. **Public Landing Experience** — an unauthenticated, cinematic brand and acquisition experience with a pre-rendered CG hero and a low-friction planning input.
-2. **Authenticated Product Experience** — the personalized planning and preparation product, including the real-time 3D Home, avatar, gear visualization, and later adventure environments.
+2. **Authenticated Product Experience** — the personalized planning and preparation product: an Authenticated Home / Plan experience that pairs a pre-rendered looping preparation-room CG/video background with the interactive AI planning UI, a Pack experience where real-time 3D begins with the persistent avatar and gear visualization, and later adventure environments.
 
 The experience should feel like a personalized outdoor companion rather than a traditional trail database or enterprise dashboard.
 
@@ -81,7 +81,7 @@ with
 
 **interactive visual storytelling**.
 
-The public landing page previews this world through cinematic, pre-rendered CG. The interactive journey begins only after authentication, in the personalized real-time 3D Home experience.
+The public landing page previews this world through cinematic, pre-rendered CG. The interactive journey begins only after authentication, in the Authenticated Home, where the AI planner is presented over a pre-rendered stylized preparation-room background. Real-time 3D begins in Pack, where the user's gear choices visibly change their avatar.
 
 ---
 
@@ -99,11 +99,11 @@ Traditional browsing and filtering can exist, but AI planning should remain a fi
 
 ## 4.2 Visual but Functional
 
-Visual experiences must support a defined product purpose. The Public Landing CG supports brand storytelling, acquisition, and preview; authenticated real-time visuals support personalized product functionality.
+Visual experiences must support a defined product purpose. The Public Landing CG supports brand storytelling, acquisition, and preview; the Authenticated Home's pre-rendered room background provides atmosphere for planning; real-time 3D, which begins in Pack, supports personalized product functionality.
 
-Interactive real-time 3D scenes should not exist only as decoration.
+Interactive real-time 3D scenes should not exist only as decoration. Real-time 3D is therefore reserved for experiences where application state changes what the user sees, beginning with Pack, where equipping gear changes the avatar. A scene that is atmosphere only, with no required object-level interaction, is pre-rendered instead; this is why the Authenticated Home room is CG/video rather than a real-time 3D scene (section 40.5).
 
-Whenever possible, visual changes should reflect actual application state such as:
+Whenever possible, real-time visual changes should reflect actual application state such as:
 
 - selected trail
 - scenery type
@@ -185,6 +185,8 @@ In product terms:
 
 The transition between these experiences should feel coherent, but their responsibilities must remain distinct.
 
+Both experiences use pre-rendered CG/video as their visual background. What separates them is responsibility and content, not rendering method: the Public Landing shows cinematic outdoor scenes for acquisition, while the Authenticated Home shows a preparation room behind the working AI planner.
+
 ---
 
 # 5. Primary User Journey
@@ -240,6 +242,8 @@ Memory
 
 The authenticated product preserves the established **Plan → Pack → Explore → Memory** journey. The MVP does not need to implement every stage at full fidelity, and later-stage labels indicate delivery sequence rather than a separate product journey.
 
+Within this journey, the Authenticated Home and AI Planning steps are a React planning UI presented over a pre-rendered room background. Real-time 3D first appears in Pack, at the Customize Gear and Avatar Update steps.
+
 ---
 
 # 6. Plan
@@ -268,7 +272,7 @@ Authenticated user
 → Authenticated Home / Planning Experience
 ```
 
-The term **Public Landing** refers to the unauthenticated brand and acquisition page. The term **Authenticated Home** refers to the user's personalized preparation space. They must not be treated as the same screen or as interchangeable uses of “Home.”
+The term **Public Landing** refers to the unauthenticated brand and acquisition page. The term **Authenticated Home** refers to the authenticated planning space: the AI planner presented over a pre-rendered preparation-room background (section 7.8). They must not be treated as the same screen or as interchangeable uses of “Home.”
 
 Returning authenticated users should enter the Authenticated Home or active planning experience directly. They should not be required to repeatedly pass through the Public Landing. The exact routing behavior is an implementation decision.
 
@@ -459,19 +463,26 @@ The direction may take inspiration from stylized Japanese adventure games, but m
 
 ## 7.8 Authenticated Home Experience
 
-After successful authentication, the user enters the actual product experience. The Authenticated Home is a real-time, stylized 3D home environment and is where the interactive product journey begins.
+After successful authentication, the user enters the actual product experience. The Authenticated Home / Plan experience is where the interactive product journey begins. It is built from two layers:
+
+1. **Background: pre-rendered looping CG/video** showing a general stylized outdoor-preparation room. The room is visual atmosphere only.
+2. **Foreground: the interactive React UI**, centred on the AI planner and conversation. This is the only interactive layer.
+
+The Authenticated Home is not a real-time 3D environment.
 
 ```text
 Authenticated Home
         ↓
-Real-time 3D Home Scene
-        ↓
-Persistent User Avatar
+Pre-rendered looping room CG/video (background, atmosphere only)
+        +
+AI planning UI / conversation (foreground, interactive, visually central)
         ↓
 AI Planning
 ```
 
-The environment represents the user preparing for an outdoor adventure. Possible visual elements include:
+### Room background
+
+The room should visually communicate outdoor preparation. Possible visual elements include:
 
 - entrance or gear room
 - equipment shelf
@@ -481,18 +492,33 @@ The environment represents the user preparing for an outdoor adventure. Possible
 - map
 - window or outdoor view
 
-These elements are visual direction rather than mandatory individual features.
+These elements are visual direction rather than mandatory individual features. In the Home scene they are decorative and environmental: for the Capstone MVP they do not need to reflect live application state such as owned gear, equipped gear, weather, or the selected trip.
 
-The Authenticated Home is not a marketing page. It is the user's personal preparation space and should eventually reflect personalized state such as:
+The background may show a generic character from behind, for example seated at a computer. That figure is part of the pre-rendered atmosphere. It is not the persistent avatar described in sections 16 and 17, and the Authenticated Home does not require the production-ready avatar.
 
-- avatar
-- owned gear
-- equipped gear
-- planning state
-- future saved trips
-- future weather and trip context
+### Interaction
 
-The primary interaction remains AI trip planning. The avatar should initially use default casual outdoor clothing or the user's current equipment state. The Home scene must not require the user to understand or control a 3D game.
+The primary interaction remains AI trip planning. The planning input and conversation stay visually central and are the dominant functional UI. When a planning prompt was entered on the Public Landing, it continues into this planner after authentication when practical (section 7.5).
+
+The room background is not a navigation system and contains no required interactive 3D objects. The user does not need to click furniture, gear, maps, computers, or other room objects. The following are outside the approved scope:
+
+- clicking the computer, the map, or gear shelves
+- walking around the room, including WASD movement
+- room customization
+- room physics
+- room inventory interaction
+
+### Personalization
+
+The Authenticated Home is not a marketing page. It is the user's planning space, and its personalization lives in the UI layer rather than in the room: the restored planning prompt, the conversation, planning state, and later saved trips and trip context.
+
+A Home background that responds to application state, or a real-time 3D Home, is a deferred possible enhancement only. It is not part of the approved scope and must not be built without an explicit product decision that updates this document.
+
+### Functional-first
+
+The planner must be usable before the background media has loaded and when it fails to load. The background must have a reduced-motion or non-animated alternative (section 43). Temporary media, a still image, or a placeholder is acceptable until final CG/video exists; producing that media must not block functional Plan → Pack work.
+
+The rationale for this architecture is recorded in section 40.5.
 
 ---
 
@@ -762,9 +788,11 @@ The user should always retain final control.
 
 ## 16.1 Purpose
 
-The avatar is the persistent visual representation of the user throughout the product experience.
+The avatar is the persistent visual representation of the user. It is a real-time 3D character introduced in Pack, where the user prepares for the selected trip, and it carries the same identity and equipment into Adventure.
 
-It should connect:
+The Authenticated Home does not require the avatar. A generic character may appear in the pre-rendered Home room background (section 7.8); that figure is atmosphere and is not the persistent avatar.
+
+The trip chosen during planning determines what the avatar is prepared for, so the avatar should connect:
 
 **Planning**
 
@@ -811,18 +839,18 @@ The avatar exists primarily to visualize preparation and outdoor activity.
 
 # 17. Persistent Avatar Identity
 
-The same avatar should persist across the major stages.
+The same avatar should persist across every stage in which it appears. It is introduced in Pack and continues into Adventure.
 
 Example:
 
 ```text
-AUTHENTICATED HOME
+PACK (avatar introduced)
 
 Avatar with default equipment
 
         ↓
 
-PACK
+PACK (gear customization)
 
 Avatar updates as user equips gear
 
@@ -836,13 +864,17 @@ with the same selected equipment
 
 Do not independently generate unrelated characters for different pages.
 
+The generic character that may appear in the pre-rendered Authenticated Home room background is not the persistent avatar and does not need to match the user's equipment. Where practical it should follow the same art direction and character proportions so that it does not read as a different product (section 39).
+
 ---
 
 # 18. Gear-to-Avatar Visualization
 
 ## 18.1 Goal
 
-When the user changes equipped gear, the avatar should update visually.
+When the user changes equipped gear in Pack, the avatar should update visually in real time. Pack is the first experience in the product that uses real-time 3D, because it is where application state directly changes what is visible on the avatar.
+
+Equip, Unequip, Bring, and Remove actions (section 15) drive these updates. Only gear the user has explicitly chosen to wear or carry (Equipped, section 13.2) is shown on the avatar; a Recommended or Owned item is not shown until the user equips it.
 
 Examples:
 
@@ -1006,7 +1038,7 @@ to:
 
 # 24. Home-to-Adventure Transition
 
-The application should visually transition from the Authenticated Home environment into an Outdoor environment.
+The application should visually transition from the preparation experience (Authenticated Home / Plan, then Pack) into an Outdoor environment.
 
 Conceptually:
 
@@ -1025,6 +1057,8 @@ OUTDOOR ENVIRONMENT
 ```
 
 The avatar must retain the user's selected equipment during this transition.
+
+This transition is a product concept, not a rendering requirement. It does not imply that the Authenticated Home is a real-time 3D scene: the Home room is pre-rendered CG/video (section 7.8), and the avatar that enters the outdoor environment is the one prepared in Pack. How the transition is rendered is an implementation decision to be made when Adventure is scoped.
 
 ---
 
@@ -1417,7 +1451,7 @@ The product should feel:
 - premium
 - exploratory
 
-The Public Landing and Authenticated Product must feel like the same visual universe even though they use different rendering methods. They should share:
+The Public Landing and Authenticated Product must feel like the same visual universe even though they use different rendering methods: pre-rendered CG/video for the Public Landing and the Authenticated Home room background, and real-time 3D from Pack onward. They should share:
 
 - art direction
 - character proportions
@@ -1431,11 +1465,15 @@ Conceptually:
 ```text
 Public CG Character
 ≈
-Authenticated Avatar
+Home Room Character (pre-rendered, generic)
+≈
+Pack Avatar (real-time 3D)
 
 Public CG World
 ≈
-Authenticated 3D World
+Home Preparation Room (pre-rendered)
+≈
+Real-Time 3D Visuals (Pack, later Adventure)
 ```
 
 Visual consistency is more important than identical rendering quality. The real-time experience may use simpler geometry, lighting, animation, and effects to meet performance needs.
@@ -1444,11 +1482,20 @@ Visual consistency is more important than identical rendering quality. The real-
 
 # 40. CG and Real-Time 3D Roles
 
-The product intentionally uses two different visual technologies.
+The product intentionally uses two visual technologies, pre-rendered CG/video and interactive real-time 3D, and assigns each a specific role:
+
+| Experience | Visual role |
+|---|---|
+| Public Landing | Pre-rendered cinematic outdoor CG/video |
+| Authenticated Home / Plan | Pre-rendered stylized preparation-room CG/video, with the interactive AI planning UI overlaid |
+| Pack | Interactive real-time 3D avatar and gear visualization |
+| Adventure / Explore | A later interactive visual environment, as defined by future scope |
+
+Real-time 3D begins in Pack. Neither the Public Landing nor the Authenticated Home is a real-time 3D experience.
 
 ## 40.1 Public Landing — Pre-Rendered Cinematic CG
 
-The Public Landing uses pre-rendered cinematic CG animation for:
+The Public Landing uses pre-rendered cinematic outdoor CG/video for:
 
 - brand expression
 - acquisition
@@ -1458,17 +1505,31 @@ The Public Landing uses pre-rendered cinematic CG animation for:
 
 It does not need to respond to personalized user state and must not be described as the interactive 3D product.
 
-## 40.2 Authenticated Experience — Interactive Real-Time 3D
+## 40.2 Authenticated Home / Plan — Pre-Rendered Preparation-Room CG/Video
 
-The Authenticated Home and later Adventure experiences use interactive, real-time 3D for:
+The Authenticated Home / Plan experience uses a pre-rendered, looping CG/video background showing a general stylized outdoor-preparation room, with the interactive AI planning UI overlaid on it.
+
+The background is used for:
+
+- atmosphere
+- communicating outdoor preparation
+- continuity with the public CG world
+
+All interaction happens in the React UI layer, where the AI planner remains visually central. The room contains no required interactive 3D objects, is not a navigation system, and for the Capstone MVP does not need to reflect live application state. Section 7.8 defines the experience in full.
+
+## 40.3 Pack — Interactive Real-Time 3D
+
+Pack is the first experience in which the product uses interactive real-time 3D. Pack uses real-time 3D for:
 
 - personalization
-- avatar visualization
+- persistent avatar visualization
 - equipment visualization
+- real-time visual response to Equip / Unequip / Bring / Remove actions
 - trip preparation
-- adventure visualization
 
-The target real-time 3D environment should be:
+The fixed visual gear categories (sections 19 and 20), the gear-to-visual mapping (section 21), and the avatar equipment slots (section 22) remain part of the intended product architecture. Recommended gear remains distinct from Equipped gear, and Owned gear remains distinct from Equipped gear (section 13.2).
+
+The target real-time 3D visual style should be:
 
 - stylized
 - anime-inspired
@@ -1494,6 +1555,23 @@ rather than:
 **a clone of a specific game**
 
 The real-time 3D layer may be simplified for performance but should preserve the public CG world's recognizable character and environment language.
+
+## 40.4 Adventure / Explore — Later Interactive Visual Environment
+
+The future Adventure experience may use real-time 3D or another suitable interactive visual implementation. That choice is made when the Adventure scope is defined. The avatar prepared in Pack continues into Adventure with the same selected equipment (sections 17 and 24).
+
+This section does not expand Adventure or Explore scope.
+
+## 40.5 Rationale
+
+This architecture is an approved product decision (2026-10-11). It replaces the earlier direction in which the Authenticated Home was a real-time 3D room.
+
+- The Authenticated Home room has no required object-level user interaction.
+- A real-time 3D room would add Blender, Three.js, rendering, responsive camera, asset loading, performance, and maintenance cost without materially improving the Plan interaction.
+- Pre-rendered CG/video can provide higher visual quality with substantially lower implementation complexity.
+- Real-time 3D is reserved for Pack because that is where application state directly changes visible equipment on the avatar.
+- This follows the principle that 3D should support product functionality rather than exist only as decoration (sections 4.2 and 4.6).
+- It protects the Capstone scope and keeps Plan → Select → Pack functionality on the critical path.
 
 ---
 
@@ -1532,7 +1610,7 @@ must work without requiring desktop layout.
 
 The advanced 3D experience may use reduced visual complexity on smaller or less powerful devices.
 
-The Public Landing may use an appropriately optimized or simplified media treatment on mobile, but its planning input and authentication path must remain usable.
+The Public Landing may use an appropriately optimized or simplified media treatment on mobile, but its planning input and authentication path must remain usable. The Authenticated Home room background may likewise be optimized or simplified on mobile, but the planner must remain usable.
 
 Functional planning must never depend on high-end 3D rendering.
 
@@ -1554,7 +1632,7 @@ Required principles:
 - reduced-motion support where appropriate
 - functional fallback when advanced visual effects are unavailable
 
-The Public Landing must provide a reduced-motion or non-animated alternative to the looping CG hero without removing access to the planning input, suggestion prompts, or authentication action.
+The Public Landing must provide a reduced-motion or non-animated alternative to the looping CG hero without removing access to the planning input, suggestion prompts, or authentication action. The Authenticated Home must provide the same alternative for its looping room background without removing access to the planner.
 
 ---
 
@@ -1573,7 +1651,7 @@ For future 3D:
 
 The user should be able to begin planning quickly.
 
-The Public Landing must not require all final CG media to finish loading before its core text, planning input, and authentication actions become usable. Pre-rendered hero media should use delivery and fallback strategies appropriate to the user's device and connection. The Authenticated Home must apply the same functional-first principle to real-time 3D loading.
+The Public Landing must not require all final CG media to finish loading before its core text, planning input, and authentication actions become usable. Pre-rendered hero media should use delivery and fallback strategies appropriate to the user's device and connection. The Authenticated Home must apply the same functional-first principle to its pre-rendered room background: the planner must be usable before the background media loads and when it fails to load. Pack must apply the principle to real-time 3D loading: packing recommendations and gear selection must remain usable while 3D assets load, on reduced-capability devices, and when 3D is unavailable.
 
 ---
 
@@ -1609,6 +1687,7 @@ The first development version may use temporary media, still images, simple moti
 
 - authentication
 - Authenticated Home / planning experience
+- pre-rendered looping preparation-room background behind the planner (non-blocking; see the note at the end of this section)
 - restored public planning prompt when available
 - conversational trip input
 - trail recommendation
@@ -1645,6 +1724,8 @@ The first development version may use temporary media, still images, simple moti
 - empty states
 - mobile usability
 
+The Authenticated Home room background may use temporary media, a still image, or a placeholder until final CG/video is available. It is atmosphere only and must not block functional Plan → Pack development or validation.
+
 ---
 
 # 46. 3D Product MVP
@@ -1653,16 +1734,17 @@ The first development version may use temporary media, still images, simple moti
 
 Once Plan → Pack works end-to-end, the first visual MVP may include:
 
-- one authenticated Home 3D scene
-- one avatar
+- one persistent avatar, introduced in Pack
 - basic idle animation
 - fixed equipment visualization
 - gear-to-avatar updates for the supported visual categories
 - one outdoor scene
 - one walking animation
-- Home → Adventure transition
+- Home / Plan → Adventure transition
 
 This is sufficient to prove the visual product concept.
+
+Real-time 3D in this MVP begins in Pack. It does not include a real-time 3D Authenticated Home scene; the Home background is pre-rendered CG/video (sections 7.8 and 40).
 
 ---
 
@@ -1733,6 +1815,9 @@ The following are not required for MVP:
 - advanced social network
 - full GPX/video generation pipeline
 - requiring final public CG assets before the functional product can be developed or validated
+- a real-time 3D Authenticated Home room
+- object-level interaction with the Authenticated Home room, such as clicking the computer, map, or gear shelves, walking around the room, room customization, room physics, or room inventory interaction
+- requiring final Authenticated Home room CG/video before the functional product can be developed or validated
 
 ---
 
@@ -1810,7 +1895,7 @@ When 3D is introduced, can users immediately understand that gear choices affect
 
 Mitigation:
 
-Complete the functional end-to-end flow before advanced 3D work.
+Complete the functional end-to-end flow before advanced 3D work. Reserve real-time 3D for Pack, where application state changes visible equipment, and keep the Authenticated Home pre-rendered.
 
 ---
 
@@ -1820,13 +1905,13 @@ High-quality public CG and anime-inspired real-time environments can become sepa
 
 Mitigation:
 
-Use temporary public hero media during functional development, keep final CG production off the critical path, and use a small fixed asset library with reusable real-time scene archetypes.
+Use temporary public hero and Authenticated Home room media during functional development, keep final CG production off the critical path, and use a small fixed asset library with reusable real-time scene archetypes.
 
 ---
 
 ## Visual World Drift
 
-The pre-rendered Public Landing and real-time authenticated experience could appear to belong to different products.
+The pre-rendered Public Landing, the pre-rendered Authenticated Home room, and the real-time 3D Pack avatar could appear to belong to different products. The generic character in the Home room and the persistent avatar in Pack could also read as unrelated characters.
 
 Mitigation:
 
@@ -1894,7 +1979,7 @@ Commit
 Continue to next feature
 ```
 
-Public hero development should begin with structure, content hierarchy, interaction, and representative temporary media. Final high-quality CG asset production may proceed earlier in parallel when assets are available, but it must not block authentication, planning, trail, packing, or gear functionality.
+Public hero and Authenticated Home background development should begin with structure, content hierarchy, interaction, and representative temporary media. Final high-quality CG asset production for either may proceed earlier in parallel when assets are available, but it must not block authentication, planning, trail, packing, or gear functionality.
 
 ---
 
@@ -1902,69 +1987,79 @@ Public hero development should begin with structure, content hierarchy, interact
 
 ## Step 1
 
-Public landing structure.
+Public Landing structure.
 
 ## Step 2
 
-Hero planner input.
+Public CG/video hero.
 
 ## Step 3
 
-Authentication gate interaction.
+Public hero planner input.
 
 ## Step 4
 
-Authentication integration.
+Authentication gate interaction.
 
 ## Step 5
 
-Authenticated Home structure.
+Authentication integration.
 
 ## Step 6
 
-Real recommendation integration.
+Authenticated Home / Plan structure.
 
 ## Step 7
 
-Trail detail.
+Authenticated Home looping room CG/video background.
 
 ## Step 8
 
-Packing.
+Prompt continuity from the Public Landing into the Authenticated Home planner.
 
 ## Step 9
 
-Gear inventory.
+Real recommendation integration.
 
 ## Step 10
 
-Gear customization.
+Trail detail.
 
 ## Step 11
 
-Authenticated 3D avatar.
+Packing.
 
 ## Step 12
 
-Gear-to-avatar mapping.
+Gear inventory.
 
 ## Step 13
 
-Authenticated Home 3D environment.
+Gear customization.
 
 ## Step 14
 
-Outdoor environment.
+Real-time 3D avatar for Pack.
 
 ## Step 15
 
-Home → Adventure transition.
+Gear-to-avatar mapping.
 
 ## Step 16
 
-Final high-quality public CG hero assets.
+Outdoor / Adventure visual experience.
 
-Final CG production may happen earlier in parallel if assets are available, but it must not block product functionality. Explore and Memory follow after the core experience is stable.
+## Step 17
+
+Home / Plan → Adventure transition.
+
+## Step 18
+
+Later Explore and Memory work.
+
+Steps 2 and 7 may be delivered with temporary media, still images, or placeholders. Final high-quality CG/video for the public hero and the Authenticated Home room may be produced in parallel at any point, but neither blocks product functionality, and the Home CG/video in particular is not a blocker for functional Plan → Pack work.
+
+Real-time 3D begins at Step 14. No earlier step requires a 3D library, 3D assets, or a real-time scene.
 
 ---
 
@@ -2033,7 +2128,9 @@ In particular, do not silently change:
 
 - AI-first planning
 - Public Landing and Authenticated Home separation
-- pre-rendered CG for the Public Landing and real-time 3D for the Authenticated Home
+- pre-rendered CG/video for the Public Landing
+- a pre-rendered room CG/video background with the React AI planning UI for the Authenticated Home / Plan
+- real-time 3D beginning in Pack rather than in the Authenticated Home
 - unauthenticated planning-intent entry followed by an authentication gate
 - prompt continuity through authentication when practical
 - Plan → Pack → Explore → Memory
@@ -2045,6 +2142,22 @@ In particular, do not silently change:
 - Home → Adventure transition concept
 
 If implementation limitations make a requirement difficult, report the limitation instead of silently replacing the experience.
+
+## Visual Architecture Guard
+
+Agents must read the visual architecture as:
+
+- Home / Plan background = pre-rendered CG/video
+- Home interaction = the React UI planning experience
+- Pack = the first primary real-time 3D avatar and gear experience
+
+Without an explicit product decision that updates this document, agents must not:
+
+- implement the Authenticated Home as a real-time 3D scene, or add a 3D library, 3D model, or 3D asset pipeline for it
+- add object-level interaction to the Home room, such as clickable computers, maps, furniture, or gear, room navigation, movement, customization, physics, or inventory interaction
+- make planning depend on the Home background media or on any 3D asset
+- treat the generic character in the Home room background as the persistent avatar
+- remove or weaken the Pack requirements: persistent avatar identity, fixed visual gear categories, gear category to visual asset mapping, avatar equipment slots, Equip / Unequip behavior, Recommended ≠ Equipped, Owned ≠ Equipped, real-time visual changes when supported gear is equipped, web-optimized 3D assets, and continuity of the avatar into Adventure
 
 ---
 

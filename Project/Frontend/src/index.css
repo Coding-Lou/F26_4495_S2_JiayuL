@@ -1,6 +1,12 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "./features/landing/landing.css";
+@import "./features/auth/auth.css";
+@import "./features/home/home.css";
+@import "./features/planning/planner.css";
+@import "./components/layout/trip-shell.css";
+@import "./features/trails/trails.css";
+@import "./features/packing/packing.css";
 
 :root {
   --radius: 0.625rem;

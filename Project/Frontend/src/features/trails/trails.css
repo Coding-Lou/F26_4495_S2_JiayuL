@@ -1,0 +1,537 @@
+/*
+ * FEATURE-004 — Trail Detail (State A): one `paper` sheet centred on the
+ * shell's `ink` base. No scene: the preparation image is neither shown nor
+ * requested here (§13, D15).
+ *
+ * Imported by src/index.css. Every rule is scoped to a .trail- class. The
+ * shell, the header, the links, and the secondary button are in
+ * components/layout/trip-shell.css; the trip-date control is the planner's.
+ *
+ * Tokens come from docs/DESIGN_SYSTEM.md Version 2. Feature-level values come
+ * from docs/features/004-trail-selection-preparation.md; section numbers in
+ * comments refer to that specification.
+ */
+
+@layer components {
+  /* ------------------------------------------------------------------ *
+   * Per-tier values (§21.3, §22.1, §22.3)
+   * ------------------------------------------------------------------ */
+  .trail-detail {
+    /* Below 480px */
+    --trail-sheet-pad: 20px;
+    --trail-rail-width: 340px;
+    --trail-column-gap: 40px;
+    --trail-page-bottom: 24px;
+    --trail-back-top: 0px;
+    --trail-back-gap: 8px;
+    --trail-name-size: 1.75rem;
+    --trail-name-line: 2.125rem;
+
+    @media (width >= 480px) {
+      --trail-name-size: 2rem;
+      --trail-name-line: 2.375rem;
+    }
+
+    @media (width >= 768px) {
+      --trail-sheet-pad: 32px;
+    }
+
+    /* Tier M */
+    @media (width >= 1280px) {
+      --trail-sheet-pad: 48px;
+      --trail-rail-width: 400px;
+      --trail-column-gap: 56px;
+      --trail-name-size: 2.25rem;
+      --trail-name-line: 2.625rem;
+    }
+
+    /* Tiers L and XL */
+    @media (width >= 1440px) {
+      --trail-page-bottom: 40px;
+      --trail-back-top: 8px;
+      --trail-back-gap: 12px;
+      --trail-name-size: 2.5rem;
+      --trail-name-line: 2.875rem;
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Page (§21.3). The sheet is centred in the viewport and never wider than
+   * 1120px; below that it fills the width between the gutters. The page
+   * scrolls when the sheet is taller than the viewport; nothing inside the
+   * sheet scrolls by itself.
+   * ------------------------------------------------------------------ */
+  .trail-page {
+    padding-block-end: var(--trail-page-bottom);
+    padding-inline: calc(var(--trip-gutter) + env(safe-area-inset-left, 0px))
+      calc(var(--trip-gutter) + env(safe-area-inset-right, 0px));
+  }
+
+  .trail-frame {
+    width: min(1120px, 100%);
+    margin-inline: auto;
+  }
+
+  /* Back to planning: a 44px row on the base. The link is offset so that its
+     icon's left edge is on the sheet's left edge. */
+  .trail-back {
+    display: flex;
+    min-height: 44px;
+    margin-block: var(--trail-back-top) var(--trail-back-gap);
+  }
+
+  .trail-back > .trip-link {
+    margin-inline-start: -12px;
+  }
+
+  /* The sheet. Its border is transparent: an edge that exists in
+     forced-colors mode. It never clips, so focus rings and the date popover
+     stay whole. The border is taken out of the padding, so the columns have
+     exactly the widths of §21.3. */
+  .trail-sheet {
+    /* The widest the date popover may be: the sheet's content. */
+    --trip-date-popover-max: calc(
+      100vw - 2 * var(--trip-gutter) - 2 * var(--trail-sheet-pad)
+    );
+
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+    row-gap: 32px;
+    min-height: 320px;
+    padding: calc(var(--trail-sheet-pad) - 1px);
+    border: 1px solid transparent;
+    border-radius: 24px;
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+  }
+
+  .trail-column,
+  .trail-rail {
+    min-width: 0;
+  }
+
+  /* From 1024px: the main column is flexible and the rail has a fixed width.
+     The rail stays 24px from the top when the page scrolls, so the decision
+     row remains in view. The columns do not change width with the state. */
+  @media (width >= 1024px) {
+    .trail-sheet {
+      grid-template-columns: minmax(0, 1fr) var(--trail-rail-width);
+      column-gap: var(--trail-column-gap);
+    }
+
+    .trail-rail {
+      position: sticky;
+      inset-block-start: 24px;
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Main column (§21.4)
+   * ------------------------------------------------------------------ */
+  .trail-name {
+    color: var(--color-ink);
+    font-size: var(--trail-name-size);
+    line-height: var(--trail-name-line);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    overflow-wrap: anywhere;
+  }
+
+  /* S2 and S3: the heading is 32/38 at every desktop tier (§21.15). */
+  @media (width >= 1280px) {
+    .trail-sheet[data-view="not-found"] .trail-name,
+    .trail-sheet[data-view="failed"] .trail-name {
+      font-size: 2rem;
+      line-height: 2.375rem;
+    }
+  }
+
+  /* Plain text, not chips. */
+  .trail-scenery {
+    margin-top: 8px;
+    color: var(--color-stone);
+    font-size: 1rem;
+    line-height: 1.5rem;
+    overflow-wrap: anywhere;
+  }
+
+  /* One pair per fact, in equal columns, between two rules. A fact that is
+     missing has no pair, and the rest share the width. */
+  .trail-facts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin-top: 20px;
+    padding-block: 16px;
+    border-block: 1px solid var(--trip-ink-12);
+  }
+
+  @media (width >= 768px) {
+    .trail-facts {
+      grid-template-columns: none;
+      grid-auto-flow: column;
+      grid-auto-columns: minmax(0, 1fr);
+    }
+  }
+
+  .trail-fact {
+    min-width: 0;
+  }
+
+  .trail-fact > dt {
+    color: var(--color-stone);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .trail-fact > dd {
+    margin-top: 2px;
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Trail visual (§21.5): one 5:2 box. The plate is its own background:
+   * three flat tones, the same for every trail. It is not a photograph, not
+   * a map, and not an error. `conifer` itself is not used, so Choose this
+   * trail stays the only `conifer` element on the screen.
+   * ------------------------------------------------------------------ */
+  .trail-visual {
+    --trail-sky: linear-gradient(
+      to bottom,
+      var(--color-ink),
+      color-mix(in srgb, var(--color-ink) 50%, var(--color-conifer-press))
+    );
+
+    position: relative;
+    aspect-ratio: 5 / 2;
+    margin-top: 24px;
+    overflow: hidden;
+    /* An edge in forced-colors mode. */
+    border: 1px solid transparent;
+    border-radius: 16px;
+    background-color: var(--color-ink);
+    background-image:
+      /* Near hill */
+      radial-gradient(
+        ellipse 70% 70% at 22% 125%,
+        var(--color-conifer-deep) calc(100% - 0.5px),
+        transparent 100%
+      ),
+      /* Far hill */
+      radial-gradient(
+        ellipse 60% 60% at 78% 110%,
+        var(--color-conifer-press) calc(100% - 0.5px),
+        transparent 100%
+      ),
+      var(--trail-sky);
+    background-origin: border-box;
+    background-repeat: no-repeat;
+  }
+
+  /* S1: the sky only. */
+  .trail-visual[data-skeleton] {
+    background-image: var(--trail-sky);
+  }
+
+  .trail-visual-image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 50%;
+    opacity: 0;
+    user-select: none;
+    transition: opacity var(--duration-base) var(--ease-ui);
+  }
+
+  .trail-visual-image[data-ready] {
+    opacity: 1;
+  }
+
+  /* It sits on the near hill: `snow` on `conifer-deep`. */
+  .trail-visual-caption {
+    position: absolute;
+    inset-block-end: 16px;
+    inset-inline: 16px;
+    color: var(--color-snow);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  /* The route line: text only. No frame, no map area, no coordinates. */
+  .trail-route {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-top: 10px;
+    color: var(--color-stone);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .trail-route > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+  }
+
+  /* The backend's text, in full, as text. Never clamped. */
+  .trail-description {
+    margin-top: 24px;
+    font-size: 1rem;
+    line-height: 1.625rem;
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+  }
+
+  .trail-sample {
+    margin-top: 16px;
+    color: var(--color-stone);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * S1: static shapes and one line that carries the state (§21.15)
+   * ------------------------------------------------------------------ */
+  .trail-skeleton {
+    display: block;
+    border-radius: 8px;
+    background-color: var(--trip-ink-08);
+  }
+
+  .trail-skeleton-name {
+    width: 60%;
+    height: 40px;
+  }
+
+  .trail-loading-line {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-top: 8px;
+    color: var(--color-stone);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .trail-loading-line > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+  }
+
+  .trail-skeleton-facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-top: 20px;
+    padding-block: 16px;
+    border-block: 1px solid var(--trip-ink-12);
+  }
+
+  .trail-skeleton-facts > .trail-skeleton {
+    width: 96px;
+    height: 44px;
+  }
+
+  .trail-skeleton-lines {
+    display: grid;
+    gap: 10px;
+    margin-top: 24px;
+  }
+
+  .trail-skeleton-lines > .trail-skeleton {
+    height: 16px;
+  }
+
+  .trail-skeleton-lines > .trail-skeleton:last-child {
+    width: 70%;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * S2 and S3: a statement and one action, in the main column (§21.15)
+   * ------------------------------------------------------------------ */
+  .trail-state-text {
+    max-width: 560px;
+    margin-top: 8px;
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+
+  .trail-state-action {
+    margin-top: 24px;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Why this trail (§21.6): directly on the sheet. No card, no border, no
+   * fill of its own. Every value is text; nothing is colored by value.
+   * ------------------------------------------------------------------ */
+  .trail-why-heading {
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+    font-weight: 600;
+  }
+
+  .trail-why-total {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    margin-top: 12px;
+  }
+
+  .trail-why-score {
+    font-size: 2.5rem;
+    line-height: 2.75rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .trail-why-of {
+    color: var(--color-stone);
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+
+  .trail-why-label {
+    margin-top: 2px;
+    color: var(--color-stone);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .trail-why-parts {
+    display: grid;
+    gap: 14px;
+    margin-top: 20px;
+  }
+
+  /* Line 1: the label at the start, the value at the end. Line 2, 6px
+     below: the bar, which belongs to the value and spans the row. */
+  .trail-why-part {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding-block-end: 12px;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .trail-why-part > dt {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .trail-why-part > dd {
+    flex: none;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* One appearance at every value: an outlined track and a filled length.
+     Both are borders, so they remain when background colors are removed. */
+  .trail-bar {
+    position: absolute;
+    inset-block-end: 0;
+    inset-inline: 0;
+    box-sizing: border-box;
+    height: 6px;
+    overflow: hidden;
+    border: 1px solid var(--color-stone);
+    border-radius: 3px;
+  }
+
+  .trail-bar > span {
+    display: block;
+    height: 0;
+    border-block-start: 4px solid var(--color-ink);
+  }
+
+  .trail-why-caption {
+    margin-top: 4px;
+    color: var(--color-stone);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .trail-why-scored {
+    margin-top: 20px;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Decision row (§21.8): the trip date, 12px, the action. When it cannot
+   * hold both, the action takes the second line at full width.
+   * ------------------------------------------------------------------ */
+  .trail-decision[data-after-why] {
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid var(--trip-ink-12);
+  }
+
+  .trail-decision-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+  }
+
+  /* Choose this trail: the only `conifer` element on the screen. Compact
+     rounded, not a pill. Never disabled. */
+  .trail-choose {
+    flex: 1 1 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 20px;
+    /* An edge in forced-colors mode. */
+    border: 1px solid transparent;
+    border-radius: 12px;
+    background-color: var(--color-conifer);
+    color: var(--color-snow);
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  .trail-choose > svg {
+    flex: none;
+    width: 18px;
+    height: 18px;
+  }
+
+  @media (hover: hover) {
+    .trail-choose:hover {
+      background-color: var(--color-conifer-deep);
+    }
+  }
+
+  .trail-choose:active {
+    background-color: var(--color-conifer-press);
+  }
+
+  /* 8px under the row. It keeps its height, so S7 moves nothing. */
+  .trail-decision-slot {
+    min-height: 20px;
+    margin-top: 8px;
+  }
+}
+
+/* Reduced motion (§21.19): the cover image appears at once. */
+@media (prefers-reduced-motion: reduce) {
+  .trail-visual-image {
+    transition: none;
+  }
+}

@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { CircleAlert, Info, type LucideIcon } from "lucide-react"
 import {
+  authBoundaryNoticeText,
+  authBoundaryNoticeTone,
   useAuthBoundaryNotice,
-  type AuthBoundaryNotice,
 } from "@/features/auth/authBoundary"
+import { AuthGateActions } from "./AuthGateActions"
 import { landingContent } from "./content"
 import type { PlannerPromptError } from "./usePlannerPrompt"
 
@@ -27,10 +29,17 @@ type PlannerMessageProps = {
 }
 
 /**
- * The planner's message slot (FEATURE-001 §11.11): an alert region for
- * validation errors, the over-limit counter, and a status region for
- * auth-boundary notices. All three exist from the first render, empty, so that
- * text placed in them later is announced.
+ * The planner's message slot (FEATURE-001 §11.11, FEATURE-002 §21.2).
+ *
+ * The text block holds an alert region for validation errors, the over-limit
+ * counter, and a status region for authentication notices. All three exist
+ * from the first render, empty, so that text placed in them later is
+ * announced. It is this block that describes the input.
+ *
+ * A notice that offers Sign in and Create account is the authentication gate:
+ * its two actions sit beside the text from 768px and under it below that. They
+ * are outside the text block, so they are neither announced with the notice
+ * nor read as part of the field's description.
  */
 export function PlannerMessage({
   id,
@@ -39,6 +48,7 @@ export function PlannerMessage({
   refusals,
 }: PlannerMessageProps) {
   const notice = useAuthBoundaryNotice()
+  const gateRef = useRef<HTMLDivElement>(null)
 
   const validation: Announcement | null =
     error === null
@@ -54,45 +64,60 @@ export function PlannerMessage({
   const authNotice: Announcement | null =
     notice === null
       ? null
-      : { text: noticeText(notice), sequence: notice.id }
+      : { text: authBoundaryNoticeText(notice), sequence: notice.id }
+
+  const noticeIcon =
+    notice !== null && authBoundaryNoticeTone(notice) === "alert"
+      ? CircleAlert
+      : Info
 
   const active = validation !== null || authNotice !== null
+  const hasActions = notice !== null && notice.actions
+
+  // When the gate appears partly outside the viewport, the page scrolls the
+  // shortest distance that brings all of it into view, at once and one time.
+  useEffect(() => {
+    if (hasActions) {
+      gateRef.current?.scrollIntoView({
+        block: "nearest",
+        inline: "nearest",
+        behavior: "instant",
+      })
+    }
+  }, [hasActions])
 
   return (
     <div
-      id={id}
       className="landing-message-slot"
       data-active={active ? "" : undefined}
     >
-      <div className="landing-message-block">
-        <LiveRegion role="alert" icon={CircleAlert} announcement={validation} />
-        {error === "over-limit" ? (
-          <p className="landing-message-counter">
-            {landingContent.validation.counter(length)}
-          </p>
-        ) : null}
-        <LiveRegion role="status" icon={Info} announcement={authNotice} />
+      <div
+        ref={gateRef}
+        className="landing-gate"
+        data-actions={hasActions ? "" : undefined}
+      >
+        <div id={id} className="landing-message-block">
+          <LiveRegion
+            role="alert"
+            icon={CircleAlert}
+            announcement={validation}
+          />
+          {error === "over-limit" ? (
+            <p className="landing-message-counter">
+              {landingContent.validation.counter(length)}
+            </p>
+          ) : null}
+          <LiveRegion
+            role="status"
+            icon={noticeIcon}
+            announcement={authNotice}
+          />
+        </div>
+
+        {hasActions ? <AuthGateActions /> : null}
       </div>
     </div>
   )
-}
-
-/** N1–N4, assembled from the reason and from what happened to the prompt. */
-function noticeText(notice: AuthBoundaryNotice): string {
-  const { signInToPlan, signInUnavailable, promptSaved, promptNotSaved } =
-    landingContent.notice
-
-  const lead =
-    notice.reason === "start-planning" ? signInToPlan : signInUnavailable
-
-  switch (notice.prompt) {
-    case "saved":
-      return `${lead} ${promptSaved}`
-    case "not-saved":
-      return `${lead} ${promptNotSaved}`
-    case "none":
-      return lead
-  }
 }
 
 type LiveRegionProps = {

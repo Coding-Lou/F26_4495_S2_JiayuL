@@ -1,3 +1,5 @@
+import { useEffect, useRef } from "react"
+import { takeAuthBoundaryArrivalFocus } from "@/features/auth/authBoundary"
 import { HeroIntro } from "./HeroIntro"
 import { HeroMedia } from "./hero-media/HeroMedia"
 import { SceneControl } from "./hero-media/SceneControl"
@@ -16,6 +18,17 @@ import { usePlannerPrompt } from "./usePlannerPrompt"
  */
 export function LandingHero() {
   const planner = usePlannerPrompt()
+  const headingRef = useRef<HTMLHeadingElement>(null)
+
+  // When the landing replaces another route of the running application (a
+  // closed protected route, a waiting screen), the element that had focus is
+  // gone: focus moves once to the heading, without scrolling. On a fresh page
+  // load it is left at the document start (FEATURE-002 §21.2.5).
+  useEffect(() => {
+    if (takeAuthBoundaryArrivalFocus()) {
+      headingRef.current?.focus({ preventScroll: true })
+    }
+  }, [])
 
   return (
     <SceneRotationProvider>
@@ -26,7 +39,7 @@ export function LandingHero() {
 
         <main className="landing-main">
           <div className="landing-content">
-            <HeroIntro />
+            <HeroIntro headingRef={headingRef} />
             <PlannerPrompt planner={planner} />
           </div>
 

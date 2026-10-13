@@ -1159,15 +1159,15 @@ Those will extend this design system as their features are designed.
 
 ---
 
-# 33. Authenticated 3D Experience
+# 33. Authenticated Experience
 
-Known future direction only:
+Known future direction only (see `PRODUCT_REQUIREMENTS.md` sections 7.8 and 40):
 
-- persistent user avatar
-- realtime stylized 3D
-- gear visualization
-- AI planning
+- Authenticated Home / Plan: a pre-rendered looping preparation-room CG/video background with the AI planning UI overlaid. It is not realtime 3D.
+- Pack: persistent user avatar and gear visualization in realtime stylized 3D.
 - same broad visual universe as Public Landing
+
+Whether the pre-rendered Hero layout rules carry over to the Authenticated Home background is decided when that feature is designed.
 
 Do not automatically apply pre-rendered Hero layout rules to realtime 3D screens.
 
