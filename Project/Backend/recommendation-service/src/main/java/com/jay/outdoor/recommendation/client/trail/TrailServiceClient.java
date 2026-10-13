@@ -1,11 +1,14 @@
 package com.jay.outdoor.recommendation.client.trail;
 
+import com.jay.outdoor.recommendation.exception.TrailNotFoundException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 
 import java.util.List;
+import java.util.UUID;
 
 @Component
 public class TrailServiceClient {
@@ -22,9 +25,9 @@ public class TrailServiceClient {
         );
     }
 
-    public List<TrailResponse> getTrails(String accessToken) {
+    public List<TrailSummaryResponse> getTrails(String accessToken) {
 
-        ParameterizedTypeReference<List<TrailResponse>> responseType =
+        ParameterizedTypeReference<List<TrailSummaryResponse>> responseType =
                 new ParameterizedTypeReference<>() {};
 
         return restClient
@@ -69,5 +72,23 @@ public class TrailServiceClient {
                 )
                 .retrieve()
                 .body(responseType);
+    }
+
+    public TrailSummaryResponse getTrailById(
+            UUID trailId,
+            String accessToken
+    ) {
+        try {
+            return restClient.get()
+                    .uri("/api/trails/{id}", trailId)
+                    .headers(headers ->
+                            headers.setBearerAuth(accessToken)
+                    )
+                    .retrieve()
+                    .body(TrailSummaryResponse.class);
+
+        } catch (HttpClientErrorException.NotFound ex) {
+            throw new TrailNotFoundException(trailId);
+        }
     }
 }

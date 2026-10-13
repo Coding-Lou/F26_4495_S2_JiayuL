@@ -1,9 +1,12 @@
 package com.jay.outdoor.recommendation.controller;
 
 import com.jay.outdoor.recommendation.client.trail.NearbyTrailResponse;
+import com.jay.outdoor.recommendation.client.trail.TrailSummaryResponse;
 import com.jay.outdoor.recommendation.config.SecurityConfig;
 import com.jay.outdoor.recommendation.dto.*;
 import com.jay.outdoor.recommendation.exception.UnsafePromptException;
+import com.jay.outdoor.recommendation.exception.UserServiceUnavailableException;
+import com.jay.outdoor.recommendation.service.PackRecommendationService;
 import com.jay.outdoor.recommendation.service.RecommendationService;
 import com.jay.outdoor.recommendation.service.TrailScoringService;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,6 +18,7 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -43,6 +47,9 @@ class RecommendationControllerTest {
     @MockitoBean
     private RecommendationService recommendationService;
 
+    @MockitoBean
+    private PackRecommendationService packRecommendationService;
+
     private TrailScoringService scoringService;
 
     @BeforeEach
@@ -50,25 +57,39 @@ class RecommendationControllerTest {
         scoringService = new TrailScoringService();
     }
 
+    private TrailSummaryResponse createSummary(
+            String name
+    ) {
+
+        return new TrailSummaryResponse(
+                UUID.randomUUID(),
+                name,
+                "Forest trail",
+                "MODERATE",
+                5.8,
+                220,
+                120,
+                49.3265,
+                -122.9368,
+                "TEST",
+                Set.of(
+                        "FOREST",
+                        "VIEWPOINT"
+                ),
+                "https://example.com/quarry-rock.jpg",
+                Set.of(
+                        GearCategory.FOOTWEAR,
+                        GearCategory.WATER
+                )
+        );
+    }
+
     @Test
     void shouldReturnRecommendedTrails() throws Exception {
         NearbyTrailResponse trail =
                 new NearbyTrailResponse(
-                        UUID.randomUUID(),
-                        "Quarry Rock",
-                        "Forest trail",
-                        "MODERATE",
-                        5.8,
-                        220,
-                        120,
-                        49.3265,
-                        -122.9368,
-                        "DEMO_SEED",
-                        18.5,
-                        Set.of(
-                                "FOREST",
-                                "VIEWPOINT"
-                        )
+                        createSummary("Quarry Rock"),
+                        18.5
                 );
 
         when(
@@ -76,31 +97,48 @@ class RecommendationControllerTest {
                         any(RecommendationRequest.class),
                         eq("test-token")
                 )
-        ).thenReturn(List.of(trail));
+        ).thenReturn(
+                List.of(trail)
+        );
 
         mockMvc.perform(
                         post("/api/recommendations/trails")
-                                .with(jwt().jwt(jwt ->
-                                        jwt.tokenValue("test-token")
-                                ))
+                                .with(
+                                        jwt().jwt(jwt ->
+                                                jwt.tokenValue("test-token")
+                                        )
+                                )
                                 .contentType("application/json")
                                 .content("""
-                                        {
-                                          "latitude": 49.2827,
-                                          "longitude": -123.1207,
-                                          "radiusKm": 50,
-                                          "difficulty": "MODERATE",
-                                          "maxDistanceKm": 10,
-                                          "maxElevationGainM": 500
-                                        }
-                                        """)
+                                    {
+                                      "latitude": 49.2827,
+                                      "longitude": -123.1207,
+                                      "radiusKm": 50,
+                                      "difficulty": "MODERATE",
+                                      "maxDistanceKm": 10,
+                                      "maxElevationGainM": 500
+                                    }
+                                    """)
                 )
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].name")
-                        .value("Quarry Rock"))
-                .andExpect(jsonPath("$[0].difficulty")
-                        .value("MODERATE"));
+                .andExpect(
+                        status().isOk()
+                )
+                .andExpect(
+                        jsonPath("$[0].trail.name")
+                                .value("Quarry Rock")
+                )
+                .andExpect(
+                        jsonPath("$[0].trail.difficulty")
+                                .value("MODERATE")
+                )
+                .andExpect(
+                        jsonPath("$[0].trail.coverImageUrl")
+                                .value(
+                                        "https://example.com/quarry-rock.jpg"
+                                )
+                );
     }
+
 
     @Test
     void shouldReturnUnauthorizedWhenJwtIsMissing() throws Exception {
@@ -197,60 +235,51 @@ class RecommendationControllerTest {
     }
 
     @Test
-    void shouldReturnScoredRecommendationsForNaturalLanguageQuery()
-            throws Exception {
+    void shouldReturnPackRecommendation() throws Exception {
 
         String accessToken = "test-token";
+        UUID trailId = UUID.randomUUID();
 
-        NearbyTrailResponse quarryRock =
-                new NearbyTrailResponse(
-                        UUID.randomUUID(),
-                        "Quarry Rock",
-                        "Forest trail",
-                        "MODERATE",
-                        5.8,
-                        220,
-                        120,
-                        49.3265,
-                        -122.9368,
-                        "DEMO_SEED",
-                        18.5,
-                        Set.of(
-                                "FOREST",
-                                "VIEWPOINT"
-                        )
-                );
-
-        ScoreBreakdown breakdown =
-                new ScoreBreakdown(
-                        55,
-                        15,
-                        8,
-                        10,
-                        3
-                );
-
-        ScoredTrailRecommendation recommendation =
-                new ScoredTrailRecommendation(
-                        quarryRock,
-                        91,
-                        breakdown
-                );
-
-        RecommendationResponse response =
-                new RecommendationResponse(
-                        List.of(recommendation)
+        PackRecommendationResponse response =
+                new PackRecommendationResponse(
+                        trailId,
+                        "Garibaldi Lake",
+                        new TrailWeather(
+                                4.0,
+                                70.0,
+                                20.0
+                        ),
+                        true,
+                        List.of(
+                                new PackItemStatus(
+                                        GearCategory.FOOTWEAR,
+                                        true
+                                ),
+                                new PackItemStatus(
+                                        GearCategory.WATER,
+                                        false
+                                ),
+                                new PackItemStatus(
+                                        GearCategory.RAIN_GEAR,
+                                        true
+                                ),
+                                new PackItemStatus(
+                                        GearCategory.WARM_LAYER,
+                                        false
+                                )
+                        ),
+                        33
                 );
 
         when(
-                recommendationService.recommendFromQuery(
-                        any(RecommendationQueryRequest.class),
+                packRecommendationService.getPackRecommendation(
+                        any(PackRecommendationRequest.class),
                         eq(accessToken)
                 )
         ).thenReturn(response);
 
         mockMvc.perform(
-                        post("/api/recommendations/query")
+                        post("/api/recommendations/pack")
                                 .with(
                                         jwt().jwt(jwt ->
                                                 jwt.tokenValue(accessToken)
@@ -259,75 +288,135 @@ class RecommendationControllerTest {
                                 .contentType("application/json")
                                 .content("""
                                     {
-                                      "message":
-                                        "I want a moderate hike with a lake view under three hours.",
-                                      "latitude": 49.2827,
-                                      "longitude": -123.1207,
-                                      "tripDate": "2026-10-17",
-                                      "radiusKm": 50
+                                      "trailId": "%s",
+                                      "tripDate": "2026-10-17"
                                     }
-                                    """)
+                                    """.formatted(trailId))
                 )
                 .andExpect(
                         status().isOk()
                 )
                 .andExpect(
-                        jsonPath(
-                                "$.recommendations[0].trail.name"
-                        ).value(
-                                "Quarry Rock"
-                        )
+                        jsonPath("$.trailId")
+                                .value(trailId.toString())
                 )
                 .andExpect(
-                        jsonPath(
-                                "$.recommendations[0].trail.difficulty"
-                        ).value(
-                                "MODERATE"
-                        )
+                        jsonPath("$.trailName")
+                                .value("Garibaldi Lake")
                 )
                 .andExpect(
-                        jsonPath(
-                                "$.recommendations[0].score"
-                        ).value(
-                                91
-                        )
+                        jsonPath("$.weather.temperatureC")
+                                .value(4.0)
                 )
                 .andExpect(
-                        jsonPath(
-                                "$.recommendations[0].breakdown.intent"
-                        ).value(
-                                55
-                        )
+                        jsonPath("$.weather.precipitationProbability")
+                                .value(70.0)
                 )
                 .andExpect(
-                        jsonPath(
-                                "$.recommendations[0].breakdown.weather"
-                        ).value(
-                                15
-                        )
+                        jsonPath("$.requiredGear[0].category")
+                                .value("FOOTWEAR")
                 )
                 .andExpect(
-                        jsonPath(
-                                "$.recommendations[0].breakdown.gear"
-                        ).value(
-                                8
-                        )
+                        jsonPath("$.requiredGear[0].owned")
+                                .value(true)
                 )
                 .andExpect(
-                        jsonPath(
-                                "$.recommendations[0].breakdown.scenery"
-                        ).value(
-                                10
-                        )
+                        jsonPath("$.requiredGear[1].category")
+                                .value("WATER")
                 )
                 .andExpect(
-                        jsonPath(
-                                "$.recommendations[0].breakdown.proximity"
-                        ).value(
-                                3
-                        )
+                        jsonPath("$.requiredGear[1].owned")
+                                .value(false)
                 );
     }
 
+    @Test
+    void shouldRejectPackRequestWithPastTripDate() throws Exception {
 
+        UUID trailId = UUID.randomUUID();
+
+        String pastDate =
+                LocalDate.now()
+                        .minusDays(1)
+                        .toString();
+
+        mockMvc.perform(
+                        post("/api/recommendations/pack")
+                                .with(
+                                        jwt().jwt(jwt ->
+                                                jwt.tokenValue("test-token")
+                                        )
+                                )
+                                .contentType("application/json")
+                                .content("""
+                                    {
+                                      "trailId": "%s",
+                                      "tripDate": "%s"
+                                    }
+                                    """.formatted(
+                                        trailId,
+                                        pastDate
+                                ))
+                )
+                .andExpect(
+                        status().isBadRequest()
+                );
+
+        verifyNoInteractions(
+                packRecommendationService
+        );
+    }
+
+    @Test
+    void shouldReturn503WhenUserServiceIsUnavailable() throws Exception {
+
+        UUID trailId = UUID.randomUUID();
+
+        when(
+                packRecommendationService.getPackRecommendation(
+                        any(PackRecommendationRequest.class),
+                        eq("test-token")
+                )
+        ).thenThrow(
+                new UserServiceUnavailableException(
+                        "User service is unavailable",
+                        new RuntimeException("Connection refused")
+                )
+        );
+
+        mockMvc.perform(
+                        post("/api/recommendations/pack")
+                                .with(
+                                        jwt().jwt(jwt ->
+                                                jwt.tokenValue("test-token")
+                                        )
+                                )
+                                .contentType("application/json")
+                                .content("""
+                                    {
+                                      "trailId": "%s",
+                                      "tripDate": "%s"
+                                    }
+                                    """.formatted(
+                                        trailId,
+                                        LocalDate.now()
+                                                .plusDays(7)
+                                ))
+                )
+                .andExpect(
+                        status().isServiceUnavailable()
+                )
+                .andExpect(
+                        jsonPath("$.title")
+                                .value("User Service Unavailable")
+                )
+                .andExpect(
+                        jsonPath("$.status")
+                                .value(503)
+                )
+                .andExpect(
+                        jsonPath("$.detail")
+                                .value("User service is unavailable")
+                );
+    }
 }

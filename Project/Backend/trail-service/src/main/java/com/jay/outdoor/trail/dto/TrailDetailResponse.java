@@ -1,7 +1,9 @@
 package com.jay.outdoor.trail.dto;
 
+import com.jay.outdoor.trail.entity.GearCategory;
 import tools.jackson.databind.JsonNode;
 
+import java.util.Set;
 import java.util.UUID;
 
 public record TrailDetailResponse(
@@ -15,6 +17,9 @@ public record TrailDetailResponse(
         Double latitude,
         Double longitude,
         JsonNode route,
-        String source
+        String source,
+        String coverImageUrl,
+        Set<String> scenery,
+        Set<GearCategory> baselineGearRequirements
 ) {
 }

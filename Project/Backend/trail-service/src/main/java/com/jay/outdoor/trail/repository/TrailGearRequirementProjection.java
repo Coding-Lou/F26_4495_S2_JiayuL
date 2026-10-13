@@ -1,4 +1,10 @@
 package com.jay.outdoor.trail.repository;
 
-public class TrailGearRequirementProjection {
+import java.util.UUID;
+
+public interface TrailGearRequirementProjection {
+
+    UUID getTrailId();
+
+    String getGearCategory();
 }

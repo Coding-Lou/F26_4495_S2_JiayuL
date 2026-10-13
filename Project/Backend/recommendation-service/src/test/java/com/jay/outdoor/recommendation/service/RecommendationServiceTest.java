@@ -1,6 +1,7 @@
 package com.jay.outdoor.recommendation.service;
 
 import com.jay.outdoor.recommendation.client.trail.NearbyTrailResponse;
+import com.jay.outdoor.recommendation.client.trail.TrailSummaryResponse;
 import com.jay.outdoor.recommendation.client.trail.TrailServiceClient;
 import com.jay.outdoor.recommendation.client.user.GearResponse;
 import com.jay.outdoor.recommendation.client.user.UserServiceClient;
@@ -9,6 +10,8 @@ import com.jay.outdoor.recommendation.dto.RecommendationIntent;
 import com.jay.outdoor.recommendation.dto.RecommendationQueryRequest;
 import com.jay.outdoor.recommendation.dto.RecommendationRequest;
 import com.jay.outdoor.recommendation.dto.RecommendationResponse;
+import com.jay.outdoor.recommendation.dto.GearCategory;
+import com.jay.outdoor.recommendation.dto.SceneryType;
 import com.jay.outdoor.recommendation.dto.TrailDifficulty;
 import com.jay.outdoor.recommendation.dto.TrailWeather;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,6 +30,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class RecommendationServiceTest {
+
+    private static final TrailWeather GOOD_WEATHER =
+            new TrailWeather(12.0, 10.0, 10.0);
 
     private TrailServiceClient trailServiceClient;
     private UserServiceClient userServiceClient;
@@ -139,7 +145,9 @@ class RecommendationServiceTest {
 
         assertEquals(
                 "Quarry Rock",
-                result.getFirst().name()
+                result.getFirst()
+                        .trail()
+                        .name()
         );
     }
 
@@ -304,7 +312,7 @@ class RecommendationServiceTest {
                 new GearResponse(
                         UUID.randomUUID(),
                         "Hiking Boots",
-                        "Footwear",
+                        GearCategory.FOOTWEAR,
                         "Waterproof hiking boots",
                         OffsetDateTime.now()
                 );
@@ -358,7 +366,7 @@ class RecommendationServiceTest {
                 );
 
         assertEquals(
-                2,
+                1,
                 result.recommendations().size()
         );
 
@@ -378,6 +386,74 @@ class RecommendationServiceTest {
         );
     }
 
+    @Test
+    void shouldUseCandidateSceneryMetadataForQueryEligibility() {
+        String accessToken = "test-token";
+        LocalDate tripDate = LocalDate.of(2026, 10, 17);
+        RecommendationQueryRequest request =
+                new RecommendationQueryRequest(
+                        "I want a moderate lake hike.",
+                        49.2827,
+                        -123.1207,
+                        tripDate,
+                        50.0
+                );
+        RecommendationIntent intent =
+                new RecommendationIntent(
+                        TrailDifficulty.MODERATE,
+                        null,
+                        null,
+                        null,
+                        List.of(SceneryType.LAKE)
+                );
+        NearbyTrailResponse nearbyViewpoint = createTrail(
+                "Nearby Viewpoint",
+                "MODERATE",
+                5.0,
+                100,
+                90,
+                1.0,
+                Set.of("VIEWPOINT")
+        );
+        NearbyTrailResponse distantLake = createTrail(
+                "Distant Lake",
+                "MODERATE",
+                5.0,
+                100,
+                90,
+                49.0,
+                Set.of("LAKE")
+        );
+
+        when(intentService.extractIntent(request.message()))
+                .thenReturn(intent);
+        when(trailServiceClient.getNearbyTrails(
+                49.2827,
+                -123.1207,
+                50.0,
+                accessToken
+        )).thenReturn(List.of(nearbyViewpoint, distantLake));
+        when(userServiceClient.getCurrentUserGear(accessToken))
+                .thenReturn(List.of());
+        when(weatherServiceClient.getWeather(
+                49.2827,
+                -123.1207,
+                tripDate
+        )).thenReturn(GOOD_WEATHER);
+
+        RecommendationResponse result =
+                recommendationService.recommendFromQuery(
+                        request,
+                        accessToken
+                );
+
+        assertEquals(1, result.recommendations().size());
+        assertEquals(
+                "Distant Lake",
+                result.recommendations().getFirst().trail().name()
+        );
+    }
+
     private NearbyTrailResponse createTrail(
             String name,
             String difficulty,
@@ -389,18 +465,27 @@ class RecommendationServiceTest {
     ) {
 
         return new NearbyTrailResponse(
-                UUID.randomUUID(),
-                name,
-                "Test trail",
-                difficulty,
-                distanceKm,
-                elevationGainM,
-                estimatedDurationMin,
-                49.2827,
-                -123.1207,
-                "TEST",
-                distanceFromUserKm,
-                scenery
+                new TrailSummaryResponse(
+                        UUID.randomUUID(),
+                        name,
+                        "Test trail",
+                        difficulty,
+                        distanceKm,
+                        elevationGainM,
+                        estimatedDurationMin,
+                        49.2827,
+                        -123.1207,
+                        "TEST",
+                        scenery,
+                        "https://example.com/" + name + ".jpg",
+                        Set.of(
+                                GearCategory.FOOTWEAR,
+                                GearCategory.WATER
+                        )
+                ),
+                distanceFromUserKm
         );
     }
+
+
 }

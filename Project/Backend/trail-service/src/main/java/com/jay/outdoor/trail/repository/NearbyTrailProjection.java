@@ -24,5 +24,7 @@ public interface NearbyTrailProjection {
 
     String getSource();
 
+    String getCoverImageUrl();
+
     Double getDistanceFromUserKm();
 }

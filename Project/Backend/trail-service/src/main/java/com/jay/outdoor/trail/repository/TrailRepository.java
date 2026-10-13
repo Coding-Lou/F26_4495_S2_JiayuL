@@ -41,6 +41,7 @@ public interface TrailRepository
                         ST_X(t.trailhead) AS longitude,
 
                         t.source AS source,
+                        t.cover_image_url AS coverImageUrl,
 
                         ST_Distance(
                             CAST(t.trailhead AS geography),
@@ -165,7 +166,8 @@ public interface TrailRepository
                         ST_AsGeoJSON(t.route)
                             AS routeGeoJson,
 
-                        t.source AS source
+                        t.source AS source,
+                        t.cover_image_url AS coverImageUrl
 
                     FROM trails t
 
@@ -197,6 +199,21 @@ public interface TrailRepository
             nativeQuery = true
     )
     List<TrailSceneryProjection> findSceneryByTrailIds(
+            @Param("trailIds")
+            Collection<UUID> trailIds
+    );
+
+    @Query(
+            value = """
+                SELECT
+                    tgr.trail_id AS trailId,
+                    tgr.gear_category AS gearCategory
+                FROM trail_gear_requirements tgr
+                WHERE tgr.trail_id IN (:trailIds)
+                """,
+            nativeQuery = true
+    )
+    List<TrailGearRequirementProjection> findGearRequirementsByTrailIds(
             @Param("trailIds")
             Collection<UUID> trailIds
     );

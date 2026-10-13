@@ -5,6 +5,7 @@ import com.jay.outdoor.recommendation.exception.UnsafePromptException;
 import com.jay.outdoor.recommendation.safety.PromptGuard;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import com.jay.outdoor.recommendation.dto.PlanningContextDelta;
 import com.jay.outdoor.recommendation.dto.RecommendationIntent;
 import com.jay.outdoor.recommendation.dto.SceneryType;
 import com.jay.outdoor.recommendation.dto.TrailDifficulty;
@@ -75,5 +76,30 @@ class RecommendationIntentServiceTest {
         assertEquals(expectedIntent, result);
 
         verify(intentExtractor).extract(safePrompt);
+    }
+
+    @Test
+    void shouldExtractDeltaForSafePrompt() {
+
+        String safePrompt = "About three hours.";
+
+        PlanningContextDelta expectedDelta =
+                new PlanningContextDelta(
+                        null,
+                        null,
+                        null,
+                        180,
+                        null
+                );
+
+        when(
+                intentExtractor.extractDelta(safePrompt)
+        ).thenReturn(expectedDelta);
+
+        PlanningContextDelta result =
+                intentService.extractDelta(safePrompt);
+
+        assertEquals(expectedDelta, result);
+        verify(intentExtractor).extractDelta(safePrompt);
     }
 }

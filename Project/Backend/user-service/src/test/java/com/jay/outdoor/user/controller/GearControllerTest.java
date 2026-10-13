@@ -2,6 +2,7 @@ package com.jay.outdoor.user.controller;
 
 import com.jay.outdoor.user.config.SecurityConfig;
 import com.jay.outdoor.user.dto.GearItemResponse;
+import com.jay.outdoor.user.entity.GearCategory;
 import com.jay.outdoor.user.exception.ErrorCode;
 import com.jay.outdoor.user.exception.GlobalExceptionHandler;
 import com.jay.outdoor.user.exception.ResourceNotFoundException;
@@ -80,7 +81,7 @@ class GearControllerTest {
         GearItemResponse response = new GearItemResponse(
                 gearId,
                 "Hiking Boots",
-                "FOOTWEAR",
+                GearCategory.FOOTWEAR,
                 "Waterproof hiking boots",
                 OffsetDateTime.now()
         );
@@ -114,7 +115,7 @@ class GearControllerTest {
         GearItemResponse item1 = new GearItemResponse(
                 UUID.randomUUID(),
                 "Hiking Boots",
-                "FOOTWEAR",
+                GearCategory.FOOTWEAR,
                 "Waterproof hiking boots",
                 OffsetDateTime.now()
         );
@@ -122,7 +123,7 @@ class GearControllerTest {
         GearItemResponse item2 = new GearItemResponse(
                 UUID.randomUUID(),
                 "Rain Jacket",
-                "CLOTHING",
+                GearCategory.RAIN_GEAR,
                 "Waterproof shell jacket",
                 OffsetDateTime.now()
         );
@@ -139,7 +140,7 @@ class GearControllerTest {
                 .andExpect(jsonPath("$[0].name").value("Hiking Boots"))
                 .andExpect(jsonPath("$[0].category").value("FOOTWEAR"))
                 .andExpect(jsonPath("$[1].name").value("Rain Jacket"))
-                .andExpect(jsonPath("$[1].category").value("CLOTHING"));
+                .andExpect(jsonPath("$[1].category").value("RAIN_GEAR"));
     }
 
     @Test
@@ -165,7 +166,7 @@ class GearControllerTest {
         GearItemResponse response = new GearItemResponse(
                 gearId,
                 "Updated Hiking Boots",
-                "FOOTWEAR",
+                GearCategory.FOOTWEAR,
                 "Updated description",
                 OffsetDateTime.now()
         );
@@ -257,5 +258,22 @@ class GearControllerTest {
                 .andExpect(jsonPath("$.errors[0].field")
                         .value("name"));
     }
-}
 
+    @Test
+    void shouldReturn400WhenGearCategoryIsNotCanonical() throws Exception {
+
+        mockMvc.perform(post("/api/users/me/gear")
+                        .with(jwt().jwt(token ->
+                                token.subject("keycloak-user-123")
+                        ))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                        {
+                          "name": "Rain Jacket",
+                          "category": "Rain Gear",
+                          "description": "Waterproof shell jacket"
+                        }
+                        """))
+                .andExpect(status().isBadRequest());
+    }
+}

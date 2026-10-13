@@ -38,14 +38,15 @@ public class IntentPromptBuilder {
                     "FOREST",
                     "MOUNTAIN",
                     "OCEAN"
-                  ]
+                  ] | null
                 }
 
                 Rules:
 
                 - Do not invent preferences that the user did not express.
                 - Use null when a preference cannot be determined.
-                - preferredScenery may be empty.
+                - Use null for preferredScenery when scenery was not mentioned.
+                - Use an empty preferredScenery array only when the user explicitly says they have no scenery preference.
                 - Do not return explanations.
                 - Do not return markdown.
                 - Do not return additional fields.

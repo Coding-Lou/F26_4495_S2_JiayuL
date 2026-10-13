@@ -7,13 +7,9 @@ import java.util.Set;
 
 public record TrailCandidateContext(
         NearbyTrailResponse trail,
-
         TrailWeather weather,
-
         Set<SceneryType> scenery,
-
-        List<String> requiredGearCategories,
-
-        List<String> ownedGearCategories
+        List<GearCategory> requiredGearCategories,
+        List<GearCategory> ownedGearCategories
 ) {
 }

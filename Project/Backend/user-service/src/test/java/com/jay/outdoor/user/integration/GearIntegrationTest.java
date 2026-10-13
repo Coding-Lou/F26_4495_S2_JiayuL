@@ -1,5 +1,6 @@
 package com.jay.outdoor.user.integration;
 
+import com.jay.outdoor.user.entity.GearCategory;
 import com.jay.outdoor.user.repository.GearItemRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -76,7 +77,7 @@ class GearIntegrationTest {
 
         assertEquals(1, gearItems.size());
         assertEquals("Hiking Boots", gearItems.getFirst().getName());
-        assertEquals("FOOTWEAR", gearItems.getFirst().getCategory());
+        assertEquals(GearCategory.FOOTWEAR, gearItems.getFirst().getCategory());
         assertEquals(false, gearItems.getFirst().isDeleted());
     }
 
@@ -96,7 +97,7 @@ class GearIntegrationTest {
                         .content("""
                         {
                           "name": "Rain Jacket",
-                          "category": "CLOTHING",
+                          "category": "RAIN_GEAR",
                           "description": "Waterproof shell jacket"
                         }
                         """))
@@ -112,7 +113,7 @@ class GearIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].name").value("Rain Jacket"))
-                .andExpect(jsonPath("$[0].category").value("CLOTHING"))
+                .andExpect(jsonPath("$[0].category").value("RAIN_GEAR"))
                 .andExpect(jsonPath("$[0].description")
                         .value("Waterproof shell jacket"));
     }

@@ -7,7 +7,7 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "gear_items")
-public class GearItem {
+public class Gear {
 
     @Id
     private UUID id;
@@ -18,8 +18,9 @@ public class GearItem {
     @Column(nullable = false, length = 100)
     private String name;
 
+    @Enumerated(EnumType.STRING)
     @Column(length = 50)
-    private String category;
+    private GearCategory category;
 
     @Column(length = 255)
     private String description;
@@ -53,7 +54,7 @@ public class GearItem {
         return name;
     }
 
-    public String getCategory() {
+    public GearCategory getCategory() {
         return category;
     }
 
@@ -73,7 +74,7 @@ public class GearItem {
         this.name = name;
     }
 
-    public void setCategory(String category) {
+    public void setCategory(GearCategory category) {
         this.category = category;
     }
 

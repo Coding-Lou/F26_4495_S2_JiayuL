@@ -1,8 +1,11 @@
 package com.jay.outdoor.recommendation.client.weather;
 
 import com.jay.outdoor.recommendation.dto.TrailWeather;
+import com.jay.outdoor.recommendation.exception.WeatherServiceUnavailableException;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
+import tools.jackson.databind.JsonNode;
 
 import java.time.LocalDate;
 
@@ -25,78 +28,121 @@ public class WeatherServiceClient {
             LocalDate tripDate
     ) {
 
-        OpenMeteoResponse response =
-                restClient.get()
-                        .uri(uriBuilder -> uriBuilder
-                                .path("/v1/forecast")
-                                .queryParam("latitude", latitude)
-                                .queryParam("longitude", longitude)
-                                .queryParam(
-                                        "daily",
-                                        "temperature_2m_max,"
-                                                + "temperature_2m_min,"
-                                                + "precipitation_probability_max,"
-                                                + "wind_speed_10m_max"
-                                )
-                                .queryParam(
-                                        "timezone",
-                                        "auto"
-                                )
-                                .build()
-                        )
-                        .retrieve()
-                        .body(OpenMeteoResponse.class);
+        try {
+            JsonNode response =
+                    restClient.get()
+                            .uri(uriBuilder ->
+                                    uriBuilder
+                                            .path("/v1/forecast")
+                                            .queryParam("latitude", latitude)
+                                            .queryParam("longitude", longitude)
+                                            .queryParam(
+                                                    "daily",
+                                                    "temperature_2m_max," +
+                                                            "temperature_2m_min," +
+                                                            "precipitation_probability_max," +
+                                                            "wind_speed_10m_max"
+                                            )
+                                            .queryParam("timezone", "auto")
+                                            .queryParam("start_date", tripDate)
+                                            .queryParam("end_date", tripDate)
+                                            .build()
+                            )
+                            .retrieve()
+                            .body(JsonNode.class);
 
-        if (response == null
-                || response.daily() == null) {
-            throw new IllegalStateException(
-                    "Open-Meteo returned no weather data"
-            );
-        }
-
-        return findWeatherForDate(
-                response.daily(),
-                tripDate
-        );
-    }
-
-    private TrailWeather findWeatherForDate(
-            OpenMeteoDaily daily,
-            LocalDate tripDate
-    ) {
-
-        for (int i = 0; i < daily.time().size(); i++) {
-
-            LocalDate date =
-                    LocalDate.parse(
-                            daily.time().get(i)
-                    );
-
-            if (!date.equals(tripDate)) {
-                continue;
+            if (response == null) {
+                throw new WeatherServiceUnavailableException(
+                        "Weather service returned an empty response"
+                );
             }
 
-            double maxTemperature =
-                    daily.temperature2mMax().get(i);
+            JsonNode daily = response.get("daily");
 
-            double minTemperature =
-                    daily.temperature2mMin().get(i);
+            if (daily == null) {
+                throw new WeatherServiceUnavailableException(
+                        "Weather response does not contain daily forecast data"
+                );
+            }
 
-            double averageTemperature =
-                    (maxTemperature + minTemperature) / 2.0;
+            JsonNode dates =
+                    daily.get("time");
 
-            return new TrailWeather(
-                    averageTemperature,
-                    daily.precipitationProbabilityMax()
-                            .get(i),
-                    daily.windSpeed10mMax()
-                            .get(i)
+            JsonNode maxTemperatures =
+                    daily.get("temperature_2m_max");
+
+            JsonNode minTemperatures =
+                    daily.get("temperature_2m_min");
+
+            JsonNode precipitationProbabilities =
+                    daily.get("precipitation_probability_max");
+
+            JsonNode windSpeeds =
+                    daily.get("wind_speed_10m_max");
+
+            if (dates == null
+                    || maxTemperatures == null
+                    || minTemperatures == null
+                    || precipitationProbabilities == null
+                    || windSpeeds == null) {
+
+                throw new WeatherServiceUnavailableException(
+                        "Weather response is missing required forecast fields"
+                );
+            }
+
+            String requestedDate =
+                    tripDate.toString();
+
+            for (int i = 0; i < dates.size(); i++) {
+
+                if (requestedDate.equals(
+                        dates.get(i).asText()
+                )) {
+
+                    double maxTemp =
+                            maxTemperatures
+                                    .get(i)
+                                    .asDouble();
+
+                    double minTemp =
+                            minTemperatures
+                                    .get(i)
+                                    .asDouble();
+
+                    double averageTemp =
+                            (maxTemp + minTemp) / 2.0;
+
+                    double precipitationProbability =
+                            precipitationProbabilities
+                                    .get(i)
+                                    .asDouble();
+
+                    double windSpeed =
+                            windSpeeds
+                                    .get(i)
+                                    .asDouble();
+
+                    return new TrailWeather(
+                            averageTemp,
+                            precipitationProbability,
+                            windSpeed
+                    );
+                }
+            }
+
+            throw new WeatherServiceUnavailableException(
+                    "Weather forecast is not available for date: "
+                            + tripDate
+            );
+
+        } catch (RestClientException ex) {
+
+            throw new WeatherServiceUnavailableException(
+                    "Weather service is unavailable",
+                    ex
             );
         }
-
-        throw new IllegalArgumentException(
-                "Weather forecast is unavailable for "
-                        + tripDate
-        );
     }
+
 }

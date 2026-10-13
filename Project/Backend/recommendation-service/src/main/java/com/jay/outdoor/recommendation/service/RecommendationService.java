@@ -5,14 +5,7 @@ import com.jay.outdoor.recommendation.client.trail.TrailServiceClient;
 import com.jay.outdoor.recommendation.client.user.GearResponse;
 import com.jay.outdoor.recommendation.client.user.UserServiceClient;
 import com.jay.outdoor.recommendation.client.weather.WeatherServiceClient;
-import com.jay.outdoor.recommendation.dto.RecommendationIntent;
-import com.jay.outdoor.recommendation.dto.RecommendationQueryRequest;
-import com.jay.outdoor.recommendation.dto.RecommendationRequest;
-import com.jay.outdoor.recommendation.dto.RecommendationResponse;
-import com.jay.outdoor.recommendation.dto.SceneryType;
-import com.jay.outdoor.recommendation.dto.ScoredTrailRecommendation;
-import com.jay.outdoor.recommendation.dto.TrailCandidateContext;
-import com.jay.outdoor.recommendation.dto.TrailWeather;
+import com.jay.outdoor.recommendation.dto.*;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -57,15 +50,34 @@ public class RecommendationService {
                         request.message()
                 );
 
+        return recommend(
+                intent,
+                request.latitude(),
+                request.longitude(),
+                request.tripDate(),
+                request.radiusKm(),
+                accessToken
+        );
+    }
+
+    RecommendationResponse recommend(
+            RecommendationIntent intent,
+            double latitude,
+            double longitude,
+            LocalDate tripDate,
+            Double requestedRadiusKm,
+            String accessToken
+    ) {
+
         double radiusKm =
-                request.radiusKm() != null
-                        ? request.radiusKm()
-                        : 50.0;
+                requestedRadiusKm != null
+                        ? requestedRadiusKm
+                        : DEFAULT_RADIUS_KM;
 
         List<NearbyTrailResponse> nearbyTrails =
                 trailServiceClient.getNearbyTrails(
-                        request.latitude(),
-                        request.longitude(),
+                        latitude,
+                        longitude,
                         radiusKm,
                         accessToken
                 );
@@ -75,7 +87,7 @@ public class RecommendationService {
                         accessToken
                 );
 
-        List<String> ownedGearCategories =
+        List<GearCategory> ownedGearCategories =
                 userGear.stream()
                         .map(GearResponse::category)
                         .filter(Objects::nonNull)
@@ -86,7 +98,7 @@ public class RecommendationService {
                         .map(trail ->
                                 buildCandidateContext(
                                         trail,
-                                        request,
+                                        tripDate,
                                         ownedGearCategories
                                 )
                         )
@@ -106,26 +118,26 @@ public class RecommendationService {
 
     private TrailCandidateContext buildCandidateContext(
             NearbyTrailResponse trail,
-            RecommendationQueryRequest request,
-            List<String> ownedGearCategories
+            LocalDate tripDate,
+            List<GearCategory> ownedGearCategories
     ) {
 
         TrailWeather weather =
                 weatherServiceClient.getWeather(
-                        trail.latitude(),
-                        trail.longitude(),
-                        request.tripDate()
+                        trail.trail().latitude(),
+                        trail.trail().longitude(),
+                        tripDate
                 );
 
-        List<String> requiredGearCategories =
+        List<GearCategory> requiredGearCategories =
                 gearRequirementService.determineRequiredGear(
-                        trail,
+                        trail.trail(),
                         weather
                 );
 
         Set<SceneryType> scenery =
                 mapScenery(
-                        trail.scenery()
+                        trail.trail().scenery()
                 );
 
         return new TrailCandidateContext(
@@ -169,8 +181,8 @@ public class RecommendationService {
             return true;
         }
 
-        return trail.difficulty() != null
-                && trail.difficulty().equalsIgnoreCase(request.difficulty());
+        return trail.trail().difficulty() != null
+                && trail.trail().difficulty().equalsIgnoreCase(request.difficulty());
     }
 
     private boolean matchesDistance(
@@ -181,8 +193,8 @@ public class RecommendationService {
             return true;
         }
 
-        return trail.distanceKm() != null
-                && trail.distanceKm() <= request.maxDistanceKm();
+        return trail.trail().distanceKm() != null
+                && trail.trail().distanceKm() <= request.maxDistanceKm();
     }
 
     private boolean matchesElevation(
@@ -193,8 +205,8 @@ public class RecommendationService {
             return true;
         }
 
-        return trail.elevationGainM() != null
-                && trail.elevationGainM() <= request.maxElevationGainM();
+        return trail.trail().elevationGainM() != null
+                && trail.trail().elevationGainM() <= request.maxElevationGainM();
     }
 
     private Set<SceneryType> mapScenery(

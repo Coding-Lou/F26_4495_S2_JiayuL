@@ -1,5 +1,6 @@
 package com.jay.outdoor.user.dto;
 
+import com.jay.outdoor.user.entity.GearCategory;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
@@ -9,8 +10,7 @@ public record CreateGearItemRequest(
         @Size(max = 100)
         String name,
 
-        @Size(max = 50)
-        String category,
+        GearCategory category,
 
         @Size(max = 255)
         String description

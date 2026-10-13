@@ -1,13 +1,13 @@
 package com.jay.outdoor.recommendation.service;
 
 import com.jay.outdoor.recommendation.client.trail.NearbyTrailResponse;
+import com.jay.outdoor.recommendation.client.trail.TrailSummaryResponse;
 import com.jay.outdoor.recommendation.dto.*;
 import org.springframework.stereotype.Service;
 
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 
 @Service
@@ -30,6 +30,9 @@ public class TrailScoringService {
     ) {
 
         return candidates.stream()
+                .filter(candidate ->
+                        isEligible(candidate, intent)
+                )
                 .map(candidate ->
                         scoreTrail(
                                 candidate,
@@ -46,6 +49,50 @@ public class TrailScoringService {
                 .toList();
     }
 
+    private boolean isEligible(
+            TrailCandidateContext candidate,
+            RecommendationIntent intent
+    ) {
+        TrailSummaryResponse trail =
+                candidate.trail().trail();
+
+        return matchesDifficulty(
+                trail,
+                intent.difficulty()
+        ) && matchesScenery(
+                candidate.scenery(),
+                intent.preferredScenery()
+        );
+    }
+
+    private boolean matchesDifficulty(
+            TrailSummaryResponse trail,
+            TrailDifficulty requestedDifficulty
+    ) {
+        if (requestedDifficulty == null) {
+            return true;
+        }
+
+        return trail.difficulty() != null
+                && trail.difficulty().equalsIgnoreCase(
+                        requestedDifficulty.name()
+                );
+    }
+
+    private boolean matchesScenery(
+            Set<SceneryType> trailScenery,
+            List<SceneryType> preferredScenery
+    ) {
+        if (preferredScenery == null
+                || preferredScenery.isEmpty()) {
+            return true;
+        }
+
+        return trailScenery != null
+                && preferredScenery.stream()
+                .anyMatch(trailScenery::contains);
+    }
+
     private ScoredTrailRecommendation scoreTrail(
             TrailCandidateContext candidate,
             RecommendationIntent intent,
@@ -53,9 +100,10 @@ public class TrailScoringService {
     ) {
 
         NearbyTrailResponse trail = candidate.trail();
+        TrailSummaryResponse summary = trail.trail();
 
         int intentScore =
-                scoreIntent(trail, intent);
+                scoreIntent(summary, intent);
 
         int weatherScore =
                 scoreWeather(candidate.weather());
@@ -97,7 +145,7 @@ public class TrailScoringService {
                 );
 
         return new ScoredTrailRecommendation(
-                trail,
+                summary,
                 total,
                 breakdown
         );
@@ -108,7 +156,7 @@ public class TrailScoringService {
     // ------------------------------------------------
 
     private int scoreIntent(
-            NearbyTrailResponse trail,
+            TrailSummaryResponse trail,
             RecommendationIntent intent
     ) {
 
@@ -119,7 +167,7 @@ public class TrailScoringService {
     }
 
     private int scoreDifficulty(
-            NearbyTrailResponse trail,
+            TrailSummaryResponse trail,
             RecommendationIntent intent
     ) {
 
@@ -137,7 +185,7 @@ public class TrailScoringService {
     }
 
     private int scoreDistance(
-            NearbyTrailResponse trail,
+            TrailSummaryResponse trail,
             RecommendationIntent intent
     ) {
 
@@ -165,7 +213,7 @@ public class TrailScoringService {
     }
 
     private int scoreElevation(
-            NearbyTrailResponse trail,
+            TrailSummaryResponse trail,
             RecommendationIntent intent
     ) {
 
@@ -193,7 +241,7 @@ public class TrailScoringService {
     }
 
     private int scoreDuration(
-            NearbyTrailResponse trail,
+            TrailSummaryResponse trail,
             RecommendationIntent intent
     ) {
 
@@ -275,8 +323,8 @@ public class TrailScoringService {
     // ------------------------------------------------
 
     private int scoreGear(
-            List<String> requiredGear,
-            List<String> ownedGear
+            List<GearCategory> requiredGear,
+            List<GearCategory> ownedGear
     ) {
 
         if (requiredGear == null
@@ -289,12 +337,11 @@ public class TrailScoringService {
             return 0;
         }
 
-        Set<String> owned =
-                normalizeGear(ownedGear);
+        Set<GearCategory> owned =
+                new HashSet<>(ownedGear);
 
         long matched =
                 requiredGear.stream()
-                        .map(this::normalize)
                         .filter(owned::contains)
                         .count();
 
@@ -387,31 +434,6 @@ public class TrailScoringService {
         return (int) Math.round(
                 weight * ratio
         );
-    }
-
-    private Set<String> normalizeGear(
-            List<String> gear
-    ) {
-
-        Set<String> normalized =
-                new HashSet<>();
-
-        for (String item : gear) {
-            normalized.add(
-                    normalize(item)
-            );
-        }
-
-        return normalized;
-    }
-
-    private String normalize(
-            String value
-    ) {
-
-        return value
-                .trim()
-                .toLowerCase(Locale.ROOT);
     }
 
     private int clamp(

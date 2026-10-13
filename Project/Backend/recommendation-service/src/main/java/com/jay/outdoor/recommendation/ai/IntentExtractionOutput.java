@@ -16,5 +16,5 @@ public class IntentExtractionOutput {
 
     public Optional<Integer> maxDurationMin;
 
-    public List<SceneryType> preferredScenery;
+    public Optional<List<SceneryType>> preferredScenery;
 }

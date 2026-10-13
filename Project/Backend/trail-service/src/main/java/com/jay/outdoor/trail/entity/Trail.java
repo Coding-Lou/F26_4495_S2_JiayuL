@@ -77,6 +77,20 @@ public class Trail {
     private Set<TrailScenery> scenery =
             new HashSet<>();
 
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(
+            name = "trail_gear_requirements",
+            joinColumns = @JoinColumn(name = "trail_id")
+    )
+    @Column(
+            name = "gear_category",
+            nullable = false,
+            length = 50
+    )
+    @Enumerated(EnumType.STRING)
+    private Set<GearCategory> baselineGearRequirements =
+            new HashSet<>();
+
     @Column(
             length = 100
     )
@@ -98,6 +112,12 @@ public class Trail {
             nullable = false
     )
     private boolean deleted = false;
+
+    @Column(
+            name = "cover_image_url",
+            length = 500
+    )
+    private String coverImageUrl;
 
     public Trail() {
     }
@@ -265,5 +285,26 @@ public class Trail {
             boolean deleted
     ) {
         this.deleted = deleted;
+    }
+
+    public String getCoverImageUrl() {
+        return coverImageUrl;
+    }
+
+    public void setCoverImageUrl(
+            String coverImageUrl
+    ) {
+        this.coverImageUrl = coverImageUrl;
+    }
+
+    public Set<GearCategory> getBaselineGearRequirements() {
+        return baselineGearRequirements;
+    }
+
+    public void setBaselineGearRequirements(
+            Set<GearCategory> baselineGearRequirements
+    ) {
+        this.baselineGearRequirements =
+                baselineGearRequirements;
     }
 }

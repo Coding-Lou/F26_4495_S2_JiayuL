@@ -1,9 +1,11 @@
 package com.jay.outdoor.recommendation.client.user;
 
+import com.jay.outdoor.recommendation.exception.UserServiceUnavailableException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 
 import java.util.List;
 
@@ -24,16 +26,22 @@ public class UserServiceClient {
     public List<GearResponse> getCurrentUserGear(
             String accessToken
     ) {
-        var responseType =
-                new ParameterizedTypeReference<List<GearResponse>>() {};
+        try {
+            return restClient.get()
+                    .uri("/api/users/me/gear")
+                    .headers(headers ->
+                            headers.setBearerAuth(accessToken)
+                    )
+                    .retrieve()
+                    .body(
+                            new ParameterizedTypeReference<List<GearResponse>>() {}
+                    );
 
-        return restClient
-                .get()
-                .uri("/api/users/me/gear")
-                .headers(headers ->
-                        headers.setBearerAuth(accessToken)
-                )
-                .retrieve()
-                .body(responseType);
+        } catch (RestClientException ex) {
+            throw new UserServiceUnavailableException(
+                    "User service is unavailable",
+                    ex
+            );
+        }
     }
 }

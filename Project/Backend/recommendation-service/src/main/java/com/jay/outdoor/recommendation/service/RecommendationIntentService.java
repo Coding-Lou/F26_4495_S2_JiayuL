@@ -1,6 +1,7 @@
 package com.jay.outdoor.recommendation.service;
 
 import com.jay.outdoor.recommendation.ai.IntentExtractor;
+import com.jay.outdoor.recommendation.dto.PlanningContextDelta;
 import com.jay.outdoor.recommendation.dto.RecommendationIntent;
 import com.jay.outdoor.recommendation.exception.UnsafePromptException;
 import com.jay.outdoor.recommendation.safety.PromptGuard;
@@ -25,6 +26,13 @@ public class RecommendationIntentService {
         validatePrompt(message);
 
         return intentExtractor.extract(message);
+    }
+
+    public PlanningContextDelta extractDelta(String message) {
+
+        validatePrompt(message);
+
+        return intentExtractor.extractDelta(message);
     }
 
     private void validatePrompt(String message) {

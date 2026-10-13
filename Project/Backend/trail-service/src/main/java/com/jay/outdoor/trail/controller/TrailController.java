@@ -2,7 +2,7 @@ package com.jay.outdoor.trail.controller;
 
 import com.jay.outdoor.trail.dto.NearbyTrailResponse;
 import com.jay.outdoor.trail.dto.TrailDetailResponse;
-import com.jay.outdoor.trail.dto.TrailResponse;
+import com.jay.outdoor.trail.dto.TrailSummaryResponse;
 import com.jay.outdoor.trail.service.TrailService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -28,7 +28,7 @@ public class TrailController {
 
 
     @GetMapping
-    public List<TrailResponse> searchTrails(
+    public List<TrailSummaryResponse> searchTrails(
             @RequestParam(required = false)
             String search,
 

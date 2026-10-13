@@ -1,4 +1,7 @@
 package com.jay.outdoor.recommendation.dto;
 
-public class PackItemStatus {
+public record PackItemStatus(
+        GearCategory category,
+        boolean owned
+) {
 }

@@ -1,6 +1,7 @@
 package com.jay.outdoor.recommendation.ai;
 
 import com.openai.client.OpenAIClient;
+import com.openai.core.JsonSchemaLocalValidation;
 import com.openai.models.responses.ResponseCreateParams;
 import com.openai.models.responses.StructuredResponse;
 import com.openai.models.responses.StructuredResponseCreateParams;
@@ -45,7 +46,10 @@ public class OpenAiIntentClientImpl
         return ResponseCreateParams.builder()
                 .instructions(systemPrompt)
                 .input(userPrompt)
-                .text(IntentExtractionOutput.class)
+                .text(
+                        IntentExtractionOutput.class,
+                        JsonSchemaLocalValidation.NO
+                )
                 .model(model)
                 .build();
     }

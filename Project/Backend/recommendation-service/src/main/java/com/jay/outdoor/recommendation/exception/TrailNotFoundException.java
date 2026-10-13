@@ -1,4 +1,10 @@
 package com.jay.outdoor.recommendation.exception;
 
-public class TrailNotFoundException {
+import java.util.UUID;
+
+public class TrailNotFoundException extends RuntimeException {
+
+    public TrailNotFoundException(UUID trailId) {
+        super("Trail not found: " + trailId);
+    }
 }

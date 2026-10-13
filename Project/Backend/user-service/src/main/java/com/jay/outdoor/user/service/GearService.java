@@ -4,7 +4,7 @@ import com.jay.outdoor.user.dto.CreateGearItemRequest;
 import com.jay.outdoor.user.dto.GearItemResponse;
 import com.jay.outdoor.user.dto.UpdateGearItemRequest;
 import com.jay.outdoor.user.dto.UserResponse;
-import com.jay.outdoor.user.entity.GearItem;
+import com.jay.outdoor.user.entity.Gear;
 import com.jay.outdoor.user.exception.ErrorCode;
 import com.jay.outdoor.user.exception.ResourceNotFoundException;
 import com.jay.outdoor.user.repository.GearItemRepository;
@@ -34,15 +34,15 @@ public class GearService {
     ) {
         UserResponse currentUser = userService.getOrCreateUser(jwt);
 
-        GearItem gearItem = new GearItem();
-        gearItem.setUserId(currentUser.id());
-        gearItem.setName(request.name());
-        gearItem.setCategory(request.category());
-        gearItem.setDescription(request.description());
+        Gear gear = new Gear();
+        gear.setUserId(currentUser.id());
+        gear.setName(request.name());
+        gear.setCategory(request.category());
+        gear.setDescription(request.description());
 
-        GearItem savedGearItem = gearItemRepository.save(gearItem);
+        Gear savedGear = gearItemRepository.save(gear);
 
-        return toResponse(savedGearItem);
+        return toResponse(savedGear);
     }
 
     public List<GearItemResponse> getCurrentUserGear(Jwt jwt) {
@@ -55,20 +55,20 @@ public class GearService {
                 .toList();
     }
 
-    private GearItemResponse toResponse(GearItem gearItem) {
+    private GearItemResponse toResponse(Gear gear) {
         return new GearItemResponse(
-                gearItem.getId(),
-                gearItem.getName(),
-                gearItem.getCategory(),
-                gearItem.getDescription(),
-                gearItem.getCreatedAt()
+                gear.getId(),
+                gear.getName(),
+                gear.getCategory(),
+                gear.getDescription(),
+                gear.getCreatedAt()
         );
     }
 
     public void deleteGearItem(Jwt jwt, UUID gearId) {
         UserResponse currentUser = userService.getOrCreateUser(jwt);
 
-        GearItem gearItem = gearItemRepository
+        Gear gear = gearItemRepository
                 .findByIdAndUserIdAndDeletedFalse(
                         gearId,
                         currentUser.id()
@@ -80,9 +80,9 @@ public class GearService {
                         )
                 );
 
-        gearItem.setDeleted(true);
+        gear.setDeleted(true);
 
-        gearItemRepository.save(gearItem);
+        gearItemRepository.save(gear);
     }
 
     public GearItemResponse updateGearItem(
@@ -92,7 +92,7 @@ public class GearService {
     ) {
         UserResponse currentUser = userService.getOrCreateUser(jwt);
 
-        GearItem gearItem = gearItemRepository
+        Gear gear = gearItemRepository
                 .findByIdAndUserIdAndDeletedFalse(
                         gearId,
                         currentUser.id()
@@ -104,12 +104,12 @@ public class GearService {
                         )
                 );
 
-        gearItem.setName(request.name());
-        gearItem.setCategory(request.category());
-        gearItem.setDescription(request.description());
+        gear.setName(request.name());
+        gear.setCategory(request.category());
+        gear.setDescription(request.description());
 
-        GearItem savedGearItem = gearItemRepository.save(gearItem);
+        Gear savedGear = gearItemRepository.save(gear);
 
-        return toResponse(savedGearItem);
+        return toResponse(savedGear);
     }
 }

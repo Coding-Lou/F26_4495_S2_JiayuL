@@ -2,11 +2,13 @@ package com.jay.outdoor.trail.service;
 
 import com.jay.outdoor.trail.dto.NearbyTrailResponse;
 import com.jay.outdoor.trail.dto.TrailDetailResponse;
-import com.jay.outdoor.trail.dto.TrailResponse;
+import com.jay.outdoor.trail.dto.TrailSummaryResponse;
+import com.jay.outdoor.trail.entity.GearCategory;
 import com.jay.outdoor.trail.entity.Trail;
 import com.jay.outdoor.trail.entity.TrailDifficulty;
 import com.jay.outdoor.trail.repository.NearbyTrailProjection;
 import com.jay.outdoor.trail.repository.TrailDetailProjection;
+import com.jay.outdoor.trail.repository.TrailGearRequirementProjection;
 import com.jay.outdoor.trail.repository.TrailRepository;
 import com.jay.outdoor.trail.repository.TrailSceneryProjection;
 
@@ -17,6 +19,7 @@ import org.springframework.web.server.ResponseStatusException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -43,21 +46,50 @@ public class TrailService {
     // Search trails
     // ------------------------------------------------
 
-    public List<TrailResponse> searchTrails(
+    public List<TrailSummaryResponse> searchTrails(
             String search,
             String difficulty,
             Double maxDistanceKm,
             Integer maxElevationGainM
     ) {
 
-        return trailRepository.searchTrails(
+        List<Trail> trails =
+                trailRepository.searchTrails(
                         normalize(search),
                         normalizeDifficulty(difficulty),
                         maxDistanceKm,
                         maxElevationGainM
+                );
+
+        if (trails.isEmpty()) {
+            return List.of();
+        }
+
+        List<UUID> trailIds =
+                trails.stream()
+                        .map(Trail::getId)
+                        .toList();
+
+        Map<UUID, Set<String>> sceneryByTrailId =
+                getSceneryByTrailId(trailIds);
+
+        Map<UUID, Set<GearCategory>> gearRequirementsByTrailId =
+                getGearRequirementsByTrailId(trailIds);
+
+        return trails.stream()
+                .map(trail ->
+                        toSummaryResponse(
+                                trail,
+                                sceneryByTrailId.getOrDefault(
+                                        trail.getId(),
+                                        Set.of()
+                                ),
+                                gearRequirementsByTrailId.getOrDefault(
+                                        trail.getId(),
+                                        Set.of()
+                                )
+                        )
                 )
-                .stream()
-                .map(this::toResponse)
                 .toList();
     }
 
@@ -66,13 +98,40 @@ public class TrailService {
     // Get trail by ID
     // ------------------------------------------------
 
-    public Optional<TrailResponse> getTrailById(
+    public Optional<TrailSummaryResponse> getTrailById(
             UUID id
     ) {
 
-        return trailRepository
-                .findByIdAndDeletedFalse(id)
-                .map(this::toResponse);
+        Optional<Trail> trail =
+                trailRepository.findByIdAndDeletedFalse(id);
+
+        if (trail.isEmpty()) {
+            return Optional.empty();
+        }
+
+        Map<UUID, Set<String>> sceneryByTrailId =
+                getSceneryByTrailId(
+                        List.of(id)
+                );
+
+        Map<UUID, Set<GearCategory>> gearRequirementsByTrailId =
+                getGearRequirementsByTrailId(
+                        List.of(id)
+                );
+
+        return trail.map(value ->
+                toSummaryResponse(
+                        value,
+                        sceneryByTrailId.getOrDefault(
+                                id,
+                                Set.of()
+                        ),
+                        gearRequirementsByTrailId.getOrDefault(
+                                id,
+                                Set.of()
+                        )
+                )
+        );
     }
 
 
@@ -102,32 +161,24 @@ public class TrailService {
 
         List<UUID> trailIds =
                 nearbyTrails.stream()
-                        .map(
-                                NearbyTrailProjection::getId
-                        )
+                        .map(NearbyTrailProjection::getId)
                         .toList();
 
         Map<UUID, Set<String>> sceneryByTrailId =
-                trailRepository
-                        .findSceneryByTrailIds(
-                                trailIds
-                        )
-                        .stream()
-                        .collect(
-                                Collectors.groupingBy(
-                                        TrailSceneryProjection::getTrailId,
-                                        Collectors.mapping(
-                                                TrailSceneryProjection::getScenery,
-                                                Collectors.toSet()
-                                        )
-                                )
-                        );
+                getSceneryByTrailId(trailIds);
+
+        Map<UUID, Set<GearCategory>> gearRequirementsByTrailId =
+                getGearRequirementsByTrailId(trailIds);
 
         return nearbyTrails.stream()
                 .map(trail ->
                         toNearbyResponse(
                                 trail,
                                 sceneryByTrailId.getOrDefault(
+                                        trail.getId(),
+                                        Set.of()
+                                ),
+                                gearRequirementsByTrailId.getOrDefault(
                                         trail.getId(),
                                         Set.of()
                                 )
@@ -145,9 +196,32 @@ public class TrailService {
             UUID id
     ) {
 
-        return trailRepository
-                .findTrailDetailById(id)
-                .map(this::toDetailResponse);
+        Optional<TrailDetailProjection> trail =
+                trailRepository.findTrailDetailById(id);
+
+        if (trail.isEmpty()) {
+            return Optional.empty();
+        }
+
+        Map<UUID, Set<String>> sceneryByTrailId =
+                getSceneryByTrailId(List.of(id));
+
+        Map<UUID, Set<GearCategory>> gearRequirementsByTrailId =
+                getGearRequirementsByTrailId(List.of(id));
+
+        return trail.map(value ->
+                toDetailResponse(
+                        value,
+                        sceneryByTrailId.getOrDefault(
+                                id,
+                                Set.of()
+                        ),
+                        gearRequirementsByTrailId.getOrDefault(
+                                id,
+                                Set.of()
+                        )
+                )
+        );
     }
 
 
@@ -155,11 +229,13 @@ public class TrailService {
     // Mapping
     // ------------------------------------------------
 
-    private TrailResponse toResponse(
-            Trail trail
+    private TrailSummaryResponse toSummaryResponse(
+            Trail trail,
+            Set<String> scenery,
+            Set<GearCategory> baselineGearRequirements
     ) {
 
-        return new TrailResponse(
+        return new TrailSummaryResponse(
                 trail.getId(),
                 trail.getName(),
                 trail.getDescription(),
@@ -169,35 +245,48 @@ public class TrailService {
                 trail.getEstimatedDurationMin(),
                 trail.getTrailhead().getY(),
                 trail.getTrailhead().getX(),
-                trail.getSource()
+                trail.getSource(),
+                scenery,
+                trail.getCoverImageUrl(),
+                baselineGearRequirements
         );
     }
 
 
     private NearbyTrailResponse toNearbyResponse(
             NearbyTrailProjection trail,
-            Set<String> scenery
+            Set<String> scenery,
+            Set<GearCategory> baselineGearRequirements
     ) {
 
+        TrailSummaryResponse summary =
+                new TrailSummaryResponse(
+                        trail.getId(),
+                        trail.getName(),
+                        trail.getDescription(),
+                        trail.getDifficulty(),
+                        trail.getDistanceKm(),
+                        trail.getElevationGainM(),
+                        trail.getEstimatedDurationMin(),
+                        trail.getLatitude(),
+                        trail.getLongitude(),
+                        trail.getSource(),
+                        scenery,
+                        trail.getCoverImageUrl(),
+                        baselineGearRequirements
+                );
+
         return new NearbyTrailResponse(
-                trail.getId(),
-                trail.getName(),
-                trail.getDescription(),
-                trail.getDifficulty(),
-                trail.getDistanceKm(),
-                trail.getElevationGainM(),
-                trail.getEstimatedDurationMin(),
-                trail.getLatitude(),
-                trail.getLongitude(),
-                trail.getSource(),
-                trail.getDistanceFromUserKm(),
-                scenery
+                summary,
+                trail.getDistanceFromUserKm()
         );
     }
 
 
     private TrailDetailResponse toDetailResponse(
-            TrailDetailProjection trail
+            TrailDetailProjection trail,
+            Set<String> scenery,
+            Set<GearCategory> baselineGearRequirements
     ) {
 
         JsonNode route = null;
@@ -230,8 +319,72 @@ public class TrailService {
                 trail.getLatitude(),
                 trail.getLongitude(),
                 route,
-                trail.getSource()
+                trail.getSource(),
+                trail.getCoverImageUrl(),
+                scenery,
+                baselineGearRequirements
         );
+    }
+
+
+    // ------------------------------------------------
+    // Scenery lookup
+    // ------------------------------------------------
+
+    private Map<UUID, Set<String>> getSceneryByTrailId(
+            Collection<UUID> trailIds
+    ) {
+
+        if (trailIds.isEmpty()) {
+            return Map.of();
+        }
+
+        return trailRepository
+                .findSceneryByTrailIds(trailIds)
+                .stream()
+                .collect(
+                        Collectors.groupingBy(
+                                TrailSceneryProjection::getTrailId,
+                                Collectors.mapping(
+                                        TrailSceneryProjection::getScenery,
+                                        Collectors.toSet()
+                                )
+                        )
+                );
+    }
+
+
+    // ------------------------------------------------
+    // Baseline gear lookup
+    // ------------------------------------------------
+
+    private Map<UUID, Set<GearCategory>>
+    getGearRequirementsByTrailId(
+            Collection<UUID> trailIds
+    ) {
+
+        if (trailIds.isEmpty()) {
+            return Map.of();
+        }
+
+        return trailRepository
+                .findGearRequirementsByTrailIds(
+                        trailIds
+                )
+                .stream()
+                .collect(
+                        Collectors.groupingBy(
+                                TrailGearRequirementProjection::getTrailId,
+                                Collectors.mapping(
+                                        requirement ->
+                                                GearCategory.valueOf(
+                                                        requirement
+                                                                .getGearCategory()
+                                                ),
+                                        Collectors.toSet()
+                                )
+                        )
+                );
     }
 
 

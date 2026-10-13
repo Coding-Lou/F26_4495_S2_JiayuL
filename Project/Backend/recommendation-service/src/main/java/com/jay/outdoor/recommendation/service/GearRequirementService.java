@@ -1,44 +1,55 @@
 package com.jay.outdoor.recommendation.service;
 
-import com.jay.outdoor.recommendation.client.trail.NearbyTrailResponse;
+import com.jay.outdoor.recommendation.client.trail.TrailSummaryResponse;
+import com.jay.outdoor.recommendation.dto.GearCategory;
 import com.jay.outdoor.recommendation.dto.TrailWeather;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 public class GearRequirementService {
 
-    public List<String> determineRequiredGear(
-            NearbyTrailResponse trail,
+    public List<GearCategory> determineRequiredGear(
+            TrailSummaryResponse trail,
             TrailWeather weather
     ) {
 
-        List<String> requiredGear =
-                new ArrayList<>();
+        Set<GearCategory> requiredGear =
+                new LinkedHashSet<>();
 
-        // Basic hiking requirements
-        requiredGear.add("Footwear");
-        requiredGear.add("Water");
+        addTrailBaselineRequirements(
+                requiredGear,
+                trail
+        );
 
         addWeatherRequirements(
                 requiredGear,
                 weather
         );
 
-        addTrailRequirements(
-                requiredGear,
-                trail
-        );
+        return List.copyOf(requiredGear);
+    }
 
-        return requiredGear.stream()
-                .distinct()
-                .toList();
+    private void addTrailBaselineRequirements(
+            Set<GearCategory> requiredGear,
+            TrailSummaryResponse trail
+    ) {
+
+        if (trail == null
+                || trail.baselineGearRequirements() == null) {
+            return;
+        }
+
+        requiredGear.addAll(
+                trail.baselineGearRequirements()
+        );
     }
 
     private void addWeatherRequirements(
-            List<String> requiredGear,
+            Set<GearCategory> requiredGear,
             TrailWeather weather
     ) {
 
@@ -47,43 +58,29 @@ public class GearRequirementService {
         }
 
         if (weather.precipitationProbability() >= 40) {
-            requiredGear.add("Rain Gear");
+            requiredGear.add(
+                    GearCategory.RAIN_GEAR
+            );
         }
 
         if (weather.temperatureC() <= 5) {
-            requiredGear.add("Warm Layer");
+            requiredGear.add(
+                    GearCategory.WARM_LAYER
+            );
         }
 
         if (weather.windSpeedKmh() >= 30) {
-            requiredGear.add("Wind Layer");
-        }
-    }
-
-    private void addTrailRequirements(
-            List<String> requiredGear,
-            NearbyTrailResponse trail
-    ) {
-
-        if (trail == null) {
-            return;
+            requiredGear.add(
+                    GearCategory.WIND_LAYER
+            );
         }
 
-        if ("HARD".equalsIgnoreCase(
-                trail.difficulty()
-        )) {
-            requiredGear.add("Hiking Poles");
-        }
+        if (weather.temperatureC() >= 25
+                && weather.precipitationProbability() < 20) {
 
-        if (trail.distanceKm() != null
-                && trail.distanceKm() >= 10) {
-
-            requiredGear.add("Food");
-        }
-
-        if (trail.estimatedDurationMin() != null
-                && trail.estimatedDurationMin() >= 240) {
-
-            requiredGear.add("Food");
+            requiredGear.add(
+                    GearCategory.SUN_PROTECTION
+            );
         }
     }
 }

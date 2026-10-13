@@ -25,4 +25,6 @@ public interface TrailDetailProjection {
     String getRouteGeoJson();
 
     String getSource();
+
+    String getCoverImageUrl();
 }
