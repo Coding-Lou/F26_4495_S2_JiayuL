@@ -1,2197 +1,410 @@
 # Outdoor Trip Companion — Product Requirements
 
-## 1. Document Purpose
+The current product definition: what the product is, how it behaves, what is in and out of scope, and the roadmap. It does not describe the repository; current APIs, routes, and implementation state are in `docs/FRONTEND_CONTEXT.md`, and visual rules in `docs/DESIGN_SYSTEM.md`. Detailed per-feature behavior, acceptance criteria, and decision history are in `docs/features/<feature>.md`.
 
-This document defines the target product experience, user journey, feature requirements, scope boundaries, and phased delivery plan for **Outdoor Trip Companion**.
+When an implementation constraint conflicts with this document, do not silently change the requirement: surface the conflict and decide whether the implementation or the requirement changes.
 
-This document answers:
-
-> What should the product become?
-
-It does **not** describe the exact current repository implementation.
-
-Current APIs, services, DTOs, technical risks, routes, and implementation status are documented separately in:
-
-`docs/FRONTEND_CONTEXT.md`
-
-Future AI coding agents should use:
-
-- `PRODUCT_REQUIREMENTS.md` for product intent and behavior.
-- `FRONTEND_CONTEXT.md` for current technical capabilities and repository state.
-- `DESIGN_SYSTEM.md` for visual and interaction rules once that document exists.
-
-When implementation constraints conflict with this PRD, do not silently change the product requirement. Surface the conflict and determine whether the implementation or the product requirement should change.
+**Section numbers.** This document was compacted on 2026-10-19 and renumbered. Feature specifications, checkpoints, and `DESIGN_SYSTEM.md` written up to that date cite the earlier numbering ("PRD §x"); those references resolve in the verbatim snapshot `docs/archive/PRODUCT_REQUIREMENTS-2026-10-19-pre-compaction.md`, which also keeps the full decision record and the superseded sections.
 
 ---
 
-# 2. Product Overview
+## 1. Decision Record
 
-Outdoor Trip Companion is an AI-powered hiking and outdoor planning experience that helps users move from:
+Decisions that still shape current behavior. Earlier and superseded entries are in the archived snapshot.
 
-> “I want to go somewhere this weekend.”
-
-to:
-
-> “I know where I am going, what I need to bring, and I am ready for the trip.”
-
-The product combines:
-
-- conversational AI trip planning
-- trail recommendation
-- weather-aware decision making
-- personal gear inventory
-- packing recommendations
-- user-controlled gear selection
-- personalized 3D avatar visualization
-- interactive outdoor environments
-- trip memories and recap
-
-The product is organized around four major stages:
-
-**Plan → Pack → Explore → Memory**
-
-The product presents these capabilities through two clearly separated experiences:
-
-1. **Public Landing Experience** — an unauthenticated, cinematic brand and acquisition experience with a pre-rendered CG hero and a low-friction planning input.
-2. **Authenticated Product Experience** — the personalized planning and preparation product: an Authenticated Home / Plan experience that pairs a pre-rendered looping preparation-room CG/video background with the interactive AI planning UI, a Pack experience where real-time 3D begins with the persistent avatar and gear visualization, and later adventure environments.
-
-The experience should feel like a personalized outdoor companion rather than a traditional trail database or enterprise dashboard.
+| Date | Decision | Detail |
+|---|---|---|
+| 2026-10-11 | The Authenticated Home is a pre-rendered room background with the React planner over it, not a real-time 3D scene | §19.1 |
+| 2026-10-14 | The product prepares users for real trips and is not a hiking simulation. Start Adventure, real-time outdoor scenes, and 3D Explore are removed. The Gear Studio is the product's real-time 3D experience | §3, §21 |
+| 2026-10-15 | The signed-out `/` is the cinematic Hero (no planner), then Discover (map + synchronized list). Signed-out trail detail is a marker-anchored popup whose action is **Sign in to plan this trip**; there is no public Trail Detail page | §5, spec 006 |
+| 2026-10-16 | Gear model: Recommended ≠ Owned ≠ Equipped. `/gear` (My Gear) manages ownership; the Gear Studio stays trip-specific; one inventory feeds both | §9, spec 007 |
+| 2026-10-16 | Remember is FEATURE-008 (Memory backend), FEATURE-009 (My Memories), FEATURE-010 (Community Memories). GPX, AI recap, video, and social features are out of scope | §12, specs 008–010 |
+| 2026-10-17 | Two trail populations: the curated catalog and generated synthetic planner candidates, always disclosed as sample data. Discover is viewport-driven and shows both, clustered | §5.2, §13 |
+| 2026-10-18 | Community Memories in Discover: popup preview plus a docked Community panel, the one exception to the single floating surface | §12.3, spec 010 |
+| 2026-10-19 | The feature freeze is reopened by explicit user decision for FEATURE-011 to FEATURE-014 (Plans). FEATURE-014 is the final product feature; there is no FEATURE-015; the freeze resumes after it | §11, §22 |
+| 2026-10-19 | Planner polish: a "no preference" answer leaves a dimension open, each dimension is asked at most once, and durations carry a mode (around / up to / at least) | §7 |
+| 2026-10-20 | My Plans (`/plans`) accepted: the user's Plans as Upcoming / Past with a monthly calendar; Continue after Finish preparation leads there | §11 |
+| 2026-10-20 | Plan → Memory Bridge accepted (FEATURE-014, final product feature): a past Plan on a curated trail offers Add memory or View memory, derived from the user's own Memories (no stored link); past Plans on synthetic trails have no bridge. The feature freeze is active again | §11, §22, spec 014 |
 
 ---
 
-# 3. Product Vision
+## 2. Product Overview
 
-The long-term vision is to turn outdoor trip planning into an interactive journey.
+Outdoor Trip Companion is an AI-assisted outdoor trip planner that takes a user from "I want to go somewhere this weekend" to "I know where I am going, what to bring, and I am ready", and afterwards to "I have kept and shared what I experienced."
 
-Instead of asking users to manually configure many filters, the application should allow them to describe what they want naturally.
+It combines public map-first trail discovery, aggregate Daily Trail Activity, conversational AI planning, weather-aware recommendation, packing recommendations with Gear Readiness, a personal gear inventory, user-controlled gear selection on a personalized real-time 3D avatar, a saved Plan for each trip the user commits to, and trip Memories that can optionally be shared back to Discover.
 
-For example:
+**One-sentence description:** Outdoor Trip Companion helps people discover trails, plan trips with AI, prepare the right gear, go outdoors in real life, and preserve and share their memories.
 
-> “I want a moderate hike with mountain views this Saturday.”
+**Tagline:** From "Where should I go?" to "I'm ready to hike."
 
-The system should understand the request, consider trail characteristics and weather, recommend suitable options, help the user prepare appropriate gear, and visually represent the user's preparation through a personalized 3D hiking avatar.
+### 2.1 Terminology
 
-After preparation, the experience transitions from a home environment into an outdoor environment representing the chosen trip.
-
-The product should connect:
-
-**real planning data**
-
-with
-
-**interactive visual storytelling**.
-
-The public landing page previews this world through cinematic, pre-rendered CG. The interactive journey begins only after authentication, in the Authenticated Home, where the AI planner is presented over a pre-rendered stylized preparation-room background. Real-time 3D begins in Pack, where the user's gear choices visibly change their avatar.
-
----
-
-# 4. Product Principles
-
-## 4.1 AI First
-
-Conversational planning is the primary entry point.
-
-Users should be able to begin planning without understanding the application's data model, trail taxonomy, or filtering system.
-
-Traditional browsing and filtering can exist, but AI planning should remain a first-class experience.
+| Term | Meaning |
+|---|---|
+| **Public Discover** | The signed-out homepage at `/`: cinematic Hero, then the Discover section |
+| **Authenticated Home** | `/home`: the AI planner over a pre-rendered preparation-room background |
+| **Plan** (stage) | Deciding where to go: the AI planner or a trail found in Discover |
+| **a Plan** (record) | One user's saved decision to go on one trail on one date, created by **Finish preparation** |
+| **Trip** | A selected trail and date during preparation |
+| **Memory** | A user's record of a real trip on a trail: date, title, optional story, up to five photos |
+| **Community Memories** | Memories authors chose to make PUBLIC, read on a trail in Discover |
+| **Curated trail / synthetic trail** | A trail of the curated catalog / a generated sample planner candidate (§13) |
 
 ---
 
-## 4.2 Visual but Functional
+## 3. Product Vision and Principles
 
-Visual experiences must support a defined product purpose. The Public Landing CG supports brand storytelling, acquisition, and preview; the Authenticated Home's pre-rendered room background provides atmosphere for planning; real-time 3D, which begins in Pack, supports personalized product functionality.
+Planning should feel guided, personal, and honest about real conditions. The user sees real trails first, then describes what they want in their own words; the system considers trail characteristics and weather, recommends options, helps prepare the right gear, shows that preparation on a personal 3D avatar, records the decision as a Plan, and after the real trip helps them remember and share it. It is not a hiking simulator or an outdoor game.
 
-Interactive real-time 3D scenes should not exist only as decoration. Real-time 3D is therefore reserved for experiences where application state changes what the user sees, beginning with Pack, where equipping gear changes the avatar. A scene that is atmosphere only, with no required object-level interaction, is pre-rendered instead; this is why the Authenticated Home room is CG/video rather than a real-time 3D scene (section 40.5).
-
-Whenever possible, real-time visual changes should reflect actual application state such as:
-
-- selected trail
-- scenery type
-- weather
-- user gear
-- equipped gear
-- trip preparation status
+1. **Discovery first, AI-first planning.** Visitors understand the product and browse real trails without an account. Once signed in, conversational planning is the primary planning entry; users need not understand the data model or filters.
+2. **Visual but functional.** Every visual serves a purpose: the Hero sets atmosphere and promise; the map supports choosing trails; the Home room provides atmosphere; real-time 3D appears only where application state changes what is visible (the Gear Studio). Atmosphere-only scenes are pre-rendered.
+3. **User control.** Recommendations are suggestions. Users control trail, date, gear, what to wear and carry, and whether to follow recommendations. A recommended item never becomes equipped automatically.
+4. **Progressive experience.** Each stage reveals only what the current decision needs.
+5. **Consumer product, not dashboard.** Avoid enterprise, admin, developer-dashboard, or generic AI-SaaS feel.
+6. **3D supports preparation; it is not core business logic.** The core value is discovery, recommendation quality, weather-aware planning, packing, gear management, and personalization.
+7. **Real trails at the door, personalized product inside.** Public Discover shows where one could go; the authenticated product helps plan and prepare. Same brand and identity, distinct responsibilities.
+8. **Honest real-world data.** Activity figures are planning counts, never presence; sample or simulated data is disclosed; missing data (routes, images, weather, activity) degrades gracefully and is never fabricated.
 
 ---
 
-## 4.3 User Control
+## 4. Primary User Journey
 
-AI recommendations are suggestions rather than commands.
+**Discover → Plan → Prepare → Finish preparation → a saved Plan → Go in real life → Remember → optionally share back to Discover**
 
-Users retain control over:
-
-- trail selection
-- trip date
-- gear selection
-- what to wear
-- what to carry
-- whether to accept or ignore recommendations
-
-A recommended item must not automatically become an equipped item.
-
----
-
-## 4.4 Progressive Experience
-
-Do not present the entire application at once.
-
-The product should progressively guide the user through:
-
-**Plan → Choose → Prepare → Adventure**
-
-Each stage should reveal only the information needed for the current decision.
-
----
-
-## 4.5 Consumer Product, Not Dashboard
-
-The product should feel like a modern outdoor consumer application.
-
-Avoid making the primary experience resemble:
-
-- enterprise administration software
-- a developer dashboard
-- a generic AI SaaS product
-- a collection of disconnected forms
-
----
-
-## 4.6 3D as Product Experience, Not Core Business Logic
-
-3D is an important presentation and interaction layer.
-
-However, the core product value remains:
-
-- trail discovery
-- recommendation quality
-- weather-aware planning
-- packing recommendations
-- user gear management
-- personalization
-
-3D must enhance these capabilities rather than replace them.
-
----
-
-## 4.7 Cinematic Entry, Personalized Product
-
-The public experience should inspire interest through a cinematic representation of outdoor adventure. After authentication, the experience should shift from brand storytelling to personalized planning, preparation, and utility.
-
-In product terms:
-
-**The Public Landing creates motivation to begin a trip.**
-
-**The Authenticated Home helps the user plan and prepare for that trip.**
-
-The transition between these experiences should feel coherent, but their responsibilities must remain distinct.
-
-Both experiences use pre-rendered CG/video as their visual background. What separates them is responsibility and content, not rendering method: the Public Landing shows cinematic outdoor scenes for acquisition, while the Authenticated Home shows a preparation room behind the working AI planner.
-
----
-
-# 5. Primary User Journey
-
-The target user journey begins in the public experience and continues into the authenticated product:
+| Stage | What the software does |
+|---|---|
+| Discover | Hero, public trail map and synchronized list, trail name search, trail popup with Daily Trail Activity and Community Memories |
+| Plan | Authenticated conversational planner; recommendations; Trail Detail with a trip date and **Choose this trail** |
+| Prepare | Trip Preparation (weather, recommended gear, Owned / Missing, Gear Readiness); My Gear; the Gear Studio with the 3D avatar |
+| Finish preparation | Saves a Plan for the trail and date (FEATURE-011); the Ready-to-Go completion follows (FEATURE-012) |
+| Go in real life | Nothing. The software does not simulate, track, or accompany the trip |
+| Remember | From a past Plan in My Plans, **Add memory** or **View memory** (FEATURE-014); My Memories; optionally PUBLIC Memories that appear as Community Memories in Discover |
 
 ```text
-PUBLIC
-
-Public Landing
-        ↓
-Pre-rendered CG Hero
-        ↓
-Enter Trip Intent
-        ↓
-Start Planning
-        ↓
-
-AUTHENTICATION BOUNDARY
-
-Login / Register
-        ↓
-
-AUTHENTICATED PRODUCT
-
-Authenticated Home
-        ↓
-AI Planning
-        ↓
-Trail Recommendations
-        ↓
-Select Trail
-        ↓
-Trail Detail
-        ↓
-Gear Recommendation
-        ↓
-Customize Gear
-        ↓
-Avatar Update
-        ↓
-Start Adventure
-        ↓
-
-FUTURE / PHASED VISUAL EXPERIENCE
-
-Outdoor Scene
-        ↓
-Explore
-        ↓
-Memory
+Public Discover (/) → Hero → Discover → select a trail → popup → "Sign in to plan this trip"
+    → sign in → that trail's Trail Detail (/trails/:trailId)
+Authenticated Home (/home) → AI conversation → recommendations → Trail Detail
+Trail Detail → date + Choose this trail → Trip Preparation → Gear up → Gear Studio
+    → Finish preparation → Plan saved → Ready for the trail. → Continue → My Plans (/plans)
+After the trip → My Plans → past Plan → Add memory (trail and date preselected) → My Memories
+    → optionally Public → Community Memories in Discover
 ```
 
-The authenticated product preserves the established **Plan → Pack → Explore → Memory** journey. The MVP does not need to implement every stage at full fidelity, and later-stage labels indicate delivery sequence rather than a separate product journey.
+The complete product loop: Discover → Planner → Trail selection → Preparation → Gear Studio → Finish preparation → Ready-to-Go → My Plans / Calendar → real-world trip → past Plan → Memory → optional Community sharing.
 
-Within this journey, the Authenticated Home and AI Planning steps are a React planning UI presented over a pre-rendered room background. Real-time 3D first appears in Pack, at the Customize Gear and Avatar Update steps.
-
----
-
-# 6. Plan
-
-## 6.1 Goal
-
-Help the user answer:
-
-> Where should I go?
-
-Planning should begin from a natural-language conversation.
+Signed-in users who open `/` go to `/home`.
 
 ---
 
-# 7. Entry and Home Experiences
+## 5. Discover (Public)
 
-## 7.1 Experience Boundary
+### 5.1 Experience boundary
 
-The Public Landing and Authenticated Home are separate product experiences.
+Public Discover (`/`, signed out) and the Authenticated Home (`/home`) are separate experiences and never interchangeable uses of "Home". Public Discover is brand first, discovery second, in this order:
 
-```text
-Unauthenticated user
-→ Public Landing
+1. A fixed public header: product identity, Discover (in-page), Sign in.
+2. The **cinematic Hero**: three pre-rendered outdoor scenes with posters, rotation, a still poster under reduced motion, and Pause / Play; the slogan "Discover the trail. Prepare for the journey.", one support line, and **Explore trails**, which moves to Discover. The Hero hosts authentication notices and the sign-in gate. It has no planner input, conversation, suggestions, or pending prompt.
+3. The **Discover section**: an interactive trail map with a synchronized trail list, and one marker-anchored trail popup.
 
-Authenticated user
-→ Authenticated Home / Planning Experience
-```
+Discovery never depends on the Hero media. The map opens on a fixed default region (Vancouver and the Lower Mainland) and never requests the visitor's location. Desktop is primary; in Discover the map dominates with a compact list beside it.
 
-The term **Public Landing** refers to the unauthenticated brand and acquisition page. The term **Authenticated Home** refers to the authenticated planning space: the AI planner presented over a pre-rendered preparation-room background (section 7.8). They must not be treated as the same screen or as interchangeable uses of “Home.”
+### 5.2 Map, list, search, and popup
 
-Returning authenticated users should enter the Authenticated Home or active planning experience directly. They should not be required to repeatedly pass through the Public Landing. The exact routing behavior is an implementation decision.
+- **Viewport-driven.** Discover shows the trails in the current map area, curated and synthetic alike, read once the map comes to rest (never during movement).
+- **Map.** Each trail is a marker at its trailhead; at wider views nearby trails merge into clusters whose number counts **trails only**; selecting a cluster zooms until it splits. Markers may encode a coarse activity level; no people counts, people icons, heat, or moving dots, and nothing implies live presence. The map is never the only way to reach a trail.
+- **List.** The trails in the current map area, nearest the map centre first, with their count; at most the 50 nearest, with a prompt to zoom in for the rest. It is the precise browsing, keyboard, and assistive-technology path. One selected trail is shared by list and map.
+- **Trail name search.** A search field finds trails by name across the curated catalog and the trails already loaded; picking one selects it, moves the map to it, and opens its popup.
+- **Popup** (the signed-out visitor's trail detail): name, difficulty, distance, elevation gain, estimated duration, scenery, short description, today's Daily Trail Activity with its sample disclosure, an image only when a real one exists, a sample-data disclosure for sample trails, Community Memories for curated trails (§12.3), then **Sign in to plan this trip** (primary) and **Create account**. No View trail link, no navigation to a full Trail Detail, no planning controls.
 
----
+### 5.3 Public access and conversion
 
-## 7.2 Public Landing Experience
+Public visitors may watch the Hero, browse the map and list, search, read trails in the popup, see Daily Trail Activity, and read PUBLIC Memories. They may not use the AI planner, choose a date, prepare, use the Gear Studio, open Trail Detail, manage gear, save Plans, or create Memories. Authentication is requested only when the visitor wants personalized functionality.
 
-Unauthenticated users first arrive on a cinematic public landing page. Its purpose is to communicate the product's outdoor identity, create interest, and preview the visual world users enter after authentication.
-
-The Public Landing must not be a real-time 3D application. Its hero uses three short, high-quality, pre-rendered CG animation sequences.
-
-Each sequence should be approximately **5–10 seconds**, with a preferred target of approximately **6–8 seconds**. The sequences should transition softly and loop continuously:
-
-```text
-Scene A
-  ↓
-soft transition
-  ↓
-Scene B
-  ↓
-soft transition
-  ↓
-Scene C
-  ↓
-soft transition
-  ↓
-Scene A
-```
-
-The CG environment should remain the dominant visual element. It is a cinematic preview, not a personalized simulation, and does not need to react to user state.
+**Sign in to plan this trip** preserves that trail as the return destination: after authentication the user lands on the authenticated Trail Detail of the same trail. The header's Sign in, used without a trail, leads to `/home`. Cancelled or failed authentication shows a clear recovery path and never implies that planning occurred.
 
 ---
 
-## 7.3 Public Hero UI
+## 6. Daily Trail Activity
 
-The interface layered over the CG hero should remain intentionally minimal and contain:
+**Daily Trail Activity** for trail *T* on date *D* is the number of trips planned for *T* for *D*: one aggregate, non-negative integer per trail per local day. Wording describes planning: "N trips planned for today", "1 trip planned for today", "No trips planned for today yet".
 
-- product branding or logo
-- lightweight navigation
-- Sign In action
-- main heading
-- short supporting text
-- central AI trip-planning input
-- a small number of suggestion prompts
-
-Example heading:
-
-> Plan your next outdoor adventure
-
-Primary interaction prompt:
-
-**Where do you want to go?**
-
-Example input:
-
-> A moderate lake hike this Saturday
-
-The UI must not visually compete with the CG scene. Do not add dashboard widgets, large feature panels, charts, or heavy card layouts to the hero.
-
-Suggested prompts may include:
-
-- Easy hike near Vancouver
-- Lake view trail
-- Rain-friendly short hike
-- Fall foliage hike
-- Moderate mountain hike this weekend
-
-Selecting a suggestion may populate or submit the planning query depending on the final interaction design.
+- It is not live presence, GPS-derived, a count of people on the trail, real-time, or location tracking. Copy never says "exploring today", "people on this trail", "live hikers", "right now", or similar.
+- Source **SIMULATED** (deterministic sample values, disclosed as **Sample activity**) is current. **RECORDED** (real planned trips) would not change the response shape; no decision yet connects Plans to it.
+- "Activity unavailable" is distinct from zero and never shown as zero. Discovery works fully without activity. Synthetic trails have no activity figure.
+- Only aggregate counts are public: never identity, participant lists, locations, individual timestamps, or planning content.
 
 ---
 
-## 7.4 Unauthenticated Planning and Authentication Gate
+## 7. Plan: AI Trail Planning
 
-Unauthenticated users may:
+Help the user answer "Where should I go?" AI planning is authenticated and happens in the Authenticated Home.
 
-- type a trip request
-- select a suggested prompt
-- activate the primary planning action
-
-Personalized AI trip planning requires authentication. Authentication is required when the user attempts to start planning, not before the user can express planning intent.
-
-```text
-Enter planning prompt
-        ↓
-Start planning
-        ↓
-Authentication required
-        ↓
-Login / Register
-        ↓
-Authenticated Home
-```
-
-This distinction is a product requirement: public intent entry must remain available even though personalized planning and all current planning APIs are authenticated capabilities.
+- **Input.** Natural language combining any of difficulty, distance, duration, elevation, scenery, location, date, and weather; users need not give every dimension. Examples: "a moderate hike with a lake view this Saturday", "something easy near Vancouver for tomorrow", "a mountain trail but I only have three hours".
+- **Multi-turn.** The conversation accumulates preferences; a later message changes only what it mentions. When the request is not yet specific enough, the planner asks one short question at a time (difficulty first, then trip length). The planner needs the trip date and a starting location.
+- **No preference.** "Any", "no preference", or "I'm flexible" leaves that dimension open and the planner moves on. Each dimension is asked at most once; an unanswered question is left open. The summary shows open dimensions as "Any difficulty", "Any trip length", "Any scenery".
+- **Duration.** A duration is read as approximate ("around three hours", "half-day"), a maximum ("up to three hours"), or a minimum ("at least four hours"), and shown as "Around …", "Up to …", or "At least …".
+- **Explicit constraints are respected.** An explicit difficulty, an explicit scenery preference (any of the named types), and a maximum or minimum duration exclude trails that contradict them. When nothing fits, the planner says so and suggests changing preferences rather than returning a contradictory trail; it may then return fewer than three.
+- **Recommendations.** Up to three primary recommendations, considering difficulty, distance, elevation, duration, proximity, scenery, weather, and gear readiness. Each card communicates name, difficulty, distance, elevation gain, duration, scenery, a match score, and a human-readable explanation, with weather where available. Raw scoring is secondary information at most.
+- Weather lookups are limited to a short list after the hard constraints; one failed lookup never fails a recommendation.
 
 ---
 
-## 7.5 Prompt Continuity Through Authentication
+## 8. Trail Detail
 
-When practical, the application must preserve a valid planning prompt entered on the Public Landing through the authentication flow and restore it in the Authenticated Home planner.
+Help the user confirm "Is this the trip I actually want to do?" Trail Detail (`/trails/:trailId`) is authenticated only; a signed-out visitor is asked to sign in and returns to it.
 
-Example:
+It shows trail facts, description, scenery, route and image (with graceful fallbacks; never fabricated), the sample disclosure for sample trails, and "Why this trail" when reached from a recommendation. Its primary action is a trip date plus **Choose this trail**, which moves the user from Plan to Prepare. For curated trails it also offers a quiet **Add a memory** for someone who has already been there.
 
-```text
-Public Landing
-"A moderate lake hike this Saturday"
-        ↓
-Login / Register
-        ↓
-Authenticated Home
-AI Planner: "A moderate lake hike this Saturday"
-```
-
-The user should not need to type the same request again. The storage and transfer mechanism is an implementation decision.
-
-If continuity cannot be completed because authentication is cancelled, fails, or the prompt is invalid, the product should preserve a clear recovery path and must not imply that planning occurred.
+Selecting a trail for a date establishes the trip context used by Trip Preparation and the Gear Studio. Trail and date travel with the user; they never have to choose them again, and signing in never loses the trail they were reading.
 
 ---
 
-## 7.6 Initial Public CG Hero Scenes
+## 9. Prepare
 
-The initial hero contains three scenes in one consistent visual world.
+Help the user answer "What should I bring?"
 
-### Scene A — Sunny Alpine Lake
+### 9.1 Trip Preparation
 
-**Purpose:** Represent destination discovery and the emotional appeal of outdoor exploration.
+The chosen trail and date with the forecast (temperature, precipitation, wind), the recommended gear, each recommended category marked Owned or Missing, and Gear Readiness. Recommendations consider trail difficulty, distance, elevation, duration, the forecast, baseline trail requirements, and the user's owned gear. **Gear up** leads to the Gear Studio.
 
-**Visual concept:**
+### 9.2 Gear states
 
-- British Columbia-inspired alpine lake and mountain valley
-- clear weather and warm sunlight
-- moving grass and subtle clouds
-- calm lake movement
-- stylized hiking character
-- anime-inspired outdoor environment
+| State | Meaning | Scope |
+|---|---|---|
+| **Owned** | In the user's persistent Gear Inventory (My Gear) | The user, across trips; stored on the server |
+| **Recommended** | What preparation recommends for this trail, date, and weather | One trip; derived |
+| **Missing** | Recommended categories not represented in the owned inventory | One trip; derived |
+| **Equipped** | What the user explicitly chooses to wear or carry | One trip; never a permanent property of an item |
 
-**Product meaning:** **Discover somewhere beautiful.**
+**Recommended ≠ Owned ≠ Equipped.** **Gear Readiness** is the share of recommended gear categories the user owns ("All recommended gear covered" or "N recommended items missing"). It is distinct from the planner's match score.
 
-### Scene B — Rainy Pacific Northwest Forest
+### 9.3 My Gear (Gear Inventory)
 
-**Purpose:** Represent weather-aware planning.
+`/gear` is the permanent ownership experience, reached from global navigation and usable without a trip: create, view, edit, and remove owned items. A user may own several items in one category. Removal is a soft delete: the item stops being Owned everywhere and stops counting as Equipped. My Gear uses category-level 2D artwork, not 3D; the interim icons are accepted, and illustrated replacements are polish.
 
-**Visual concept:**
+### 9.4 Gear Studio
 
-- Pacific Northwest- or Vancouver-inspired forest
-- cedar and evergreen trees
-- light rain, wet trail, fog or mist
-- soft overcast lighting
-- hiking character wearing rain protection
-- stylized anime-inspired environment
+The trip-specific space, reached from Trip Preparation (no global navigation entry), where the user equips or unequips owned items (one per category), replaces one item with another owned item, and adds gear they own. Adding gear in either place creates the same owned item. The user keeps final control.
 
-**Product meaning:** **Plan around the weather.**
+### 9.5 Avatar and gear visualization
 
-### Scene C — Cold Mountain Ridge
-
-**Purpose:** Represent preparation and gear awareness.
-
-**Visual concept:**
-
-- alpine mountain ridge
-- cold, cloudy environment with strong wind
-- light snow patches where appropriate
-- dramatic clouds
-- hiking character wearing warmer equipment and a backpack
-- stylized anime-inspired environment
-
-**Product meaning:** **Prepare for the conditions.**
+- One persistent, stylized, anime-inspired, cel-shaded avatar represents the user in every trip they prepare; no unrelated characters per page. No face customization, body sliders, complex hair, RPG stats, combat, or classes. A basic idle animation is allowed.
+- Only Equipped gear appears on the avatar, and it updates in real time without a reload.
+- Real gear maps to a small set of **fixed visual categories** (many products → one asset, e.g. any rain jacket → `rain_jacket`). The mapping user gear item → gear category → visual category → 3D asset → equipment slot (head, body, legs, back, hands, feet) stays separate from the gear record; the backend stores no 3D content. Not every category is visible (food and water stay packing states).
+- Packing and gear selection work while 3D loads, on reduced-capability devices, and without 3D; the avatar may be omitted on small screens.
 
 ---
 
-## 7.7 Public CG Visual Style
+## 10. Go in Real Life
 
-All three CG scenes must share an **anime-inspired stylized outdoor adventure** direction, expressed through:
-
-- cel-shaded visual language
-- painterly environments
-- simplified but high-quality geometry
-- natural but slightly saturated colors
-- atmospheric depth
-- cinematic lighting
-- expressive vegetation
-- subtle environmental motion
-- premium animation quality
-
-The direction may take inspiration from stylized Japanese adventure games, but must not reproduce copyrighted characters, proprietary environments, recognizable game UI, or specific branded assets. Internal and external product language must not characterize the experience as a clone of an existing game. Appropriate descriptions include **anime-inspired stylized outdoor adventure** and **cel-shaded cinematic outdoor world**.
+After preparing, the user has a clear ready state (trip, date, conditions, what to bring, what is equipped) and goes outdoors. "Go in real life" is not a software feature: the product does not simulate, guide, track, or record the trip.
 
 ---
 
-## 7.8 Authenticated Home Experience
+## 11. Finish Preparation and Plans
 
-After successful authentication, the user enters the actual product experience. The Authenticated Home / Plan experience is where the interactive product journey begins. It is built from two layers:
+A **Plan** means "I intend to go on this trail on this date, and I have finished reviewing my preparation." It is not "this trail was recommended to me" or "I opened preparation".
 
-1. **Background: pre-rendered looping CG/video** showing a general stylized outdoor-preparation room. The room is visual atmosphere only.
-2. **Foreground: the interactive React UI**, centred on the AI planner and conversation. This is the only interactive layer.
+### 11.1 Current behavior (FEATURE-011 to FEATURE-014, PASS / FROZEN; specs `docs/features/011-plan-foundation-finish-preparation.md`, `docs/features/012-ready-to-go-3d-completion.md`, `docs/features/013-my-plans-calendar.md`, `docs/features/014-plan-memory-bridge.md`)
 
-The Authenticated Home is not a real-time 3D environment.
+- **Finish preparation** at the end of the Gear Studio is the only way to create a Plan. It is available whatever the Gear Readiness.
+- A Plan stores only the trail, the trip date, the status `READY`, and timestamps. It copies no trail, weather, or gear data; later loadout changes do not affect it. Upcoming and Past are derived from the date; there is no "completed" status (having gone is expressed by a Memory).
+- A Plan is private to its owner; there is no public Plan. Ownership comes only from the signed-in identity.
+- One user has at most one active Plan per trail and date, however often Finish is pressed or retried; saving again confirms the existing Plan.
+- The trip date cannot be in the past. Synthetic trails may be planned.
+- After saving, the avatar plays a short ready-to-go animation (FEATURE-012; skipped under reduced motion, when paused, or without the avatar), then the user sees **Ready for the trail.** and **Continue** to My Plans. A failed or unconfirmed save never shows completion or the animation and offers Try again; an animation that cannot play never affects the saved Plan.
+- **My Plans** (`/plans`, FEATURE-013) shows the user's whole Plan collection: **Upcoming** (trip date today or later, nearest first; today's Plan marked Today) and **Past** (most recent first), beside a monthly calendar that marks the days with Plans (a count where a day has several). Selecting a Plan shows its month and day; selecting a day selects its Plan or narrows the list to that day's Plans. A selected Plan shows its trail facts and offers **View trail**, **Review gear** (Upcoming only, opening Trip Preparation for that trail and date), and **Delete plan** after a confirmation. A Plan whose trail is gone shows "Trail unavailable" and can still be deleted. There is no Plan editing, no creation from the calendar, and no weather or readiness. An incomplete collection is never shown as complete.
+- **Plan → Memory Bridge** (FEATURE-014). A selected **Past** Plan (trip date before today) on a **curated** trail whose details loaded shows, in its detail only:
+  - no matching Memory: **How was your trip?** and **Add memory**, which opens the Memory editor with the Plan's trail and date preselected (both stay editable);
+  - one or more matching Memories: **You kept a memory of this trip.** and **View memory**, which opens the user's own Memory (the most recently created when several match).
+  - A Memory matches when it is the signed-in user's own, not deleted, on the same trail and the same trip date; PRIVATE and PUBLIC both count. The match is derived each time from the user's Memories: nothing links a Plan to a Memory, opening Add memory marks nothing, and a Memory saved with a different trail or date matches that other trail and date instead.
+  - While the user's Memories are not yet known, nothing is offered; when they cannot be read completely, the Plan says **Memory status is unavailable.** with **Try again**. Unknown is never treated as "no Memory".
+  - Upcoming Plans (today included), past Plans on synthetic trails, and Plans whose trail is unavailable or not yet loaded show no bridge and no explanation. The calendar and the collapsed Plan rows show nothing about Memories.
+  - Deleting a Plan never deletes a Memory, and deleting a Memory never deletes a Plan.
 
-```text
-Authenticated Home
-        ↓
-Pre-rendered looping room CG/video (background, atmosphere only)
-        +
-AI planning UI / conversation (foreground, interactive, visually central)
-        ↓
-AI Planning
-```
+### 11.2 Roadmap boundaries
 
-### Room background
-
-The room should visually communicate outdoor preparation. Possible visual elements include:
-
-- entrance or gear room
-- equipment shelf
-- backpack
-- hiking shoes
-- jackets
-- map
-- window or outdoor view
-
-These elements are visual direction rather than mandatory individual features. In the Home scene they are decorative and environmental: for the Capstone MVP they do not need to reflect live application state such as owned gear, equipped gear, weather, or the selected trip.
-
-The background may show a generic character from behind, for example seated at a computer. That figure is part of the pre-rendered atmosphere. It is not the persistent avatar described in sections 16 and 17, and the Authenticated Home does not require the production-ready avatar.
-
-### Interaction
-
-The primary interaction remains AI trip planning. The planning input and conversation stay visually central and are the dominant functional UI. When a planning prompt was entered on the Public Landing, it continues into this planner after authentication when practical (section 7.5).
-
-The room background is not a navigation system and contains no required interactive 3D objects. The user does not need to click furniture, gear, maps, computers, or other room objects. The following are outside the approved scope:
-
-- clicking the computer, the map, or gear shelves
-- walking around the room, including WASD movement
-- room customization
-- room physics
-- room inventory interaction
-
-### Personalization
-
-The Authenticated Home is not a marketing page. It is the user's planning space, and its personalization lives in the UI layer rather than in the room: the restored planning prompt, the conversation, planning state, and later saved trips and trip context.
-
-A Home background that responds to application state, or a real-time 3D Home, is a deferred possible enhancement only. It is not part of the approved scope and must not be built without an explicit product decision that updates this document.
-
-### Functional-first
-
-The planner must be usable before the background media has loaded and when it fails to load. The background must have a reduced-motion or non-animated alternative (section 43). Temporary media, a still image, or a placeholder is acceptable until final CG/video exists; producing that media must not block functional Plan → Pack work.
-
-The rationale for this architecture is recorded in section 40.5.
+| Feature | Owns | Status |
+|---|---|---|
+| **FEATURE-012 Ready-to-Go 3D Completion** | A ready-to-go avatar animation in the Gear Studio that plays only after a Plan save has succeeded, then the **Ready for the trail.** completion | PASS / FROZEN |
+| **FEATURE-013 My Plans & Calendar** | `/plans`: the user's Plans, a monthly calendar, Upcoming / Past, Plan detail, deleting a Plan, and a **Plans** navigation entry; a Plan whose trail is gone shows as unavailable | PASS / FROZEN |
+| **FEATURE-014 Plan → Memory Bridge** | From a past Plan on a curated trail, **Add memory** with trail and date preselected, or **View memory** when a matching Memory exists; past Plans on synthetic trails have no bridge | PASS / FROZEN; final product feature |
 
 ---
 
-# 8. AI Trail Planning
+## 12. Remember
 
-## 8.1 User Input
+Help the user answer "What did I experience?" Remember happens after the real trip.
 
-The system should support natural-language requests containing combinations of:
+### 12.1 My Memories (FEATURE-009)
 
-- desired difficulty
-- maximum distance
-- maximum duration
-- elevation preference
-- scenery preference
-- location
-- trip date
-- weather considerations
+The authenticated journal at `/memories`: a Memory has a trail, a trip date (not in the future), a title, an optional story, and up to five photos, the first being the cover. The user creates, reads, edits, and deletes their Memories and chooses **Private** (default) or **Public** for each. A Memory can be started from Trail Detail, or from a past Plan with its trail and date preselected (§11.1). The trail is fixed once saved. Only curated trails can be chosen; synthetic trails are not real routes and are not used for Memories.
 
-Users should not need to specify all dimensions.
+### 12.2 Memory foundation (FEATURE-008)
 
----
+Owner and public access are separate. A Memory is private unless its author makes it public. Photos are sanitized by the server so no location or other metadata is kept, and are served through short-lived links that the product refreshes when they expire.
 
-## 8.2 Example Queries
+### 12.3 Community Memories (FEATURE-010)
 
-Examples include:
-
-> I want a moderate hike with a lake view this Saturday.
-
-> Find an easy hike near Vancouver for tomorrow.
-
-> I want a mountain trail but I only have three hours.
-
-> Give me something suitable for a rainy day.
+- Supporting evidence for a trail; Discover stays trail-first.
+- The selected curated trail's popup shows its PUBLIC Memories as a count, at most two short previews, and **View all memories**. View all hides the popup and opens a Community panel beside the map that lists them and opens one read-only; closing it brings the popup back. This is the one exception to the single floating surface (§19.4).
+- Synthetic trails show no Community Memories.
+- Read-only for everyone in Discover, including signed-out visitors. PRIVATE Memories never appear; a Memory that stops being public stops showing.
+- No author identity, likes, comments, followers, feeds, ranking, or other social features, and no creating, editing, or reporting from Discover.
 
 ---
 
-## 8.3 Recommendation Factors
+## 13. Trail Data
 
-Trail recommendations may consider:
-
-- difficulty
-- distance
-- elevation gain
-- estimated duration
-- proximity
-- scenery
-- weather
-- user gear readiness
-- future user preferences
-
-The application should communicate enough reasoning to help the user understand why a trail was recommended.
+- **Curated catalog:** the small set of curated sample trails that forms the product's catalog (disclosed as sample trail data where shown). Daily Trail Activity, the My Memories trail picker, Community Memories, and Add a memory use curated trails only.
+- **Synthetic planner candidates:** generated sample routes that give the planner enough candidates. They are always disclosed as sample data and never presented as verified trails. They appear in Discover (clustered with the rest), can be recommended, opened in Trail Detail, prepared, and saved as Plans, but have no activity figure, no Memories, and no Community Memories.
+- Missing routes, images, or weather degrade gracefully; nothing is fabricated.
 
 ---
 
-# 9. Trail Recommendation Results
+## 14. Information Architecture and Navigation
 
-## 9.1 Recommendation Count
-
-The primary planning experience should show a small number of high-quality recommendations rather than overwhelming the user.
-
-Target:
-
-**up to 3 primary recommendations**
+Public navigation: product identity (to `/`), Discover, Sign in. Authenticated navigation: Planner (Home, reached through the product identity), Plans, Gear, Memories. A Profile destination belongs to the original information architecture but is neither built nor scheduled. Navigation represents user goals, never service names, and never exposes unbuilt destinations. Trail Detail, Trip Preparation, and the Gear Studio are states of one journey reached from the planner or Discover, not top-level destinations.
 
 ---
 
-## 9.2 Trail Recommendation Card
+## 15. Errors and Empty States
 
-Each recommendation should ideally communicate:
-
-- trail name
-- difficulty
-- distance
-- elevation gain
-- estimated duration
-- scenery
-- recommendation score
-- recommendation explanation
-- relevant weather information where available
-
-The exact information shown depends on backend contract availability.
+Failures never expose technical details ("Weather information is temporarily unavailable. You can still review this trail.", not "OpenMeteo API failed with HTTP 500"). Required states include: no matching trails, trail list unavailable, map unavailable (the list remains usable), activity unavailable (never zero), recommendation unavailable, weather unavailable, route or image unavailable, empty gear inventory, owning none of the recommended gear, Memories unavailable, a Memory no longer available, a Plan save that failed or could not be confirmed, no Plans yet, no upcoming Plans, Plans unavailable (never shown as no Plans), a Plan whose trail is unavailable, and a past Plan's Memory status unavailable (never shown as no Memory).
 
 ---
 
-## 9.3 Recommendation Explanation
+## 16. Authentication
 
-The UI should explain recommendations in human-readable terms.
-
-Example:
-
-> Good match for your preferred moderate difficulty and mountain scenery, with suitable conditions expected this Saturday.
-
-Avoid exposing raw backend scoring logic unless useful.
-
-Detailed score breakdown may be available as secondary information.
+Public discovery needs no account. Planning, preparation, gear, the Gear Studio, Plans, Memories, and profile require one. Authentication is a supporting interaction: requested when the user chooses a personalized action and returning them to where they were. Identity is handled externally (Keycloak); the product builds no password system.
 
 ---
 
-# 10. Trail Selection
+## 17. Security and Privacy
 
-Selecting a recommendation establishes the active trip context.
-
-At minimum, trip context should include:
-
-- selected trail
-- selected date
-- user/origin context where relevant
-
-This context is later used for:
-
-- trail detail
-- packing
-- gear customization
-- outdoor scene selection
+- Every personal resource (gear, Plans, Memories, planner and loadout state) belongs to the signed-in user, identified only by the server from the user's credentials, never by anything the client claims. Another user's resource is indistinguishable from a missing one.
+- PRIVATE Memories, Plans, and planning content never appear publicly. Public surfaces never show an author or user identity.
+- Photos are stored without location or other metadata, privately, and shown through short-lived links.
+- No geolocation without a user action; no location tracking, presence, or GPS.
+- Per-user data kept in the browser is bound to that user and cleared on sign-out; tokens are never stored by the application.
 
 ---
 
-# 11. Trail Detail
+## 18. Visual Direction
 
-## 11.1 Goal
+The product should feel modern, outdoor-oriented, calm, immersive where it matters, slightly playful, premium, and exploratory. Public Discover, the Authenticated Home, and the Gear Studio use different rendering (pre-rendered video plus a 2D web map; pre-rendered video; real-time 3D) but share brand, typography, a nature-derived colour philosophy, calm motion, and outdoor identity.
 
-Help the user confirm:
-
-> Is this the trip I actually want to do?
+Pre-rendered media and real-time 3D share an **anime-inspired stylized outdoor adventure** direction: cel-shaded or stylized, painterly environments, simplified high-quality geometry, natural slightly saturated colour, atmospheric depth, subtle motion. It may draw inspiration from stylized Japanese adventure games but must not reproduce copyrighted characters, proprietary environments, recognizable game UI, or branded assets, nor be described as a clone. The Discover map follows the calm, paper-like colour philosophy rather than cel shading. Visual consistency matters more than identical rendering quality.
 
 ---
 
-## 11.2 Desired Information
-
-Trail detail should eventually support:
-
-- trail name
-- description
-- difficulty
-- distance
-- elevation gain
-- estimated duration
-- map / route
-- scenery
-- weather
-- recommendation context
-- image or visual representation
-
-If route geometry or imagery is unavailable, the UI must degrade gracefully rather than fabricate data.
-
----
-
-## 11.3 Primary Action
-
-Primary action:
-
-**Plan This Trip**
-
-This moves the user from:
-
-**Plan**
-
-to:
-
-**Pack**
-
----
-
-# 12. Pack
-
-## 12.1 Goal
-
-Help the user answer:
-
-> What should I bring?
-
-Packing recommendations should be contextual to the selected trip.
-
----
-
-# 13. Gear Recommendation
-
-## 13.1 Recommendation Inputs
-
-Gear recommendations may consider:
-
-- trail difficulty
-- trail distance
-- elevation gain
-- duration
-- weather
-- temperature
-- precipitation
-- wind
-- baseline trail requirements
-- user's owned gear
-
----
-
-## 13.2 Gear States
-
-The product should distinguish between the following concepts.
-
-### Owned
-
-The user owns an item that belongs to the required gear category.
-
-### Recommended
-
-The system recommends bringing or wearing the item for this trip.
-
-### Equipped
-
-The user has explicitly chosen to wear or carry the item.
-
-### Missing
-
-The system recommends the category, but the user does not currently own an appropriate item.
-
-These states must not be treated as equivalent.
-
-In particular:
-
-**Recommended ≠ Equipped**
-
-and:
-
-**Owned ≠ Equipped**
-
----
-
-# 14. Personal Gear Inventory
-
-Users should be able to maintain a personal inventory of outdoor equipment.
-
-Examples:
-
-- hiking boots
-- trail shoes
-- rain jacket
-- warm layer
-- backpack
-- trekking poles
-- headlamp
-- traction
-- water
-- sun protection
-
-The inventory represents what the user owns.
-
-It does not automatically represent what the user is taking on a specific trip.
-
----
-
-# 15. Gear Customization
-
-After receiving packing recommendations, users should be able to decide which items they actually want to wear or carry.
-
-Possible actions:
-
-- Equip
-- Unequip
-- Bring
-- Remove
-- Replace one item with another owned item
-
-The user should always retain final control.
-
----
-
-# 16. 3D Avatar
-
-## 16.1 Purpose
-
-The avatar is the persistent visual representation of the user. It is a real-time 3D character introduced in Pack, where the user prepares for the selected trip, and it carries the same identity and equipment into Adventure.
-
-The Authenticated Home does not require the avatar. A generic character may appear in the pre-rendered Home room background (section 7.8); that figure is atmosphere and is not the persistent avatar.
-
-The trip chosen during planning determines what the avatar is prepared for, so the avatar should connect:
-
-**Planning**
-
-to
-
-**Preparation**
-
-to
-
-**Adventure**
-
----
-
-## 16.2 Visual Direction
-
-The target style is:
-
-- stylized
-- anime-inspired
-- cel-shaded
-- simplified
-- outdoor adventure oriented
-
-The product may draw inspiration from stylized adventure games without copying proprietary characters, environments, or assets.
-
----
-
-## 16.3 Character Complexity
-
-The avatar does not need extensive character creation.
-
-The first versions should avoid:
-
-- face customization
-- body sliders
-- complex hairstyles
-- RPG statistics
-- combat systems
-- character classes
-
-The avatar exists primarily to visualize preparation and outdoor activity.
-
----
-
-# 17. Persistent Avatar Identity
-
-The same avatar should persist across every stage in which it appears. It is introduced in Pack and continues into Adventure.
-
-Example:
-
-```text
-PACK (avatar introduced)
-
-Avatar with default equipment
-
-        ↓
-
-PACK (gear customization)
-
-Avatar updates as user equips gear
-
-        ↓
-
-ADVENTURE
-
-The same avatar enters the outdoor scene
-with the same selected equipment
-```
-
-Do not independently generate unrelated characters for different pages.
-
-The generic character that may appear in the pre-rendered Authenticated Home room background is not the persistent avatar and does not need to match the user's equipment. Where practical it should follow the same art direction and character proportions so that it does not read as a different product (section 39).
-
----
-
-# 18. Gear-to-Avatar Visualization
-
-## 18.1 Goal
-
-When the user changes equipped gear in Pack, the avatar should update visually in real time. Pack is the first experience in the product that uses real-time 3D, because it is where application state directly changes what is visible on the avatar.
-
-Equip, Unequip, Bring, and Remove actions (section 15) drive these updates. Only gear the user has explicitly chosen to wear or carry (Equipped, section 13.2) is shown on the avatar; a Recommended or Owned item is not shown until the user equips it.
-
-Examples:
-
-- selecting a backpack adds a backpack
-- selecting trekking poles adds poles
-- selecting a rain jacket changes the jacket
-- selecting hiking boots changes footwear
-- selecting a hat changes headwear
-
-Changes should appear without requiring a page reload.
-
----
-
-# 19. Fixed Visual Gear Categories
-
-The 3D layer does not need a unique model for every real-world product.
-
-Multiple gear items can map to a shared visual asset.
-
-Example:
-
-```text
-Arc'teryx Beta Jacket
-Patagonia Torrentshell
-Columbia Rain Jacket
-
-        ↓
-
-RAIN_JACKET
-
-        ↓
-
-rain_jacket 3D asset
-```
-
-Another example:
-
-```text
-Osprey Talon 33
-Gregory Zulu 35
-Deuter Futura 32
-
-        ↓
-
-MEDIUM_BACKPACK
-
-        ↓
-
-medium_backpack 3D asset
-```
-
-This mapping is intentional and should be preserved unless a future requirement changes it.
-
----
-
-# 20. Initial 3D Gear Categories
-
-The first 3D implementation should use a limited asset library.
-
-Potential categories:
-
-### Body
-
-- default jacket
-- rain jacket
-- winter/warm jacket
-
-### Legs
-
-- hiking pants
-
-### Feet
-
-- trail shoes
-- hiking boots
-
-### Back
-
-- small backpack
-- medium backpack
-- large backpack
-
-### Head
-
-- cap
-- beanie
-
-### Hands
-
-- trekking poles
-
-Not every backend `GearCategory` must initially have visible equipment.
-
-Examples such as food and water may remain packing states without visible character equipment.
-
----
-
-# 21. Gear Visualization Mapping
-
-The future frontend should maintain a mapping conceptually similar to:
-
-```text
-User Gear Item
-        ↓
-Gear Category
-        ↓
-Visual Category
-        ↓
-3D Asset
-        ↓
-Avatar Equipment Slot
-```
-
-This mapping should remain separate from the user's actual gear record.
-
-The backend gear database must not need to store 3D binary content.
-
----
-
-# 22. Avatar Equipment Slots
-
-The visual avatar may support slots such as:
-
-- head
-- body
-- legs
-- back
-- left hand
-- right hand
-- feet
-
-Some equipment may use:
-
-- attachment models
-
-while other equipment may use:
-
-- mesh variants
-
-The exact rendering technique is an implementation decision, not a product requirement.
-
----
-
-# 23. Start Adventure
-
-After selecting a trail and preparing gear, the user can begin the visual adventure experience.
-
-Primary action:
-
-**Start Adventure**
-
-This represents the transition from:
-
-**Preparation**
-
-to:
-
-**Explore**
-
----
-
-# 24. Home-to-Adventure Transition
-
-The application should visually transition from the preparation experience (Authenticated Home / Plan, then Pack) into an Outdoor environment.
-
-Conceptually:
-
-```text
-AUTHENTICATED HOME
-  ↓
-PLAN
-  ↓
-PACK
-  ↓
-GEAR UP
-  ↓
-START ADVENTURE
-  ↓
-OUTDOOR ENVIRONMENT
-```
-
-The avatar must retain the user's selected equipment during this transition.
-
-This transition is a product concept, not a rendering requirement. It does not imply that the Authenticated Home is a real-time 3D scene: the Home room is pre-rendered CG/video (section 7.8), and the avatar that enters the outdoor environment is the one prepared in Pack. How the transition is rendered is an implementation decision to be made when Adventure is scoped.
-
----
-
-# 25. Outdoor Environment
-
-## 25.1 Purpose
-
-The outdoor scene should create a visual representation of the selected trip.
-
-The first implementation does not need to reproduce the actual trail geographically.
-
-Instead, the system may select an environment archetype representing the trail.
-
----
-
-## 25.2 Environment Types
-
-Possible environment archetypes include:
-
-- Forest
-- Alpine Lake
-- Mountain Ridge
-- Waterfall
-- Coastal
-- Snow / Winter
-
-Initial implementation may use only a subset.
-
----
-
-# 26. Scene Selection Logic
-
-Outdoor scene selection should eventually be driven by real trip context.
-
-Conceptually:
-
-```text
-Selected Trail
-      +
-Scenery / Terrain
-      +
-Weather
-      ↓
-Adventure Scene
-```
-
-Examples:
-
-```text
-LAKE + SUNNY
-→ sunny alpine lake environment
-
-FOREST + RAINY
-→ rainy forest environment
-
-MOUNTAIN + FOGGY
-→ foggy ridge environment
-```
-
-The system should not randomly select a scene unrelated to the chosen trail.
-
----
-
-# 27. Dynamic Weather Visualization
-
-Weather can influence the visual environment.
-
-Potential states:
-
-### Sunny
-
-- bright lighting
-- clear sky
-- high visibility
-
-### Cloudy
-
-- softer lighting
-- overcast sky
-
-### Rainy
-
-- rain effects
-- cloudy lighting
-- wet environment appearance
-
-### Foggy
-
-- mist
-- reduced visibility
-- atmospheric mountains
-
-### Snowy
-
-- snow-covered environment
-- snow particles where appropriate
-
-Weather visualization is an enhancement and should not block the core Plan → Pack journey.
-
----
-
-# 28. Outdoor Avatar Animation
-
-In the adventure environment, the avatar may continuously perform a hiking animation.
-
-The experience does not require game-style player controls.
-
-Initial scope should avoid:
-
-- WASD movement
-- jumping
-- collision systems
-- combat
-- player physics
-- complex navigation
-- open-world simulation
-
-A fixed or predefined walking path is sufficient.
-
----
-
-# 29. Interactive Hiking Journey
-
-The intended outdoor experience is:
-
-**an interactive visual hiking journey**
-
-not:
-
-**a browser-based open-world game**
-
-A simple combination of:
-
-- character walking animation
-- slow camera movement
-- environmental motion
-- scene transitions
-
-is sufficient to create the intended product experience.
-
----
-
-# 30. Visual Trail Discovery
-
-Future versions may allow environmental objects to act as trail discovery entry points.
-
-Examples:
-
-Clicking a lake:
-
-> Show lake-view trails
-
-Clicking a mountain:
-
-> Show mountain-view trails
-
-Clicking a forest:
-
-> Show forest trails
-
-These interactions should ultimately reuse the existing trail/recommendation system rather than implement an independent recommendation mechanism.
-
----
-
-# 31. Dual Discovery Model
-
-The product may eventually support two complementary forms of discovery.
-
-## AI Discovery
-
-User describes a need:
-
-> Find me a moderate trail with lake views.
-
-## Visual Discovery
-
-User interacts with an environment:
-
-> Select Lake.
-
-Both should lead into the same underlying trail discovery and recommendation ecosystem.
-
----
-
-# 32. Explore
-
-The long-term Explore stage may include:
-
-- trail environment
-- map
-- active users
-- route awareness
-- visual discovery
-- simulated or real activity indicators
-
-Explore is not required for the first frontend vertical slice.
-
----
-
-# 33. Memory
-
-## 33.1 Goal
-
-Help users answer:
-
-> What did I experience?
-
-The Memory stage occurs after the trip.
-
----
-
-## 33.2 Potential Inputs
-
-Future inputs may include:
-
-- GPX file
-- trail data
-- trip duration
-- photos
-- user notes
-
----
-
-## 33.3 Potential Outputs
-
-Memory may eventually provide:
-
-- trip summary
-- route recap
-- photo timeline
-- AI-generated narrative
-- shareable recap
-- short video
-
-Memory remains a later product phase.
-
----
-
-# 34. Frontend Information Architecture
-
-The final product may conceptually contain:
-
-```text
-Public Landing
-Authentication
-Authenticated Home / Plan
-Trail Recommendation
-Trail Detail
-Pack
-Gear
-Avatar / Gear Preparation
-Adventure
-Explore
-Memory
-Profile
-```
-
-Not every concept must become an independent URL or page.
-
-Some should exist as states within one continuous journey.
-
----
-
-# 35. Navigation Principles
-
-Primary navigation should remain simple.
-
-Potential high-level navigation:
-
-- Home (authenticated product)
-- Explore
-- Gear
-- Trips / Memory
-- Profile
-
-Do not expose internal technical architecture through the navigation.
-
-For example, users should not see menu concepts based on:
-
-- recommendation-service
-- user-service
-- activity-service
-
-Navigation should represent user goals.
-
----
-
-# 36. State Continuity
-
-The application should preserve relevant context while the user moves through the journey.
-
-At minimum:
-
-```text
-Public Planning Prompt
-        ↓
-Authentication
-        ↓
-Authenticated Planner
-        ↓
-Trip Date
-Selected Trail
-        ↓
-Pack
-        ↓
-Selected Gear
-        ↓
-Avatar
-        ↓
-Adventure
-```
-
-Users should not need to repeatedly select the same trail or date.
-
-When practical, users should also not need to re-enter a planning prompt submitted before authentication.
-
-Initial versions may maintain this state client-side if persistent trip storage is unavailable.
-
-Long-term versions should support persisted trips.
-
----
-
-# 37. Error and Empty-State Product Requirements
-
-Failures should not expose technical implementation details.
-
-Examples:
-
-Instead of:
-
-> OpenMeteo API failed with HTTP 500
-
-show:
-
-> Weather information is temporarily unavailable. You can still review this trail.
-
-Instead of:
-
-> Recommendation service returned empty array
-
-show:
-
-> We couldn't find a good match. Try increasing the distance or changing your preferences.
-
-Important failure states include:
-
-- no matching trails
-- recommendation unavailable
-- weather unavailable
-- route unavailable
-- image unavailable
-- gear inventory empty
-- user owns none of the recommended gear
-
----
-
-# 38. Authentication Experience
-
-**Personalized AI trip planning requires authentication.**
-
-**Unauthenticated users may express planning intent before authentication.**
-
-The Public Landing must allow a user to enter or select a planning prompt. Activating the planning action then initiates authentication. After successful authentication, the user enters the Authenticated Home, where the prompt should be restored when practical and personalized planning can begin.
-
-Identity is also required for personalized features such as:
-
-- personal gear
-- profile
-- future saved trips
-- avatar state
-
-Authentication should remain a supporting interaction.
-
-Users should not feel that authentication is the main product experience.
-
-The application should avoid building its own password system when identity is already handled externally.
-
----
-
-# 39. Visual Direction
-
-The product should feel:
-
-- modern
-- outdoor-oriented
-- calm
-- cinematic
-- immersive
-- slightly playful
-- premium
-- exploratory
-
-The Public Landing and Authenticated Product must feel like the same visual universe even though they use different rendering methods: pre-rendered CG/video for the Public Landing and the Authenticated Home room background, and real-time 3D from Pack onward. They should share:
-
-- art direction
-- character proportions
-- environment language
-- color philosophy
-- cel-shaded or stylized appearance
-- outdoor identity
-
-Conceptually:
-
-```text
-Public CG Character
-≈
-Home Room Character (pre-rendered, generic)
-≈
-Pack Avatar (real-time 3D)
-
-Public CG World
-≈
-Home Preparation Room (pre-rendered)
-≈
-Real-Time 3D Visuals (Pack, later Adventure)
-```
-
-Visual consistency is more important than identical rendering quality. The real-time experience may use simpler geometry, lighting, animation, and effects to meet performance needs.
-
----
-
-# 40. CG and Real-Time 3D Roles
-
-The product intentionally uses two visual technologies, pre-rendered CG/video and interactive real-time 3D, and assigns each a specific role:
+## 19. Visual Technology Roles
 
 | Experience | Visual role |
 |---|---|
-| Public Landing | Pre-rendered cinematic outdoor CG/video |
-| Authenticated Home / Plan | Pre-rendered stylized preparation-room CG/video, with the interactive AI planning UI overlaid |
-| Pack | Interactive real-time 3D avatar and gear visualization |
-| Adventure / Explore | A later interactive visual environment, as defined by future scope |
+| Public Discover | Pre-rendered cinematic Hero, then an interactive 2D web map with a synchronized list |
+| Authenticated Home | Pre-rendered looping preparation-room background with the interactive React planner over it |
+| Trail Detail, Trip Preparation, My Gear, Memories | Calm reading surfaces; Trip Preparation may use a pre-rendered still |
+| Gear Studio | Interactive real-time 3D avatar and gear visualization (and, from FEATURE-012, the ready-to-go animation) |
 
-Real-time 3D begins in Pack. Neither the Public Landing nor the Authenticated Home is a real-time 3D experience.
+### 19.1 Authenticated Home
 
-## 40.1 Public Landing — Pre-Rendered Cinematic CG
+The room background (shelves, backpack, boots, jackets, map, window; a generic character seen from behind is allowed) is atmosphere only. It does not reflect application state, is not a navigation system, and has no interactive objects. The planner is visually central, works before and without the media, and has a non-animated alternative under reduced motion. The generic room character is not the persistent avatar but follows the same art direction and proportions. Rationale: the room has no object-level interaction, so real-time 3D would add cost without improving planning.
 
-The Public Landing uses pre-rendered cinematic outdoor CG/video for:
+### 19.2 Gear Studio
 
-- brand expression
-- acquisition
-- storytelling
-- atmosphere
-- previewing the product world
+The product's real-time 3D experience, because equipping gear changes what is visible. Stylized, anime-inspired, cel-shaded, colourful but controlled, simplified rather than photorealistic; web-optimized assets.
 
-It does not need to respond to personalized user state and must not be described as the interactive 3D product.
+### 19.3 3D scope
 
-## 40.2 Authenticated Home / Plan — Pre-Rendered Preparation-Room CG/Video
+3D must not block the functional product. Real-time 3D is limited to the Gear Studio: one persistent avatar, a basic idle animation, fixed equipment visualization for the supported categories, and (FEATURE-012) the ready-to-go completion. No other real-time 3D experience is planned.
 
-The Authenticated Home / Plan experience uses a pre-rendered, looping CG/video background showing a general stylized outdoor-preparation room, with the interactive AI planning UI overlaid on it.
+### 19.4 UI anti-patterns
 
-The background is used for:
-
-- atmosphere
-- communicating outdoor preparation
-- continuity with the public CG world
-
-All interaction happens in the React UI layer, where the AI planner remains visually central. The room contains no required interactive 3D objects, is not a navigation system, and for the Capstone MVP does not need to reflect live application state. Section 7.8 defines the experience in full.
-
-## 40.3 Pack — Interactive Real-Time 3D
-
-Pack is the first experience in which the product uses interactive real-time 3D. Pack uses real-time 3D for:
-
-- personalization
-- persistent avatar visualization
-- equipment visualization
-- real-time visual response to Equip / Unequip / Bring / Remove actions
-- trip preparation
-
-The fixed visual gear categories (sections 19 and 20), the gear-to-visual mapping (section 21), and the avatar equipment slots (section 22) remain part of the intended product architecture. Recommended gear remains distinct from Equipped gear, and Owned gear remains distinct from Equipped gear (section 13.2).
-
-The target real-time 3D visual style should be:
-
-- stylized
-- anime-inspired
-- cel-shaded
-- colorful but controlled
-- simplified rather than photorealistic
-
-Potential visual influences include modern stylized adventure environments.
-
-Do not directly reproduce:
-
-- copyrighted characters
-- proprietary assets
-- recognizable game UI
-- branded environmental designs
-
-The goal is:
-
-**stylized outdoor adventure**
-
-rather than:
-
-**a clone of a specific game**
-
-The real-time 3D layer may be simplified for performance but should preserve the public CG world's recognizable character and environment language.
-
-## 40.4 Adventure / Explore — Later Interactive Visual Environment
-
-The future Adventure experience may use real-time 3D or another suitable interactive visual implementation. That choice is made when the Adventure scope is defined. The avatar prepared in Pack continues into Adventure with the same selected equipment (sections 17 and 24).
-
-This section does not expand Adventure or Explore scope.
-
-## 40.5 Rationale
-
-This architecture is an approved product decision (2026-10-11). It replaces the earlier direction in which the Authenticated Home was a real-time 3D room.
-
-- The Authenticated Home room has no required object-level user interaction.
-- A real-time 3D room would add Blender, Three.js, rendering, responsive camera, asset loading, performance, and maintenance cost without materially improving the Plan interaction.
-- Pre-rendered CG/video can provide higher visual quality with substantially lower implementation complexity.
-- Real-time 3D is reserved for Pack because that is where application state directly changes visible equipment on the avatar.
-- This follows the principle that 3D should support product functionality rather than exist only as decoration (sections 4.2 and 4.6).
-- It protects the Capstone scope and keeps Plan → Select → Pack functionality on the critical path.
+Avoid purple-gradient AI SaaS styling, dashboard layouts, excess cards, heavy glassmorphism, excess shadows or borders, unnecessary charts, and admin density. The map, planner, and avatar stay visually dominant on their screens. On Discover, no floating surface other than the trail popup, except the Community panel, which replaces the popup while open and is never shown beside it; no dashboard widgets over the map; nothing suggesting people's locations.
 
 ---
 
-# 41. UI Anti-Patterns
+## 20. Responsive, Accessibility, and Performance
 
-Avoid:
-
-- purple-gradient AI SaaS styling
-- generic dashboard layouts
-- excessive cards
-- heavy glassmorphism
-- excessive shadows
-- unnecessary charts
-- too many borders
-- admin-panel information density
-
-The conversational planner and outdoor environment should remain visually dominant.
-
-On the Public Landing specifically, avoid placing dashboard widgets, large feature panels, charts, or dense card layouts over the cinematic hero.
+- **Responsive.** Desktop web is primary; feature specs define viewports. At smaller widths discovery (through the list), planning, recommendations, trail information, packing, and gear selection stay usable. The avatar may be omitted, the Home media simplified, and the map reduced, but trails in the map area stay reachable through the list.
+- **Accessibility.** Keyboard-accessible controls, readable contrast, labelled inputs, reduced-motion support, and functional fallbacks. The Discover list is the keyboard and assistive equivalent of the map for the current area, and the map can be panned and zoomed by keyboard; markers need not be tab stops. Gear selection works without the avatar.
+- **Performance.** On `/` the Hero comes first; map code, style, and tiles load only when Discover is about to be seen. Discover makes one nearby request on activation and one after each settled pan or zoom, plus one activity request, with no polling and no per-marker requests. The public entry loads no planner, preparation, Studio, avatar, or 3D code. The planner works before its media; the Studio's gear selection works while 3D loads and without it.
 
 ---
 
-# 42. Mobile Experience
+## 21. Explicit Non-Goals
 
-Primary user flows must remain usable on mobile.
-
-At minimum:
-
-- planning input
-- recommendation selection
-- trail information
-- packing
-- gear selection
-
-must work without requiring desktop layout.
-
-The advanced 3D experience may use reduced visual complexity on smaller or less powerful devices.
-
-The Public Landing may use an appropriately optimized or simplified media treatment on mobile, but its planning input and authentication path must remain usable. The Authenticated Home room background may likewise be optimized or simplified on mobile, but the planner must remain usable.
-
-Functional planning must never depend on high-end 3D rendering.
+- A hiking simulation, outdoor game, or open world; Start Adventure, real-time outdoor scenes, or a Home-to-Adventure transition; walking gameplay, WASD, physics, combat, NPCs, multiplayer.
+- Complex character creation; a unique 3D model per real gear product.
+- Real-time presence, live hikers, GPS tracking, background location, WebSocket presence, heat maps or dots of people, automatic geolocation.
+- A public AI planner input; a public full Trail Detail page or public "View trail".
+- Discovery that depends on the Hero media.
+- A real-time 3D Authenticated Home or any object-level interaction with its room.
+- Accurate recreation of every trail; photorealistic environments; real-time global weather simulation.
+- Social networking (followers, feeds, likes, comments) beyond Community Memories; GPX or video generation pipelines; AI recap.
+- Features beyond FEATURE-014.
 
 ---
 
-# 43. Accessibility
+## 22. Roadmap and Freeze
 
-Core product functions must remain accessible without relying exclusively on 3D interaction.
+| Feature | Name | Status |
+|---|---|---|
+| FEATURE-001 | Public Landing (Hero reused on `/`) | PASS / FROZEN |
+| FEATURE-002 | Authentication | PASS / FROZEN |
+| FEATURE-003 | Conversational Trip Planner | PASS / FROZEN |
+| FEATURE-004 | Trail Selection & Preparation | PASS / FROZEN |
+| FEATURE-005 | Pack Customization & 3D Avatar (Gear Studio) | PASS / FROZEN |
+| FEATURE-006 | Public Discover & Trail Activity | PASS / FROZEN |
+| FEATURE-007 | Gear Inventory | PASS / FROZEN |
+| FEATURE-008 | Memory Foundation (backend) | PASS / FROZEN |
+| FEATURE-009 | My Memories | PASS / FROZEN |
+| FEATURE-010 | Community Memories | PASS / FROZEN |
+| FEATURE-011 | Plan Foundation & Finish Preparation | PASS / FROZEN |
+| FEATURE-012 | Ready-to-Go 3D Completion | PASS / FROZEN |
+| FEATURE-013 | My Plans & Calendar | PASS / FROZEN |
+| FEATURE-014 | Plan → Memory Bridge | PASS / FROZEN; final product feature |
 
-For example:
+The original roadmap ended at FEATURE-010; its final Full Regression and polish passed, and the freeze was reopened on 2026-10-19 by explicit user decision for FEATURE-011 to FEATURE-014 only. There is no FEATURE-015. **The feature freeze is active again since FEATURE-014 was accepted (2026-10-20).** The next phase is a Final Full Regression, then approved final polish if necessary, demo preparation, and deployment preparation. Work is limited to bug fixes, UI, gear-illustration and 3D polish, performance, regression, accessibility and correctness fixes, deployment and configuration (e.g. production routing for Memories and Plans), documentation, and demo and presentation preparation. Any new capability needs an explicit product decision that updates this document.
 
-If a user can click a lake in the 3D environment to discover trails, there must also be a conventional accessible UI path to discover lake trails.
-
-Required principles:
-
-- keyboard-accessible controls
-- readable text contrast
-- labeled inputs
-- reduced-motion support where appropriate
-- functional fallback when advanced visual effects are unavailable
-
-The Public Landing must provide a reduced-motion or non-animated alternative to the looping CG hero without removing access to the planning input, suggestion prompts, or authentication action. The Authenticated Home must provide the same alternative for its looping room background without removing access to the planner.
-
----
-
-# 44. Performance Principles
-
-The product must prioritize functional usability over visual complexity.
-
-For future 3D:
-
-- models should be optimized for web delivery
-- only required assets should be loaded
-- environments should avoid unnecessary geometry
-- textures should be optimized
-- lower-complexity mobile experiences are acceptable
-- loading the trip planner must not depend on all 3D assets finishing first
-
-The user should be able to begin planning quickly.
-
-The Public Landing must not require all final CG media to finish loading before its core text, planning input, and authentication actions become usable. Pre-rendered hero media should use delivery and fallback strategies appropriate to the user's device and connection. The Authenticated Home must apply the same functional-first principle to its pre-rendered room background: the planner must be usable before the background media loads and when it fails to load. Pack must apply the principle to real-time 3D loading: packing recommendations and gear selection must remain usable while 3D assets load, on reduced-capability devices, and when 3D is unavailable.
+Delivery is incremental vertical slices: specify → close backend gaps → implement → validate → continue.
 
 ---
 
-# 45. MVP Definition
+## 23. Agent Change Rules
 
-The MVP should validate the core product promise:
+Agents must not reinterpret major requirements without explicit instruction. In particular, do not silently change:
 
-> AI helps me choose a trail and prepare for it.
+- the journey of §4, including Finish preparation as the only way to create a Plan;
+- `/` as Public Discover for signed-out visitors (Hero first, then map + list) and `/home` for signed-in users;
+- no public planner; AI planning is authenticated;
+- signed-out trail detail in one popup; Trail Detail is authenticated only; **Sign in to plan this trip** returns to the same trail's Trail Detail;
+- Daily Trail Activity as an aggregate planning count with sample disclosure and no presence claims;
+- the pre-rendered Home with the React planner; real-time 3D limited to the Gear Studio;
+- user-controlled gear selection; Recommended ≠ Owned ≠ Equipped; Gear Inventory vs Gear Studio;
+- persistent avatar identity, fixed visual gear categories and their mapping, equipment slots, real-time visual updates, web-optimized assets;
+- Plans as private, one per owner, trail, and date, with no snapshot; completion shown only after a confirmed save;
+- curated vs synthetic trail rules (§13); PRIVATE Memories never public; no author identity in public;
+- the roadmap ending at FEATURE-014, then the freeze.
 
-The MVP is divided into public, authenticated functional, and 3D product layers so visual production does not block validation of the planning and packing experience.
+Without an explicit product decision that updates this document, agents must not: reintroduce a public planner or change the Hero-then-Discover order; create a public Trail Detail or "View trail"; request geolocation automatically or show presence-like activity; build gameplay, simulation, or outdoor scenes; make the Home a real-time 3D scene or add 3D assets or interaction to it; make planning depend on media or 3D; or weaken the Gear Studio requirements.
 
----
-
-## 45.1 Public MVP
-
-Required:
-
-- public landing page
-- cinematic hero structure designed for three looping scenes
-- central planning input and a small number of suggestion prompts
-- ability to express trip intent before authentication
-- authentication gate when the user starts planning
-- prompt continuity through authentication when practical
-- mobile, accessible, loading, error, and reduced-motion states
-
-The first development version may use temporary media, still images, simple motion studies, or placeholders before final CG assets are available. Final high-quality CG production must not block functional frontend development.
+If an implementation limitation makes a requirement difficult, report the limitation instead of silently replacing the experience.
 
 ---
 
-## 45.2 Authenticated Functional MVP
+## 24. Success Criteria, Metrics, and Risks
 
-### Planning
+**Success journey:** I open the site and see real trails → I read a trail and see how much planning surrounds it → I sign in and land on that trail, or describe a hike and get understandable recommendations → I choose a trail and date → I understand the conditions → I get useful packing advice and compare it with my gear → I equip gear and see it on my avatar → I finish preparation and my Plan is saved → I go → afterwards I keep and share a Memory.
 
-- authentication
-- Authenticated Home / planning experience
-- pre-rendered looping preparation-room background behind the planner (non-blocking; see the note at the end of this section)
-- restored public planning prompt when available
-- conversational trip input
-- trail recommendation
-- recommendation result cards
+**Evaluation (prototype, no telemetry needed):** discovery comprehension, activity read as planning not presence, planning completion, recommendation understanding, packing completion, end-to-end completion without blocking, and understanding that gear choices change the avatar.
 
-### Trail
-
-- trail selection
-- trail detail
-- weather information where available
-
-### Packing
-
-- gear recommendation
-- owned / missing visualization
-- packing readiness
-
-### Gear
-
-- personal gear inventory
-- create gear
-- edit gear
-- remove gear
-
-### State
-
-- selected trail continuity
-- selected trip date continuity
-
-### Quality
-
-- loading states
-- error states
-- empty states
-- mobile usability
-
-The Authenticated Home room background may use temporary media, a still image, or a placeholder until final CG/video is available. It is atmosphere only and must not block functional Plan → Pack development or validation.
+**Risks and mitigations:** scope expansion (3D only in the Gear Studio; roadmap ends at FEATURE-014); activity misread as presence (planning wording, sample disclosure, nothing drawn as people); visual drift between surfaces (shared brand and art direction); third-party map tiles (the list is a complete equivalent); gear explosion (fixed visual categories); backend contract gaps (never fabricate; record gaps in `FRONTEND_CONTEXT.md`); the product becoming a game (§21).
 
 ---
 
-# 46. 3D Product MVP
+## 25. Document Maintenance
 
-**3D must not block delivery of the functional MVP.**
-
-Once Plan → Pack works end-to-end, the first visual MVP may include:
-
-- one persistent avatar, introduced in Pack
-- basic idle animation
-- fixed equipment visualization
-- gear-to-avatar updates for the supported visual categories
-- one outdoor scene
-- one walking animation
-- Home / Plan → Adventure transition
-
-This is sufficient to prove the visual product concept.
-
-Real-time 3D in this MVP begins in Pack. It does not include a real-time 3D Authenticated Home scene; the Home background is pre-rendered CG/video (sections 7.8 and 40).
-
----
-
-# 47. Phase 2 — Personalized Adventure
-
-After the core MVP is stable, deepen the initial 3D Product MVP through:
-
-- persistent avatar
-- fixed gear-to-model mapping
-- real-time avatar equipment updates
-- Forest environment
-- Lake environment
-- Mountain environment
-- environment selection based on trail scenery
-- basic weather visual states
-- outdoor walking animation
-- adventure transition
-
----
-
-# 48. Phase 3 — Interactive Explore
-
-Possible enhancements:
-
-- clickable 3D environmental hotspots
-- visual trail discovery
-- additional environment types
-- more equipment models
-- more weather states
-- activity indicators
-- map integration
-- simulated live hikers
-- richer scene animation
-
----
-
-# 49. Phase 4 — Memory
-
-Possible capabilities:
-
-- saved trips
-- trip history
-- GPX upload
-- route replay
-- photo upload
-- timeline
-- AI trip recap
-- shareable memory
-- generated short-form recap video
-
----
-
-# 50. Explicit Non-Goals for Initial Versions
-
-The following are not required for MVP:
-
-- open-world game mechanics
-- character combat
-- player-controlled movement
-- physics simulation
-- NPCs
-- complex character creation
-- multiplayer gameplay
-- fully accurate recreation of every trail
-- unique 3D model for every real gear SKU
-- photorealistic environments
-- real-time global weather simulation
-- advanced social network
-- full GPX/video generation pipeline
-- requiring final public CG assets before the functional product can be developed or validated
-- a real-time 3D Authenticated Home room
-- object-level interaction with the Authenticated Home room, such as clicking the computer, map, or gear shelves, walking around the room, room customization, room physics, or room inventory interaction
-- requiring final Authenticated Home room CG/video before the functional product can be developed or validated
-
----
-
-# 51. Product Success Criteria
-
-The first meaningful product version should allow a user to complete this journey:
-
-```text
-I enter the hike I want from the Public Landing or Authenticated Home
-        ↓
-If needed, I authenticate without re-entering my prompt
-        ↓
-I receive understandable recommendations
-        ↓
-I choose a trail
-        ↓
-I understand the expected conditions
-        ↓
-I receive useful packing recommendations
-        ↓
-I can compare them with gear I already own
-        ↓
-I feel prepared for the trip
-```
-
-The visual version should extend this journey to:
-
-```text
-I prepare my avatar
-        ↓
-My gear choices visibly change the character
-        ↓
-I start the adventure
-        ↓
-My character enters an environment representing my trip
-```
-
----
-
-# 52. Primary Product Metrics
-
-For the Capstone prototype, metrics do not need production telemetry, but product evaluation can consider:
-
-### Planning Completion
-
-Can the user successfully move from natural-language request to selecting a trail?
-
-### Recommendation Understanding
-
-Can the user understand why a trail was recommended?
-
-### Packing Completion
-
-Can the user determine what gear they need and what they already own?
-
-### End-to-End Completion
-
-Can the user complete:
-
-**Plan → Select → Pack**
-
-without becoming blocked?
-
-### Visual Comprehension
-
-When 3D is introduced, can users immediately understand that gear choices affect their avatar?
-
----
-
-# 53. Product Risks
-
-## Scope Expansion
-
-3D development can easily consume more time than the recommendation and packing experience.
-
-Mitigation:
-
-Complete the functional end-to-end flow before advanced 3D work. Reserve real-time 3D for Pack, where application state changes visible equipment, and keep the Authenticated Home pre-rendered.
-
----
-
-## Visual Complexity
-
-High-quality public CG and anime-inspired real-time environments can become separate art projects.
-
-Mitigation:
-
-Use temporary public hero and Authenticated Home room media during functional development, keep final CG production off the critical path, and use a small fixed asset library with reusable real-time scene archetypes.
-
----
-
-## Visual World Drift
-
-The pre-rendered Public Landing, the pre-rendered Authenticated Home room, and the real-time 3D Pack avatar could appear to belong to different products. The generic character in the Home room and the persistent avatar in Pack could also read as unrelated characters.
-
-Mitigation:
-
-Define and reuse shared art direction, character proportions, environment language, color philosophy, and cel-shaded styling while allowing lower real-time rendering fidelity.
-
----
-
-## Gear Explosion
-
-Supporting unique models for every real-world item is not scalable for the prototype.
-
-Mitigation:
-
-Map many real gear items into a small set of visual categories.
-
----
-
-## Backend / Frontend Contract Gaps
-
-Some desired UI states may not yet exist in backend responses.
-
-Mitigation:
-
-Do not fabricate backend behavior.
-
-Document missing requirements in `FRONTEND_CONTEXT.md` and decide whether they require:
-
-- backend contract changes
-- frontend composition
-- deferred functionality
-
----
-
-## Product Becoming a Game
-
-Interactive environments may distract from the planning purpose.
-
-Mitigation:
-
-Do not add gameplay mechanics unless they directly improve outdoor planning or discovery.
-
----
-
-# 54. Development Strategy
-
-Frontend development should use incremental vertical slices.
-
-Do not ask an AI coding agent to generate the entire frontend in one task.
-
-Preferred workflow:
-
-```text
-Understand requirement
-        ↓
-Implement static UI
-        ↓
-Review visual direction
-        ↓
-Integrate real API
-        ↓
-Validate behavior
-        ↓
-Commit
-        ↓
-Continue to next feature
-```
-
-Public hero and Authenticated Home background development should begin with structure, content hierarchy, interaction, and representative temporary media. Final high-quality CG asset production for either may proceed earlier in parallel when assets are available, but it must not block authentication, planning, trail, packing, or gear functionality.
-
----
-
-# 55. Recommended Initial Development Sequence
-
-## Step 1
-
-Public Landing structure.
-
-## Step 2
-
-Public CG/video hero.
-
-## Step 3
-
-Public hero planner input.
-
-## Step 4
-
-Authentication gate interaction.
-
-## Step 5
-
-Authentication integration.
-
-## Step 6
-
-Authenticated Home / Plan structure.
-
-## Step 7
-
-Authenticated Home looping room CG/video background.
-
-## Step 8
-
-Prompt continuity from the Public Landing into the Authenticated Home planner.
-
-## Step 9
-
-Real recommendation integration.
-
-## Step 10
-
-Trail detail.
-
-## Step 11
-
-Packing.
-
-## Step 12
-
-Gear inventory.
-
-## Step 13
-
-Gear customization.
-
-## Step 14
-
-Real-time 3D avatar for Pack.
-
-## Step 15
-
-Gear-to-avatar mapping.
-
-## Step 16
-
-Outdoor / Adventure visual experience.
-
-## Step 17
-
-Home / Plan → Adventure transition.
-
-## Step 18
-
-Later Explore and Memory work.
-
-Steps 2 and 7 may be delivered with temporary media, still images, or placeholders. Final high-quality CG/video for the public hero and the Authenticated Home room may be produced in parallel at any point, but neither blocks product functionality, and the Home CG/video in particular is not a blocker for functional Plan → Pack work.
-
-Real-time 3D begins at Step 14. No earlier step requires a 3D library, 3D assets, or a real-time scene.
-
----
-
-# 56. Source-of-Truth Rules for AI Agents
-
-Future AI agents must read:
-
-1. `docs/PRODUCT_REQUIREMENTS.md`
-2. `docs/FRONTEND_CONTEXT.md`
-
-before making significant frontend product decisions.
-
-If available, also read:
-
-3. `docs/DESIGN_SYSTEM.md`
-
-before visual implementation.
-
----
-
-## Product Requirements Authority
-
-This document is the source of truth for:
-
-- user journey
-- product behavior
-- product terminology
-- product priorities
-- MVP scope
-- future experience direction
-
----
-
-## Frontend Context Authority
-
-`FRONTEND_CONTEXT.md` is the source of truth for:
-
-- current APIs
-- current backend capabilities
-- current frontend structure
-- technical constraints
-- known integration risks
-- implementation status
-
----
-
-## Design System Authority
-
-`DESIGN_SYSTEM.md` will be the source of truth for:
-
-- typography
-- spacing
-- colors
-- visual components
-- animation rules
-- layout conventions
-- visual consistency
-
----
-
-# 57. Agent Change Rules
-
-AI coding agents must not reinterpret major product requirements without explicit instruction.
-
-In particular, do not silently change:
-
-- AI-first planning
-- Public Landing and Authenticated Home separation
-- pre-rendered CG/video for the Public Landing
-- a pre-rendered room CG/video background with the React AI planning UI for the Authenticated Home / Plan
-- real-time 3D beginning in Pack rather than in the Authenticated Home
-- unauthenticated planning-intent entry followed by an authentication gate
-- prompt continuity through authentication when practical
-- Plan → Pack → Explore → Memory
-- user-controlled gear selection
-- Recommended vs Equipped distinction
-- persistent avatar identity
-- fixed visual gear category strategy
-- Trail + Weather driven scene selection
-- Home → Adventure transition concept
-
-If implementation limitations make a requirement difficult, report the limitation instead of silently replacing the experience.
-
-## Visual Architecture Guard
-
-Agents must read the visual architecture as:
-
-- Home / Plan background = pre-rendered CG/video
-- Home interaction = the React UI planning experience
-- Pack = the first primary real-time 3D avatar and gear experience
-
-Without an explicit product decision that updates this document, agents must not:
-
-- implement the Authenticated Home as a real-time 3D scene, or add a 3D library, 3D model, or 3D asset pipeline for it
-- add object-level interaction to the Home room, such as clickable computers, maps, furniture, or gear, room navigation, movement, customization, physics, or inventory interaction
-- make planning depend on the Home background media or on any 3D asset
-- treat the generic character in the Home room background as the persistent avatar
-- remove or weaken the Pack requirements: persistent avatar identity, fixed visual gear categories, gear category to visual asset mapping, avatar equipment slots, Equip / Unequip behavior, Recommended ≠ Equipped, Owned ≠ Equipped, real-time visual changes when supported gear is equipped, web-optimized 3D assets, and continuity of the avatar into Adventure
-
----
-
-# 58. Document Maintenance
-
-Update this document when:
-
-- a major product feature is added or removed
-- the primary user journey changes
-- MVP scope changes
-- avatar or 3D experience decisions materially change
-- gear interaction semantics change
-- Explore or Memory behavior becomes defined
-
-Do not update this document for:
-
-- small code refactors
-- endpoint implementation details
-- dependency upgrades
-- file moves
-- internal DTO changes
-
-Those belong in `FRONTEND_CONTEXT.md`.
-
----
-
-# 59. One-Sentence Product Description
-
-**Outdoor Trip Companion is an AI-powered outdoor planning experience that helps users discover trails, prepare the right gear, personalize their hiking avatar, and bring their trip to life through an interactive outdoor journey.**
-
----
-
-# 60. Product Tagline
-
-**From “Where should I go?” to “I’m ready to hike.”**
-
-AI helps plan the trail, prepare the gear, and bring the adventure to life.
+Update this document when a product feature is added or removed, the journey, MVP scope, or roadmap changes, 3D or gear-interaction semantics change, or Daily Trail Activity, Plan, or Remember behavior changes. Keep it a statement of the current product: put history, acceptance criteria, and implementation detail in feature specs, and APIs, DTOs, and routes in `FRONTEND_CONTEXT.md`.

@@ -8,3 +8,13 @@ frontend/dist/
 
 .env
 .env.*
+
+*.blend1
+*.blend2
+
+
+# macOS metadata
+.DS_Store
+
+# Local memory photo storage (development only)
+.local-storage/

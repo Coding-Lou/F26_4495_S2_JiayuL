@@ -1,557 +1,315 @@
 # Frontend Project Context
 
-This document records the repository state as inspected on 2026-10-10. Paths are relative to the repository root. `CURRENT` means code exists in the working tree; `PLANNED` means it is described by the proposal or product direction but is not implemented.
+Current implementation state of the Outdoor Trip Companion: what an agent needs to change the application safely. State as of 2026-10-20: FEATURE-001 to FEATURE-014 PASS / FROZEN (014 is the final product feature; there is no FEATURE-015); the feature freeze is active; Final Full Regression is next. Paths are relative to the repository root.
 
-## 1. Product Overview
+- Product intent: `docs/PRODUCT_REQUIREMENTS.md`. Visual rules: `docs/DESIGN_SYSTEM.md`.
+- Per-feature detail (acceptance criteria, decisions, QA, repairs): `docs/features/<feature>.md`; checkpoints `.claude/state/features/`; post-freeze polish `.claude/state/polish/`; cross-feature regression `.claude/state/final-regression.md`.
+- Full pre-compaction version: `docs/archive/FRONTEND_CONTEXT-2026-10-19-pre-compaction.md`. Specs written up to 2026-10-19 cite its section numbers ("FC §x"); sections 1–14 here keep the same topics.
 
-The Outdoor Trip Companion is a web application organized around **Plan -> Pack -> Explore -> Memory**. The intended journey is: start from a home/planning experience, describe a hike in natural language, receive trail recommendations based on preferences, trail data, weather, proximity, and owned gear, select a trail, receive a packing recommendation, customize gear, and eventually reflect the equipped gear on a 3D avatar and in an outdoor scene.
+## 1. Product and Implementation Status
 
-CURRENT backend coverage is strongest for Plan and Pack. Explore, Memory, avatar updates, animated scenes, and other 3D behavior are PLANNED only.
+Journey: **Discover → Plan → Prepare → Finish preparation → saved Plan → Go in real life → Remember → optionally share back to Discover.** In screens: Discover → Planner → Trail selection → Preparation → Gear Studio → Finish preparation → Ready-to-Go → My Plans / Calendar → (real trip) → past Plan → Memory → optional Community sharing.
 
-The intended visual direction is a modern, clean, cinematic outdoor product. It should not resemble a generic enterprise dashboard or a purple-gradient AI SaaS template. Anime-inspired or stylized 3D elements may be added later but are outside the first frontend slice.
+| Feature | In code | Status |
+|---|---|---|
+| 001 Public Landing | Hero media system, reused as the first section of `/` | PASS / FROZEN |
+| 002 Authentication | Keycloak Authorization Code + PKCE | PASS / FROZEN |
+| 003 Conversational Planner | `/home` | PASS / FROZEN |
+| 004 Trail Selection & Preparation | Trail Detail, Trip Preparation | PASS / FROZEN |
+| 005 Pack Customization & 3D Avatar | Gear Studio, real-time avatar | PASS / FROZEN |
+| 006 Public Discover & Trail Activity | `/`: Hero, viewport-driven map + list, popup, activity | PASS / FROZEN |
+| 007 Gear Inventory | `/gear` My Gear | PASS / FROZEN |
+| 008 Memory Foundation | `memory-service` (no UI) | PASS / FROZEN |
+| 009 My Memories | `/memories` | PASS / FROZEN |
+| 010 Community Memories | Public Memories in Discover | PASS / FROZEN |
+| 011 Plan Foundation & Finish Preparation | `plan-service`; **Finish preparation** in the Studio | PASS / FROZEN |
+| 012 Ready-to-Go 3D Completion | `ready_to_go` clip after a confirmed save; "Ready for the trail." completion | PASS / FROZEN |
+| 013 My Plans & Calendar | `/plans`: Upcoming / Past, monthly calendar, inline Plan detail, delete; **Plans** header link; Continue → `/plans` | PASS / FROZEN |
+| 014 Plan → Memory Bridge | `/plans` selected Past curated Plan: Add memory / View memory, derived from the owner's Memories; `/memories/new?trail=&date=` | PASS / FROZEN; final product feature |
 
-Product source: `DocumentsAndReports/JiayuL_Proposal.md`.
+Approved changes without a feature number, all PASS: viewport-driven Discover and the curated/synthetic trail dataset (2026-10-17); planner no-preference semantics, planner duration modes, Discover trail name search, final polish (2026-10-19).
 
-## 2. Current Architecture
+## 2. Architecture
 
-The backend is a Java 21 / Spring Boot 4.1.1 Maven multi-module project under `Project/Backend/`.
+Backend: Java 21 / Spring Boot 4.1.1, Maven multi-module, `Project/Backend/`.
 
-| Module | Port | Current responsibility | State |
-|---|---:|---|---|
-| `user-service` | 8081 | Keycloak-backed local user profile and per-user owned gear CRUD in PostgreSQL | CURRENT, usable |
-| `trail-service` | 8082 | Trail search, PostGIS nearby search, detail/GeoJSON response, scenery, and baseline gear requirements | CURRENT, usable with prototype data |
-| `recommendation-service` | 8083 | OpenAI intent extraction, trail/user service orchestration, Open-Meteo lookup, scoring, and packing recommendations | CURRENT; primary query works, with integration risks below |
-| `api-gateway` | 8080 | Intended edge service | INCOMPLETE: application shell only; no routes, security, or CORS configuration |
-| `activity-service` | 8084 | Intended live trail activity/WebSocket service | INCOMPLETE: application shell only; no controllers, sockets, models, or persistence |
+| Module | Port | Responsibility |
+|---|---:|---|
+| `user-service` | 8081 | Local profile from Keycloak claims; owned gear CRUD |
+| `trail-service` | 8082 | Trail search, PostGIS nearby, detail, Daily Trail Activity |
+| `recommendation-service` | 8083 | Planner, OpenAI intent extraction, Open-Meteo, scoring, packing |
+| `memory-service` | 8085 | Memories: owner CRUD, public reads, photos |
+| `plan-service` | 8086 | Plans: idempotent create, list, read, soft delete |
+| `api-gateway` | 8080 | Shell only: no routes, security, or CORS |
+| `activity-service` | 8084 | Empty shell (activity is served by trail-service) |
 
-Infrastructure in `Project/docker-compose.yml` starts PostGIS/PostgreSQL and Keycloak 26.7.4. `Project/docker/postgres/init-databases.sql` creates `user_db` and `trail_db`; Keycloak uses the database named by `POSTGRES_DB`. The compose file does not start the Spring services.
-
-Databases:
-
-- `user_db`: `users` and `gear_items`, managed by Flyway in `Project/Backend/user-service/src/main/resources/db/migration/`.
-- `trail_db`: PostGIS `trails`, `trail_scenery`, and `trail_gear_requirements`, managed by Flyway in `Project/Backend/trail-service/src/main/resources/db/migration/`.
-- The recommendation service has no database; it orchestrates other services and external APIs.
-
-External integrations:
-
-- Keycloak issuer: `http://localhost:8180/realms/outdoor-trip`.
-- OpenAI Java SDK: structured intent extraction; client is created from environment configuration by `OpenAIOkHttpClient.fromEnv()`.
-- Open-Meteo: daily forecast by trail coordinates and trip date.
+Databases (Flyway per module): `user_db`, `trail_db` (PostGIS), `memory_db`, `plan_db`; no cross-database foreign keys; recommendation-service has none. `Project/docker/postgres/init-databases.sql` creates them only on a fresh volume; an older volume needs a one-time `CREATE DATABASE …`; never delete the volume or a database. `Project/docker-compose.yml` starts PostgreSQL/PostGIS and Keycloak 26.7.4 only. External: Keycloak issuer `http://localhost:8180/realms/outdoor-trip`, OpenAI Java SDK (`OpenAIOkHttpClient.fromEnv()`), Open-Meteo.
 
 ## 3. Backend Capabilities
 
-### User service
+**User service.** Validates JWTs; auto-creates the profile from `sub`, `email`, `name` → `preferred_username`; CRUD on the caller's gear only (soft delete). No registration, password, or profile-editing endpoints.
 
-CURRENT and usable:
+**Trail service.** Name search with optional difficulty / max distance / max elevation; nearby by PostGIS distance, nearest first; detail with a GeoJSON `route` when present (seed routes and cover images are null). Two trail populations:
 
-- Validate Keycloak JWTs as a stateless OAuth2 resource server.
-- Return the current local profile and automatically create it from JWT claims on first access.
-- Create, list, update, and soft-delete only the authenticated user's gear.
-- Return structured RFC 9457/Spring `ProblemDetail` responses for user-service authentication, authorization, not-found, and DTO validation errors.
+- **Curated catalog:** 8 `DEMO_SEED` trails (`V2`), `discover_visible = true`.
+- **Synthetic planner candidates:** 400 deterministic `SYNTHETIC_DEMO` trails (`V8`), `discover_visible = false`, across Southwest BC, all difficulties and sceneries. Descriptions begin "Generated sample route, not a verified trail." Not real trails.
+- `discover_visible` is presentation only. `GET /api/trails` and Daily Trail Activity cover the curated catalog only; `/nearby` and `/{id}` return both, so Discover, the planner, Trail Detail, Trip Preparation, the Studio, and Plans accept synthetic trails.
+- Public: `GET /api/trails`, `/api/trails/{uuid}`, `/api/trails/activity`, `/api/trails/nearby`. Validation failures are `400` with Spring's default body.
+- Daily Trail Activity is `SIMULATED` (deterministic per trail and date). Nothing derives a `RECORDED` source from Plans yet.
 
-Not implemented:
+**Recommendation service.** Stateless planner turn, one-shot `/query`, `/pack`, a prompt-injection guard before OpenAI, and a temporary `/trails` filter (not the planner contract). Forwards the user's token to trail- and user-service.
 
-- Direct registration/password endpoints. `CreateUserRequest` exists but is unused; Keycloak owns identity.
-- Profile editing, preferences, favorites, saved plans, or trip history.
+**Memory service** (spec 008).
 
-### Trail service
+- A Memory: immutable `trailId`, `tripDate`, `title`, optional plain-text `story`, `visibility` (`PRIVATE` default, `PUBLIC` by the author's choice), 0–5 photos; lowest position is the cover.
+- Owner = token `sub` (`owner_subject`), never accepted or returned. Foreign, missing, and deleted Memories are the same `404`.
+- Owner API (token) and public API (no token) have separate controllers and DTOs. Public DTOs carry no author identity; `PRIVATE` and deleted rows are filtered in the query. A deleted trail hides its Memories publicly; the owner still sees them.
+- Trail validated at create only (`400 TRAIL_NOT_FOUND`, `503` when trail-service is unreachable). The check is existence only: the server accepts synthetic trail ids; "curated only" is enforced by the UI (picker, Trail Detail, Plan bridge).
+- Several active Memories may share owner + trail + date (no unique index); the owner list has no trail / date filter.
+- Photos: one multipart `file` per request; JPEG/PNG/WebP by bytes; ≤ 10 MB, ≤ 40 MP, ≤ 12,000 px a side. Re-encoded from pixels, so no EXIF/GPS/XMP is stored; originals never stored.
+- Storage: local filesystem (`memory-service/.local-storage/`, dev only) or S3 (no bucket yet). Responses carry a signed `url` valid 15 minutes and `urlExpiresAt`; object keys are never returned. Local URLs are root-relative (`/api/memories/local-photos/...`).
+- Soft delete keeps rows and objects; no restore.
 
-CURRENT and usable:
+**Plan service** (spec 011 §6–§12).
 
-- Search trails by case-insensitive name substring and optional difficulty, maximum trail length, and maximum elevation gain.
-- Find trails within a radius using PostGIS geography distance, ordered nearest first.
-- Return a trail detail record with a GeoJSON route when route data exists.
-- Enrich search and nearby summaries with scenery and baseline gear categories.
-
-Prototype limitations:
-
-- The dataset is eight `DEMO_SEED` trails from `V2__seed_demo_trails.sql`, not a live OpenStreetMap/Overpass import.
-- Seeded routes are all `NULL`; `TrailDetailResponse.route` is therefore currently null for demo rows.
-- Cover image URLs are not populated by migrations and are currently null unless added manually.
-- All endpoints require authentication.
-
-### Recommendation service
-
-CURRENT and usable:
-
-- A temporary structured-filter endpoint for nearby trails.
-- A natural-language recommendation endpoint that extracts intent with OpenAI, fetches nearby trails and owned gear, fetches per-trail weather, derives required gear, scores candidates, and returns the top three.
-- A stateless conversational planner endpoint that merges the latest natural-language preference delta into a client-owned planning context, asks deterministic clarification questions until the context is ready, and then invokes the same recommendation pipeline.
-- A packing endpoint that compares required gear categories with the authenticated user's inventory and returns readiness percentage.
-- A basic prompt-injection phrase guard before OpenAI intent extraction.
-
-Important qualification:
-
-- The pack flow receives baseline trail requirements through the Trail Detail contract. Focused client and Pack tests cover detail deserialization, mild weather, weather fallback, category deduplication, ownership, and readiness.
-- There is no repository-level end-to-end test spanning recommendation, trail, user, OpenAI, and Open-Meteo.
-
-### API gateway and activity service
-
-No frontend-usable gateway or activity endpoints exist. Direct service URLs or frontend development proxies are required today.
+- A Plan: `id`, `trailId`, `tripDate`, `status` (`READY`, the only value), `createdAt`, `updatedAt`; internal `owner_subject` (token `sub`, never accepted, returned, or logged) and `deleted`. No trail, weather, or gear snapshot. Upcoming / Past is derived from `tripDate`; there is no `COMPLETED`.
+- Create is idempotent per `(owner, trailId, tripDate)` among non-deleted Plans (partial unique index): `201` new, `200` existing unchanged; concurrent creates give one row. A deleted Plan does not block recreation.
+- Trail validated at create (`400 TRAIL_NOT_FOUND`; otherwise `503 TRAIL_SERVICE_UNAVAILABLE`); synthetic trails are valid; `tripDate` not before the server's today.
+- All queries scoped to owner and `deleted = false`; foreign, deleted, missing → `404 PLAN_NOT_FOUND`. No public endpoint; no update (trail + date are the identity); no range queries.
 
 ## 4. API Contracts
 
-All current endpoints require `Authorization: Bearer <Keycloak access token>`. There are no public REST endpoints in the three implemented services.
+Every endpoint needs a bearer token except the four public trail reads, `GET /api/memories/public`, `GET /api/memories/public/{id}`, and local-mode signed photo URLs. An invalid token is refused even on a public path, so the frontend sends none there.
 
-Status meanings:
+| Method | Path | Request | Response | Auth |
+|---|---|---|---|---|
+| GET, POST | `/api/users/me/gear` | POST `{ name ≤100, category?, description? ≤255 }` | list newest first / item 201 | Token |
+| PUT, DELETE | `/api/users/me/gear/{id}` | PUT full replacement | item / 204 | Token |
+| GET | `/api/users/me` | — | `UserResponse` (not called by the frontend) | Token |
+| GET | `/api/trails` | `search`, `difficulty`, `maxDistanceKm`, `maxElevationGainM` | `TrailSummaryResponse[]`, curated only | Public |
+| GET | `/api/trails/nearby` | `lat`, `lon`, `0 < radiusKm <= 150` | `NearbyTrailResponse[]`, both populations | Public |
+| GET | `/api/trails/{uuid}` | — | `TrailDetailResponse`; 404 empty body | Public |
+| GET | `/api/trails/activity` | `date` within one day of the server's | `TrailActivityResponse` | Public |
+| POST | `/api/planner/turn` | `PlannerTurnRequest` | `PlannerTurnResponse` | Token |
+| POST | `/api/recommendations/query` | `{ message, latitude, longitude, tripDate, radiusKm? }` | `{ recommendations[≤3] }` | Token |
+| POST | `/api/recommendations/pack` | `{ trailId, tripDate ≥ today }` | `PackRecommendationResponse` | Token |
+| GET, POST | `/api/memories` | `page`, `size` / `{ trailId, tripDate, title, story?, visibility? }` | `MemoryPage<OwnerMemorySummary>` / `OwnerMemoryDetail` 201 | Token |
+| GET, PUT, DELETE | `/api/memories/{id}` | PUT `tripDate`, `title`, `story`, `visibility` | `OwnerMemoryDetail` / 204 | Token |
+| POST | `/api/memories/{id}/photos` | multipart `file` | `MemoryPhotoResponse` 201 | Token |
+| PUT | `/api/memories/{id}/photos/order` | `{ photoIds }` = exactly the current photos | photos | Token |
+| DELETE | `/api/memories/{id}/photos/{photoId}` | — | 204 | Token |
+| GET | `/api/memories/public` | `trailId`, `page`, `size` | `MemoryPage<PublicMemorySummary>`; `totalItems` = public count | Public |
+| GET | `/api/memories/public/{id}` | — | `PublicMemoryDetail`; PRIVATE/deleted/missing → 404 | Public |
+| POST | `/api/plans` | `{ trailId, tripDate }` | `PlanResponse` 201 / 200 | Token |
+| GET | `/api/plans` | `page` (0), `size` (20, max 50) | `PlanPage`, `tripDate ASC, createdAt ASC, id ASC` | Token |
+| GET, DELETE | `/api/plans/{id}` | — | `PlanResponse` / 204 | Token |
 
-- `stable`: implemented, covered by relevant source tests, and usable within the prototype constraints.
-- `incomplete`: code exists but a known contract or behavior gap affects frontend integration.
-- `temporary`: transitional behavior that should not be treated as the primary product contract.
-- `mock/test`: test-only; no such public endpoint exists in the current source.
+Pages (memory, plan): `{ items, page, size, totalItems, totalPages }`, `size` max 50. Memory lists order `tripDate DESC, createdAt DESC, id DESC`; the server accepts a Memory date up to its today + 1 (time-zone allowance), and the UI blocks future dates. User, memory, and plan errors are `ProblemDetail` with `code` (`VALIDATION_ERROR` + `errors[]`, `AUTHENTICATION_REQUIRED`, `*_NOT_FOUND`, `PHOTO_LIMIT_REACHED` 409, `PAYLOAD_TOO_LARGE`/`IMAGE_TOO_LARGE` 413, `UNSUPPORTED_MEDIA_TYPE` 415, `TRAIL_SERVICE_UNAVAILABLE`/`STORAGE_UNAVAILABLE` 503); trail and recommendation use Spring defaults.
 
-### User service (`http://localhost:8081`)
+**DTOs** (Java sources in each service's `dto/`; full Memory field lists in spec 008 §13–§14; frontend types in each feature's `types/`):
 
-| Method | Path | Request / parameters | Response | Auth | Owner | Status |
-|---|---|---|---|---|---|---|
-| GET | `/api/users/me` | None | `UserResponse` | Required | `user-service` / `UserController` | stable |
-| POST | `/api/users/me/gear` | JSON `CreateGearItemRequest` | `GearItemResponse`, HTTP 201 | Required | `user-service` / `GearController` | stable |
-| GET | `/api/users/me/gear` | None | `List<GearItemResponse>` ordered newest first | Required | `user-service` / `GearController` | stable |
-| PUT | `/api/users/me/gear/{gearId}` | Path UUID `gearId`; JSON `UpdateGearItemRequest` | `GearItemResponse` | Required | `user-service` / `GearController` | stable |
-| DELETE | `/api/users/me/gear/{gearId}` | Path UUID `gearId` | Empty body, HTTP 204; row is soft-deleted | Required | `user-service` / `GearController` | stable |
+- `TrailSummaryResponse`: `id`, `name`, `description`, `difficulty`, `distanceKm`, `elevationGainM`, `estimatedDurationMin`, `latitude`, `longitude`, `source` (`DEMO_SEED` | `SYNTHETIC_DEMO`), `scenery[]`, nullable `coverImageUrl`, `baselineGearRequirements[]`. Detail adds nullable `route`. Nearby = `{ trail, distanceFromUserKm }`.
+- `TrailActivityResponse`: `{ date, source: SIMULATED | RECORDED, trails: [{ trailId, activityCount }] }`, catalog trails only, zeros included; an absent trail is unknown, never zero.
+- `ScoredTrailRecommendation`: `trail`, `score`, `breakdown` (`intent`, `weather`, `gear`, `scenery`, `proximity`); no weather, distance, derived gear, or intent.
+- `PackRecommendationResponse`: `trailId`, `trailName`, nullable `weather` (`temperatureC`, `precipitationProbability`, `windSpeedKmh`), `weatherAvailable`, `requiredGear[]` of `{ category, owned }`, `readinessPercentage`.
+- `GearItemResponse`: `id`, `name`, nullable `category`, nullable `description`, `createdAt`.
+- Memory photos (`MemoryPhotoResponse` / `PublicPhoto`): `id`, `position`, `url`, `urlExpiresAt`. No Memory DTO contains an owner subject, email, user id, display name, object key, or `deleted`.
+- `PlanResponse`: `{ id, trailId, tripDate, status: "READY", createdAt, updatedAt }`.
+- Enums: difficulty `EASY | MODERATE | HARD`; scenery `LAKE | VIEWPOINT | WATERFALL | FOREST | MOUNTAIN | OCEAN`; `GearCategory` `FOOTWEAR | RAIN_GEAR | WARM_LAYER | WIND_LAYER | TREKKING_POLES | TRACTION | HEADLAMP | BACKPACK | WATER | FOOD | SUN_PROTECTION`; `PRIVATE | PUBLIC`. Keep wire values canonical; map to labels in the UI only.
 
-### Trail service (`http://localhost:8082`)
+### Conversational planner contract
 
-| Method | Path | Request / parameters | Response | Auth | Owner | Status |
-|---|---|---|---|---|---|---|
-| GET | `/api/trails` | Optional query: `search: string`, `difficulty: string`, `maxDistanceKm: positive number`, `maxElevationGainM: non-negative integer` | `List<TrailSummaryResponse>` | Required | `trail-service` / `TrailController` | stable; prototype dataset |
-| GET | `/api/trails/nearby` | Required query: `lat [-90,90]`, `lon [-180,180]`, `radiusKm > 0` | `List<NearbyTrailResponse>` | Required | `trail-service` / `TrailController` | stable; prototype dataset |
-| GET | `/api/trails/{id}` | Path UUID `id` | `TrailDetailResponse`; HTTP 404 with empty body when absent | Required | `trail-service` / `TrailController` | stable; seeded route data is null |
+`POST /api/planner/turn` is **stateless**: the frontend owns the messages and the `PlanningContext` and sends the latest context back on each turn after the first.
 
-`difficulty` is normalized case-insensitively and must resolve to `EASY`, `MODERATE`, or `HARD`. Invalid values produce HTTP 400. Trail lists are not paginated.
-
-`TrailDetailResponse` contains `id`, `name`, `description`, `difficulty`, `distanceKm`, `elevationGainM`, `estimatedDurationMin`, `latitude`, `longitude`, nullable `route`, `source`, nullable `coverImageUrl`, `scenery`, and `baselineGearRequirements`. The two collection fields use the same stored values and enum wire semantics as `TrailSummaryResponse`.
-
-### Recommendation service (`http://localhost:8083`)
-
-| Method | Path | Request / parameters | Response | Auth | Owner | Status |
-|---|---|---|---|---|---|---|
-| POST | `/api/recommendations/trails` | JSON `RecommendationRequest` | `List<com.jay.outdoor.recommendation.client.trail.NearbyTrailResponse>` | Required | `recommendation-service` / `RecommendationController` | temporary: nearby lookup plus deterministic filters only; no AI, weather, gear, or scoring |
-| POST | `/api/recommendations/query` | JSON `RecommendationQueryRequest` | `RecommendationResponse` containing at most three `ScoredTrailRecommendation` items | Required | `recommendation-service` / `RecommendationController` | stable prototype flow; external-service and error-shape risks remain |
-| POST | `/api/planner/turn` | JSON `PlannerTurnRequest` | `PlannerTurnResponse` | Required | `recommendation-service` / `PlannerController` | stable stateless multi-turn planner; delegates to the existing recommendation pipeline when ready |
-| POST | `/api/recommendations/pack` | JSON `PackRecommendationRequest` | `PackRecommendationResponse` | Required | `recommendation-service` / `RecommendationController` | stable; Trail Detail supplies baseline gear requirements |
-
-There are no routes in the API gateway configuration. The frontend cannot currently use port 8080 as a unified backend base URL.
-
-### API-to-frontend mapping
-
-| Frontend feature/page | API consumption |
-|---|---|
-| Authenticated app bootstrap / account display | `GET /api/users/me` |
-| Home / Planning | Multi-turn: `POST /api/planner/turn`; one-shot/backward-compatible: `POST /api/recommendations/query`; do not build the main experience around the temporary `/trails` recommendation endpoint |
-| Recommendation result cards | Existing `ScoredTrailRecommendation` data returned by ready `POST /api/planner/turn` responses or by `POST /api/recommendations/query` |
-| Trail discovery/list | `GET /api/trails` |
-| Nearby trail view | `GET /api/trails/nearby` |
-| Trail detail | `GET /api/trails/{id}` |
-| Gear inventory | GET/POST/PUT/DELETE `/api/users/me/gear` |
-| Pack for selected trail | `POST /api/recommendations/pack`, plus `GET /api/users/me/gear` when actual owned item names/IDs are needed for customization |
-| Explore, Memory, avatar, and scene pages | No supporting endpoint exists |
-
-#### Conversational planner contract
-
-`POST /api/planner/turn` processes exactly one conversation turn. It is stateless: the frontend owns both displayed messages and the current `PlanningContext`, and sends the context back on every turn after the first. The backend does not persist sessions or message history.
-
-`PlannerTurnRequest` fields:
-
-| Field | Type | Required | Validation / behavior |
-|---|---|---:|---|
-| `message` | string | yes | Non-blank, maximum 2000 characters |
-| `context` | `PlanningContext` or null | no | Null on the first turn; otherwise the latest context returned by the backend |
-| `latitude` | number | yes | `[-90, 90]` |
-| `longitude` | number | yes | `[-180, 180]` |
-| `tripDate` | ISO local date (`YYYY-MM-DD`) | yes | Required |
-| `radiusKm` | number or null | no | Must be greater than zero when supplied; omission preserves the existing 50 km recommendation default |
-
-`PlanningContext` fields are `difficulty: EASY | MODERATE | HARD | null`, `maxDistanceKm: positive number | null`, `maxElevationGainM: non-negative integer | null`, `maxDurationMin: positive integer | null`, and `preferredScenery: SceneryType[]`. The backend normalizes a null scenery list to an empty list in its response.
-
-`PlannerTurnResponse` fields are:
-
-- `status`: `NEEDS_CLARIFICATION` or `READY_TO_RECOMMEND`.
-- `assistantMessage`: deterministic clarification or result summary text.
-- `context`: the final context produced by merging the latest message delta into the supplied context.
-- `recommendations`: an array of the existing `ScoredTrailRecommendation` objects; empty while clarification is needed.
-
-Only explicitly mentioned preferences replace prior context values; unmentioned values remain unchanged. An explicit empty scenery preference clears prior scenery choices. The planner is ready when `difficulty` is known and at least one of `maxDurationMin`, `maxDistanceKm`, `maxElevationGainM`, or a non-empty `preferredScenery` is known. If difficulty is missing, the planner asks for difficulty; if difficulty is present but every other useful preference is missing, it asks for hiking duration. It does not require every field.
-
-An explicit difficulty is also a recommendation eligibility constraint: when the final context says `EASY`, only trails whose difficulty is `EASY` can be returned. A non-empty `preferredScenery` list is an eligibility constraint using any-match semantics: a trail must contain at least one requested scenery type. When no candidate satisfies either explicit constraint, the ready response uses the existing empty recommendation list and no-match assistant message rather than returning a contradictory trail. Empty/unset difficulty or scenery preferences preserve the prior unconstrained behavior for that field.
-
-When ready, the endpoint converts `PlanningContext` to the existing internal `RecommendationIntent` and uses the same nearby-trail, user-gear, weather, gear-requirement, scoring, and top-three execution path as `/api/recommendations/query`. The existing endpoint and its request/response contract remain unchanged for one-shot clients.
+- Request: `message` (non-blank, ≤ 2000), `context` (null first), `latitude`, `longitude`, `tripDate`, optional `radiusKm` (> 0, default 50 km).
+- `PlanningContext`: `difficulty`, `maxDistanceKm`, `maxElevationGainM`, `maxDurationMin`, `durationMode` (`APPROXIMATE | MAXIMUM | MINIMUM`; null only without a duration; a duration with no mode reads as `MAXIMUM`), `preferredScenery[]`, `openPreferences[]` (`DIFFICULTY | SCENERY | TRIP_LENGTH`; trip length = duration, distance, elevation), `lastAsked` (null when ready). Responses include every field; the client sends them back unchanged.
+- Response: `status` (`NEEDS_CLARIFICATION` | `READY_TO_RECOMMEND`), `assistantMessage`, merged `context`, `recommendations[]`.
+- **Merge:** only explicitly mentioned preferences change. A dimension named as open ("any", "no preference") becomes open and loses its value; general flexibility opens only dimensions without a value; receiving a value removes a dimension from `openPreferences`. Null + open = "any"; null + not open = "not answered yet". Each dimension is asked at most once: an unresolved `lastAsked` becomes open.
+- **Readiness:** difficulty resolved (value or open) and the trip group resolved (a duration, distance, or elevation value, non-empty scenery, or `TRIP_LENGTH`/`SCENERY` open). Otherwise one question, difficulty first.
+- **Duration:** "around/about N hours", bare "N hours", "half-day" (240), "a couple of hours" (120), "a few hours" (180), "full-day" (450), and ranges (midpoint) are `APPROXIMATE`; "up to / at most / under" `MAXIMUM`; "at least / or longer / more than" `MINIMUM`. A later duration replaces value and mode.
+- **Hard constraints:** explicit difficulty (exact), non-empty scenery (any-match), `MAXIMUM` / `MINIMUM` (a trail with no duration is kept, scoring 0 duration points). No eligible candidate → ready with an empty list and a no-match message. Open dimensions add no constraint.
+- The "So far" line shows "Any difficulty" / "Any trip length" / "Any scenery" and "Around …" / "Up to …" / "At least …".
 
 ## 5. Important Backend Classes
 
-### Controllers
-
-- `UserController` - `Project/Backend/user-service/src/main/java/com/jay/outdoor/user/controller/UserController.java`
-- `GearController` - `Project/Backend/user-service/src/main/java/com/jay/outdoor/user/controller/GearController.java`
-- `TrailController` - `Project/Backend/trail-service/src/main/java/com/jay/outdoor/trail/controller/TrailController.java`
-- `RecommendationController` - `Project/Backend/recommendation-service/src/main/java/com/jay/outdoor/recommendation/controller/RecommendationController.java`
-- `PlannerController` - stateless turn endpoint: `Project/Backend/recommendation-service/src/main/java/com/jay/outdoor/recommendation/controller/PlannerController.java`
-
-### Services and clients
-
-- `UserService` - creates/reads the local profile from JWT claims: `Project/Backend/user-service/src/main/java/com/jay/outdoor/user/service/UserService.java`
-- `GearService` - authenticated owned-gear CRUD: `Project/Backend/user-service/src/main/java/com/jay/outdoor/user/service/GearService.java`
-- `TrailService` - search, nearby/detail mapping, scenery, and gear enrichment: `Project/Backend/trail-service/src/main/java/com/jay/outdoor/trail/service/TrailService.java`
-- `RecommendationService` - recommendation orchestration: `Project/Backend/recommendation-service/src/main/java/com/jay/outdoor/recommendation/service/RecommendationService.java`
-- `RecommendationIntentService` - prompt guard plus intent extraction: `Project/Backend/recommendation-service/src/main/java/com/jay/outdoor/recommendation/service/RecommendationIntentService.java`
-- `ConversationPlannerService` - planning-context delta merge, readiness, clarification, and recommendation delegation: `Project/Backend/recommendation-service/src/main/java/com/jay/outdoor/recommendation/service/ConversationPlannerService.java`
-- `TrailScoringService` - deterministic 100-point scoring and top-three selection: `Project/Backend/recommendation-service/src/main/java/com/jay/outdoor/recommendation/service/TrailScoringService.java`
-- `GearRequirementService` - baseline plus weather-derived gear categories: `Project/Backend/recommendation-service/src/main/java/com/jay/outdoor/recommendation/service/GearRequirementService.java`
-- `PackRecommendationService` - selected-trail packing orchestration: `Project/Backend/recommendation-service/src/main/java/com/jay/outdoor/recommendation/service/PackRecommendationService.java`
-- `TrailServiceClient` - authenticated calls from recommendation to trail: `Project/Backend/recommendation-service/src/main/java/com/jay/outdoor/recommendation/client/trail/TrailServiceClient.java`
-- `UserServiceClient` - authenticated calls from recommendation to user gear: `Project/Backend/recommendation-service/src/main/java/com/jay/outdoor/recommendation/client/user/UserServiceClient.java`
-- `WeatherServiceClient` - Open-Meteo daily forecast: `Project/Backend/recommendation-service/src/main/java/com/jay/outdoor/recommendation/client/weather/WeatherServiceClient.java`
-- `OpenAiIntentClientImpl` and `OpenAiIntentExtractor` - structured OpenAI intent extraction: `Project/Backend/recommendation-service/src/main/java/com/jay/outdoor/recommendation/ai/`
-
-### Repositories and domain models
-
-- `UserRepository`, `GearItemRepository` - `Project/Backend/user-service/src/main/java/com/jay/outdoor/user/repository/`
-- `User`, `Gear`, user-service `GearCategory` - `Project/Backend/user-service/src/main/java/com/jay/outdoor/user/entity/`
-- `TrailRepository` and projection interfaces - `Project/Backend/trail-service/src/main/java/com/jay/outdoor/trail/repository/`
-- `Trail`, `TrailDifficulty`, `TrailScenery`, trail-service `GearCategory` - `Project/Backend/trail-service/src/main/java/com/jay/outdoor/trail/entity/`
-
-### Configuration
-
-- User resource-server security: `Project/Backend/user-service/src/main/java/com/jay/outdoor/user/config/SecurityConfig.java`
-- Trail resource-server security and CORS: `Project/Backend/trail-service/src/main/java/com/jay/outdoor/trail/config/SecurityConfig.java`
-- Recommendation resource-server security: `Project/Backend/recommendation-service/src/main/java/com/jay/outdoor/recommendation/config/SecurityConfig.java`
-- Service URLs and issuer configuration: each service's `src/main/resources/application.yml` or `.yaml`
-- OpenAI client configuration: `Project/Backend/recommendation-service/src/main/java/com/jay/outdoor/recommendation/config/OpenAiConfig.java`
-
-### Frontend contract DTOs
-
-The following should become TypeScript types close to the feature that owns them. Java UUIDs and dates serialize as strings; Java `Set` serializes as a JSON array.
-
-| Java type and path | Purpose | Important fields |
-|---|---|---|
-| `UserResponse` - `Project/Backend/user-service/src/main/java/com/jay/outdoor/user/dto/UserResponse.java` | Current local profile | `id`, `email`, `displayName`, `createdAt` |
-| `CreateGearItemRequest` - `.../user/dto/CreateGearItemRequest.java` | Create owned item | `name` required/max 100, nullable `category`, nullable `description` max 255 |
-| `UpdateGearItemRequest` - `.../user/dto/UpdateGearItemRequest.java` | Full update of owned item | same shape as create |
-| `GearItemResponse` - `.../user/dto/GearItemResponse.java` | Owned gear item | `id`, `name`, nullable `category`, nullable `description`, `createdAt` |
-| `TrailSummaryResponse` - `Project/Backend/trail-service/src/main/java/com/jay/outdoor/trail/dto/TrailSummaryResponse.java` | Search/nearby/recommendation trail card | `id`, `name`, `description`, `difficulty`, `distanceKm`, `elevationGainM`, `estimatedDurationMin`, `latitude`, `longitude`, `source`, `scenery[]`, `coverImageUrl`, `baselineGearRequirements[]` |
-| `NearbyTrailResponse` - `.../trail/dto/NearbyTrailResponse.java` | Nearby result wrapper | `trail: TrailSummaryResponse`, `distanceFromUserKm` |
-| `TrailDetailResponse` - `.../trail/dto/TrailDetailResponse.java` | Detail/map route and Pack trail input | `id`, `name`, `description`, `difficulty`, `distanceKm`, `elevationGainM`, `estimatedDurationMin`, `latitude`, `longitude`, nullable `route`, `source`, nullable `coverImageUrl`, `scenery[]`, `baselineGearRequirements[]` |
-| `RecommendationRequest` - `Project/Backend/recommendation-service/src/main/java/com/jay/outdoor/recommendation/dto/RecommendationRequest.java` | Temporary structured recommendation filter | `latitude`, `longitude`, `radiusKm`, optional `difficulty`, `maxDistanceKm`, `maxElevationGainM` |
-| `RecommendationQueryRequest` - `.../recommendation/dto/RecommendationQueryRequest.java` | Primary natural-language planner request | `message`, `latitude`, `longitude`, `tripDate`, optional `radiusKm`; `message` max 2000 |
-| `RecommendationResponse` - `.../recommendation/dto/RecommendationResponse.java` | Planner result envelope | `recommendations[]` |
-| `PlannerTurnRequest` - `.../recommendation/dto/PlannerTurnRequest.java` | One stateless conversational planning turn | required `message`, `latitude`, `longitude`, `tripDate`; nullable `context`; optional `radiusKm` |
-| `PlanningContext` - `.../recommendation/dto/PlanningContext.java` | Client-owned accumulated planning preferences | nullable difficulty/distance/elevation/duration; `preferredScenery[]` |
-| `PlannerTurnResponse` - `.../recommendation/dto/PlannerTurnResponse.java` | Turn result | `status`, `assistantMessage`, merged `context`, existing `recommendations[]` |
-| `ScoredTrailRecommendation` - `.../recommendation/dto/ScoredTrailRecommendation.java` | Ranked result | `trail`, `score`, `breakdown` |
-| `ScoreBreakdown` - `.../recommendation/dto/ScoreBreakdown.java` | Score explanation | `intent`, `weather`, `gear`, `scenery`, `proximity` |
-| `PackRecommendationRequest` - `.../recommendation/dto/PackRecommendationRequest.java` | Packing request | required `trailId`, required present/future `tripDate` |
-| `PackRecommendationResponse` - `.../recommendation/dto/PackRecommendationResponse.java` | Packing result | `trailId`, `trailName`, nullable `weather`, `weatherAvailable`, `requiredGear[]`, `readinessPercentage` |
-| `PackItemStatus` - `.../recommendation/dto/PackItemStatus.java` | Required category ownership status | `category`, `owned` |
-| `TrailWeather` - `.../recommendation/dto/TrailWeather.java` | Daily conditions | `temperatureC`, `precipitationProbability`, `windSpeedKmh` |
-
-Shared enum values:
-
-- `TrailDifficulty`: `EASY`, `MODERATE`, `HARD`.
-- `SceneryType`: `LAKE`, `VIEWPOINT`, `WATERFALL`, `FOREST`, `MOUNTAIN`, `OCEAN`.
-- `GearCategory`: `FOOTWEAR`, `RAIN_GEAR`, `WARM_LAYER`, `WIND_LAYER`, `TREKKING_POLES`, `TRACTION`, `HEADLAMP`, `BACKPACK`, `WATER`, `FOOD`, `SUN_PROTECTION`.
-
-Do not create a frontend contract for `CreateUserRequest`; no controller uses it. `RecommendationIntent`, `TrailCandidateContext`, the recommendation service's client DTO copies, and repository projections are internal backend types rather than direct frontend contracts.
+Under `Project/Backend/<module>/src/main/java/com/jay/outdoor/<module>/`: controllers in `controller/`, services in `service/`, `config/SecurityConfig` per service (trail-service also holds the only CORS, for `http://localhost:5173`). Recommendation: `ConversationPlannerService` (merge, readiness), `RecommendationService` (orchestration, `WEATHER_SHORTLIST_SIZE`), `TrailScoringService`, `GearRequirementService`, `PackRecommendationService`, `client/{trail,user,weather}/`, `ai/` (OpenAI extraction, `IntentPromptBuilder`). Memory: `PhotoSanitizer` (`image/`), `MemoryPhotoStorage` local/S3 (`storage/`), `TrailCatalogClient`. Plan-service follows the memory-service conventions (spec 011 §8–§12).
 
 ## 6. Trail Recommendation Flow
 
-The conversational flow is `POST /api/planner/turn`:
+Planner turn: prompt guard → OpenAI extraction into a partial delta → merge → readiness; not ready returns a question without calling other services. Ready runs the `/query` pipeline:
 
-1. `PlannerController` accepts the authenticated `PlannerTurnRequest` and passes the bearer token to `ConversationPlannerService`.
-2. The latest message passes through the same prompt guard and OpenAI extraction integration as the one-shot endpoint, but is represented as a partial `PlanningContextDelta`. Null delta fields mean unmentioned; an explicit empty scenery list can clear scenery preferences.
-3. The delta is merged over the client-supplied `PlanningContext`. The merged context is the source of truth; backend chat history does not exist.
-4. The deterministic readiness rule requires difficulty plus one useful effort/scenery preference. If it is not met, the service returns `NEEDS_CLARIFICATION`, the merged context, a deterministic question, and an empty recommendation list without calling trail, user, weather, gear, or scoring orchestration.
-5. When ready, the service returns `READY_TO_RECOMMEND` and calls the same structured recommendation execution path used by `/api/recommendations/query`.
+1. Nearby trails (request radius or 50 km) and the user's gear, with the user's token.
+2. **Bounded weather shortlist:** drop candidates failing hard rules, rank the rest by weather-free factors (ties nearest first), keep the top 15; only those get an Open-Meteo call (sequential). A failed lookup scores weather 0 for that trail and does not fail the request.
+3. Required gear = baseline + weather: rain gear at precipitation ≥ 40 %, warm layer ≤ 5 °C, wind layer ≥ 30 km/h, sun protection ≥ 25 °C with precipitation < 20 %.
+4. Score (100): intent 55 (difficulty 20, distance 15, elevation 10, duration 10: `APPROXIMATE` full within ±15 %, falling to 0 at ±75 %; full inside a `MAXIMUM`/`MINIMUM` bound), weather 15, gear readiness 15, scenery 10, proximity 5. Top three.
 
-The primary CURRENT flow is `POST /api/recommendations/query`:
+`/pack`: baseline from trail detail plus weather rules; a weather failure returns baseline-only with `weatherAvailable=false`; `readinessPercentage` = share of required categories owned.
 
-1. The frontend sends `RecommendationQueryRequest` with a bearer token to `RecommendationController.recommendFromQuery()` in `Project/Backend/recommendation-service/src/main/java/com/jay/outdoor/recommendation/controller/RecommendationController.java`.
-2. `RecommendationService.recommendFromQuery()` in `.../service/RecommendationService.java` delegates the message to `RecommendationIntentService`.
-3. `RecommendationIntentService` calls `PromptGuard` and then `OpenAiIntentExtractor`.
-4. `IntentPromptBuilder` creates a hiking-only structured extraction prompt. `OpenAiIntentClientImpl` calls the OpenAI Responses API and maps structured output to `RecommendationIntent`: difficulty, maximum distance/elevation/duration, and preferred scenery.
-5. The request radius is used, or defaults to 50 km. `TrailServiceClient.getNearbyTrails()` forwards the user's bearer token to `GET /api/trails/nearby` on the trail service.
-6. `TrailController.getNearbyTrails()` calls `TrailService.getNearbyTrails()`, which calls `TrailRepository.findNearbyTrails()`. The native PostGIS query uses `ST_DWithin` and `ST_Distance` on geography values, excludes soft-deleted rows, and orders by user distance. Separate repository queries batch-load scenery and baseline gear requirements.
-7. `UserServiceClient.getCurrentUserGear()` forwards the same bearer token to `GET /api/users/me/gear`. `GearController` -> `GearService` -> `UserService.getOrCreateUser()` resolves or creates the profile, then `GearItemRepository` returns non-deleted owned items.
-8. For every nearby trail, `WeatherServiceClient.getWeather()` calls Open-Meteo `/v1/forecast` for that trail's coordinates and requested date. It averages the daily minimum and maximum temperatures and reads maximum precipitation probability and wind speed.
-9. `GearRequirementService` combines the trail's baseline requirements with weather rules: rain gear at precipitation >= 40%, warm layer at <= 5 C, wind layer at >= 30 km/h, and sun protection at >= 25 C with precipitation < 20%.
-10. `TrailScoringService` first removes candidates that contradict an explicit difficulty or non-empty scenery preference. Difficulty is an exact match; multiple scenery values use any-match semantics. It then applies the existing scores to eligible candidates: intent 55 points (difficulty 20, distance 15, elevation 10, duration 10), weather 15, gear readiness 15, scenery 10, and proximity 5. It sorts descending and returns at most three.
-11. The controller returns `RecommendationResponse { recommendations }`. Each result currently contains `trail`, total `score`, and `breakdown`; it does not return the fetched weather, `distanceFromUserKm`, derived required gear, or extracted intent.
+## 7. Authentication and Request Layers
 
-The older `POST /api/recommendations/trails` flow only fetches nearby trails and filters them by difficulty, distance, and elevation. Treat it as temporary, not the AI planning contract.
+Spec 002. Code in `src/features/auth/`; `authSession.ts` is the only importer of `keycloak-js` (26.2.x).
 
-## 7. Authentication
+- Public client `outdoor-web`, standard flow, PKCE S256, nonce, fragment response mode. Config `VITE_KEYCLOAK_URL`, `VITE_KEYCLOAK_REALM`, `VITE_KEYCLOAK_CLIENT_ID` (`.env.example`, local `.env.local`); missing values mean sign-in unavailable.
+- Credentials only on Keycloak pages, reached only when the user activates Sign in / Create account. A signed-out visitor on a protected route goes to `/` with a sign-in gate.
+- Tokens in adapter memory only; nothing token-shaped in storage, cookies, URLs, or the console (except the adapter's short-lived `kc-callback-<state>`). Restore after reload: hidden-frame `prompt=none` (`public/silent-check-sso.html`; needs same-site cookies, fails closed). Renewal ~30 s before expiry, on protected navigation, on tab visibility, and in `getAccessToken()`; refusal → `session-expired`.
+- Exports: `getAccessToken()` (or `NotAuthenticatedError`), `getAuthenticatedSubject()` (the `sub`, to bind per-user state), `useAuth()` (states `initializing`, `unauthenticated`, `redirecting`, `callback-processing`, `authenticated`, `callback-failed`, `session-expired`, `signing-out`, `signed-out`; waits bounded at 9 s, doubt → signed-out).
+- **Return destination:** pathname only, in session storage, validated on write and read by `returnDestination.ts` (`/home`, `/gear`, `/plans`, `/trails/<id>[/prepare[/<date>[/pack]]]`, `/memories[/new|/<uuid>[/edit]]`), used once. Discover's **Sign in to plan this trip** / **Create account** call `startTrailPlanning(trailId, action)` (`authBoundary.ts`), saving `/trails/<id>`; the header Sign in lands on `/home`.
+- **Sign-out:** `POST` to Keycloak's end-session endpoint, back to `/`; clears the session, the Query cache, the return destination, and per-user session state (`registerSessionCleanup`). Header identity comes from the ID token.
 
-CURRENT architecture:
+**Request layers** (`src/services/apiClient.ts`, base `VITE_API_BASE_URL`, empty = same origin):
 
-- Keycloak runs locally at `http://localhost:8180`; the realm is `outdoor-trip`.
-- The frontend at `Project/Frontend/` signs users in through the Keycloak public client `outdoor-web` with Authorization Code + PKCE (S256), implemented by FEATURE-002. See "Frontend authentication" below.
-- User, trail, and recommendation services are stateless OAuth2 resource servers and validate JWTs against the same issuer URI.
-- Every current endpoint requires authentication. The frontend must attach the current access token as a bearer token to every API request. FEATURE-003 added the shared function that does this, `authenticatedApiRequest()` in `services/apiClient.ts`: it obtains the token from `getAccessToken()` (below) immediately before each request, never from storage, and attaches it only to a path under `/api/` on the configured API origin; any other path is refused before a token is asked for. Its callers are the conversational planner (`POST /api/planner/turn`) and, from FEATURE-004, Trail Detail (`GET /api/trails/{id}`) and Trip Preparation (`POST /api/recommendations/pack`). `GET /api/users/me` and `GET /api/users/me/gear` are still not called.
-- The recommendation service forwards that same access token to the trail and user services. It does not use a service account.
-- `GET /api/users/me` is the explicit profile bootstrap. Gear operations also call `getOrCreateUser`, so they bootstrap the local profile implicitly.
-- User creation assumes JWT `sub` and `email`, and uses `name` with `preferred_username` as fallback for `displayName`.
+- `authenticatedApiRequest()` obtains a token right before each request and attaches it only to `/api/` paths on the configured origin. Used by planner, pack, gear, owner Memory, and Plan requests.
+- `features/trails/api/publicRequest.ts`: tokenless, `credentials: "omit"`. All trail reads (for every visitor) and public Memory reads.
+- Feature request layers own time limits (20 s; 60 s for photo uploads), `AbortSignal`, and best-effort `ProblemDetail` parsing: `memories/api/memoryRequest.ts`, `plans/api/planRequest.ts` (optional `cancel` signal for queries), `gear/api/`, `trails/api/tripRequest` (pack).
 
-Do not add application passwords or a parallel registration system. Login, logout, session refresh, and account management should stay with Keycloak unless the backend architecture changes.
+**Session storage** (tab-scoped, never `localStorage`, never a token):
 
-### Frontend authentication (FEATURE-002)
+- `outdoor-trip-companion.planner` (`planning/storage/plannerSession.ts`, v2): `owner`, `messages`, `context`, `tripDate`, `startingPoint`, `draft`, `draftFromLanding`.
+- `outdoor-trip-companion.loadout` (`loadout/storage/loadoutStorage.ts`, v1): `owner`, `trips["<trail id>/<date>"] = { equipped: { <GearCategory>: <item id> }, updatedAt }`; past trips dropped, ≤ 20 trips, confirmed against the gear list before counting as Equipped.
+- Both are bound to `owner` = `sub`: read only once the subject is known, discarded whole on a bad shape or another owner, never written without an owner, removed on sign-out, expiry, and a sessionless startup (`PlannerSessionBoundary`, `LoadoutSessionBoundary` in `AppProviders`).
+- Also: return destination, sign-out notice markers, and the legacy pending prompt (read as a draft, never written).
 
-Specification: `docs/features/002-authentication.md`. All authentication code is in `Project/Frontend/src/features/auth/`, and `authSession.ts` is the only file that imports the adapter.
+**Keycloak setup** (manual; no realm export): `outdoor-web` public, standard flow only, PKCE S256; redirect URIs `http://localhost:5173/auth/callback` and `/silent-check-sso.html`; post-logout `http://localhost:5173/`; web origin `http://localhost:5173`. Realm: registration on, access token 300 s, SSO idle 30 min, max 12 h, password ≥ 8. Login theme in `Project/docker/keycloak/themes/outdoor-trip-companion/`. The dev server is pinned to 5173; `npm run preview` cannot sign in.
 
-- **Adapter:** `keycloak-js` 26.2.x, the one OIDC dependency. Standard flow, PKCE S256, nonce, `responseMode: fragment`, scope `openid` (the client's defaults add `email` and `profile`).
-- **Configuration:** `VITE_KEYCLOAK_URL`, `VITE_KEYCLOAK_REALM`, `VITE_KEYCLOAK_CLIENT_ID`, documented in `.env.example` and set for local work in the git-ignored `.env.local`. None is a secret; the client has no secret. Missing or unusable values leave the application signed out with sign-in reported as unavailable.
-- **Credentials:** entered only on Keycloak-hosted pages reached by top-level navigation. The application has no password field.
-- **Tokens:** held in the adapter's memory only. Nothing token-shaped is written to web storage, a cookie, a URL, or the console. The adapter keeps short-lived callback state in `localStorage` under `kc-callback-<state>` (state, nonce, PKCE verifier; removed when the response is processed, otherwise expiring after 60 minutes).
-- **Session restore after a reload:** a hidden-frame `prompt=none` check that returns to `public/silent-check-sso.html`. It never navigates the window and never shows a Keycloak page. It relies on Keycloak's cookies being sent inside a frame: that works when the application and Keycloak are the same site (as on `localhost`) and fails closed to signed-out where third-party cookies are blocked.
-- **Renewal:** the access token (300 s locally) is renewed with the refresh token about 30 s before expiry, on navigation to a protected route, when the tab becomes visible, and inside `getAccessToken()`. A refused renewal ends in the `session-expired` state.
-- **Token access for later features:** `getAccessToken()` exported from `@/features/auth` returns a currently valid access token or rejects with `NotAuthenticatedError`. `getAuthenticatedSubject()`, also exported from `@/features/auth`, returns the signed-in user's `sub` claim as a plain string, or `null` when there is no session or no such claim. It exists so that per-user client state is never restored for another user; it is an identifier, not a credential, and no token or other claim is exposed through it.
-- **States:** `initializing`, `unauthenticated`, `redirecting`, `callback-processing`, `authenticated`, `callback-failed`, `session-expired`, `signing-out`, `signed-out`; read with `useAuth()`. Every waiting state is bounded (9 s) and every doubt resolves to signed-out.
-- **Navigation to Keycloak** happens only when the user activates Sign in or Create account. A signed-out visitor on a protected route is sent to `/` with a sign-in gate, never to Keycloak.
-- **Return destination:** the protected route a signed-out visitor asked for, kept in session storage for the tab, validated against the protected routes when written and when read, used once, and never taken from a URL parameter. The accepted paths, checked by one pattern in `features/auth/returnDestination.ts`, are `/home`, `/gear`, `/trails/<segment>`, and, from FEATURE-004, `/trails/<segment>/prepare` and `/trails/<segment>/prepare/<YYYY-MM-DD>`. Only the pathname is kept: a query string is never part of a destination, so Trail Detail's `rec` reference does not survive a sign-in round trip, while a Trip Preparation address does, because its trail and date are both in the path.
-- **Sign-out:** a `POST` to Keycloak's end-session endpoint with the ID token hint in the form body, returning to `/`. It clears the in-memory session, the TanStack Query cache, the pending planning prompt, and the return destination.
-- **Identity shown in the layout header** comes from the ID token (`name`, then `email`, then `preferred_username`). `GET /api/users/me` is not called by this feature.
-- **Tab-scoped session-storage keys** used by the application: the pending planning prompt, the return destination, markers that only choose which notice the landing shows after a sign-out or an ended session, and the planner's state (FEATURE-003): one key, `outdoor-trip-companion.planner`, defined only in `features/planning/storage/plannerSession.ts`, holding one versioned JSON value (`version`: 2, `owner`, `messages`, `context`, `tripDate`, `startingPoint`, `draft`, `draftFromLanding`). `owner` is the signed-in user's Keycloak subject (`sub`), stored for ownership only (user decision, 2026-10-12): it is never displayed or logged, and no token, raw JWT, or other claim is stored. The value is read only once the current subject is known, and is discarded and removed, whole, if it does not parse, has the wrong version or shape, has no owner, or belongs to a different subject; nothing is written without an owner, so a session with no `sub` plans in memory only. It is also removed on sign-out, on session expiry (both through `registerSessionCleanup`), and on any startup that finds no session (`PlannerSessionBoundary`, mounted in `AppProviders`). None holds a token or grants access (the planner value's `owner` is an identifier, not a credential), and nothing of the planner is written to `localStorage`.
+**Development proxy** (`vite.config.ts`; the only browser path, no gateway): `/api/planner/**`, `/api/recommendations/pack` → 8083; `/api/trails/**` → 8082; `/api/users/me/gear/**` → 8081; `/api/memories/**` → 8085; `/api/plans/**` → 8086. Nothing else.
 
-Keycloak client configuration the frontend depends on (applied by hand in the admin console; see the feature specification, section 15):
+## 8. Frontend Architecture
 
-| Setting on client `outdoor-web` | Required value for local development |
-|---|---|
-| Client authentication | Off (public client) |
-| Flows | Standard flow on; implicit flow and direct access grants off |
-| PKCE code challenge method | S256 |
-| Valid redirect URIs | `http://localhost:5173/auth/callback` and `http://localhost:5173/silent-check-sso.html` |
-| Valid post-logout redirect URIs | `http://localhost:5173/` |
-| Web origins | `http://localhost:5173` |
-| Home URL | `http://localhost:5173/` |
+**Stack:** React 19.3, TypeScript 6.0, Vite 8.3, Tailwind CSS 4.3, shadcn/ui (New York), React Router 7.18, TanStack Query 5.104. Studio avatar only: `three` ^0.186, `@react-three/fiber` ^9.8 (no drei). Discover map only: `maplibre-gl` ^6.14 with OpenFreeMap tiles/glyphs and a local style (`mapStyle.ts`).
 
-Realm values recorded on 2026-10-12 (they live in the Keycloak database, not in the repository): access token lifetime 300 s, SSO session idle 1800 s, SSO session max 12 hours, password policy minimum length 8. A user is therefore asked to sign in again after 30 minutes without a renewal or 12 hours after signing in, whichever comes first. The registration page does not yet state the password rule; Keycloak reports it only when a shorter password is refused.
-
-The realm needs user registration on, and email verification off unless email delivery is configured. The development server is pinned to port 5173 (`strictPort`), because the client accepts no other origin; `npm run preview` (port 4173) therefore cannot sign in.
-
-Keycloak login theme: `Project/docker/keycloak/themes/outdoor-trip-companion/login/`, inheriting from `keycloak.v2`, mounted read-only into the Keycloak container by `Project/docker-compose.yml`. It takes effect once the container has been recreated and the realm's login theme is set to `outdoor-trip-companion`.
-
-Repository gaps relevant to frontend setup:
-
-- No Keycloak realm/client export is checked in, so realm/client setup is external/manual, including the client settings and the login-theme selection listed above.
-- Only trail-service defines CORS, limited to `http://localhost:5173`. User-service and recommendation-service do not define CORS.
-- The API gateway has no routes. The frontend centralizes its future backend origin in `VITE_API_BASE_URL`, but a working unified browser path still requires gateway/CORS work. For local development only, the Vite dev server proxies exactly three paths, each one entry in `vite.config.ts` with no new environment variable: `/api/planner/**` to `recommendation-service` at `http://localhost:8083` (FEATURE-003 D2), and, from FEATURE-004 (D7), `/api/trails/**` to `trail-service` at `http://localhost:8082` and `/api/recommendations/pack` to `recommendation-service` at `http://localhost:8083`. Nothing else is proxied: not `/api/users/**`, and not the rest of `/api/recommendations/**`. `npm run preview` and a deployed build cannot reach the planner, a trail, or the pack endpoint until production routing exists.
-
-## 8. Frontend Architecture Decision
-
-Selected stack:
-
-- React 19.3
-- TypeScript 6.0 (the newest release supported by the current TypeScript ESLint toolchain)
-- Vite 8.3
-- Tailwind CSS 4.3 through the Vite plugin
-- shadcn/ui configuration with the New York style and neutral CSS variables
-- React Router 7.18
-- TanStack Query 5.104
-
-The initial frontend application skeleton is CURRENT at `Project/Frontend/`. It includes the Vite application entry point, a shared application layout, browser routing, a root `QueryClientProvider`, one shadcn `Button`, minimal neutral Tailwind styling, and a fetch-based API client foundation.
-
-Current routes:
-
-| Route | Current page |
-|---|---|
-| `/` | Public Landing (FEATURE-001), rendered outside the application layout. Public; a signed-in user is sent on to `/home` |
-| `/auth/callback` | Where Keycloak returns after sign-in or registration. Shows a waiting screen, then replaces itself with the return destination or `/` |
-| `/home` | Authenticated Home (FEATURE-003): the conversational trip planner over the Home media. Protected, and rendered in its own full-viewport shell outside `AppLayout` |
-| `/trails/:trailId` | Trail Detail (FEATURE-004), replacing the earlier placeholder: one trail from `GET /api/trails/{id}`, "Why this trail" when the optional `?rec=<assistant message id>` finds the recommendation in the planner's session, a trip date, and Choose this trail. Protected, and rendered in its own full-viewport shell outside `AppLayout`: a `paper` sheet on the `ink` base, with no scene |
-| `/trails/:trailId/prepare/:tripDate` | Trip Preparation (FEATURE-004): the chosen trail and date with packing readiness, recommended gear (Owned or Missing), and the forecast from `POST /api/recommendations/pack`. Protected, in the same shell, over the pre-rendered still `Project/Frontend/public/media/img/preparation bg.png`. The address is the selection: the trail and the date are in the path and nothing else stores them. The date segment is optional in the route; without a usable date the screen asks for one and makes no pack request |
-| `/gear` | Gear placeholder. Protected, in `AppLayout` |
-| `*` | Not Found placeholder. Public; shows no account information to a signed-out visitor |
-
-Protected routes sit behind `ProtectedRoute` (`features/auth`), outside the application layout, so nothing protected and no identity renders before a session is confirmed. This is what the browser shows, not the security boundary: the Spring services validate the JWT on every request. `public/silent-check-sso.html` is a static page used only by the hidden-frame session check.
-
-The Public Landing calls no product API. Its authentication entry points go through one module, `Project/Frontend/src/features/auth/authBoundary.ts`: the primary planning action shows a sign-in gate (Sign in, Create account) in the planner's message slot, and the navigation's Sign in goes straight to Keycloak. A valid planning prompt is saved in session storage under the single key defined in `Project/Frontend/src/features/planning/pendingPrompt.ts`. It survives the round trip to Keycloak and is cleared on sign-out. The Authenticated Home planner (FEATURE-003) consumes it: the prompt arrives as the composer's editable draft, is never sent automatically, and its key is cleared once the draft is held in the planner's own state. The read-only "Your trip request" block that `/home` showed before (`SavedTripRequest`) has been removed. Hero scenes are declared only in `Project/Frontend/src/features/landing/hero-media/scenes.ts`; media files are in `Project/Frontend/public/media/hero/`.
-
-The central API client is `Project/Frontend/src/services/apiClient.ts`. It reads `VITE_API_BASE_URL`, trims a trailing slash, and uses the native `fetch` API. `apiRequest()` is unauthenticated; `authenticatedApiRequest()` adds the bearer token as described in section 7. Neither has endpoint-specific behavior: request functions and error classification live in the feature that owns the endpoint (`features/planning/api/plannerTurn.ts` for the planner, `features/trails/api/trailDetail.ts` for a trail, `features/packing/api/packRecommendation.ts` for the pack). `Project/Frontend/.env.example` documents `VITE_API_BASE_URL=`; an empty value uses the frontend's current origin, which is what the three development proxy entries rely on.
-
-The FEATURE-004 shell is `components/layout/TripShell.tsx` with `TripHeader.tsx` and `trip-shell.css`: the `ink` base, the Authenticated Home's header without New Plan, and one `main`. Both screens read server state through TanStack Query: the trail query is shared by the two screens and keyed by trail id; the pack query is keyed by the signed-in subject, the trail id, and the trip date, and runs again whenever Trip Preparation mounts. Each request has a 20-second client limit. FEATURE-004 has no store of its own and writes nothing to web storage, a cookie, or history state.
-
-Visual architecture (product decision of 2026-10-11; defined in `docs/PRODUCT_REQUIREMENTS.md` sections 7.8 and 40):
-
-| Experience | Visual implementation | Frontend consequence |
+| Route | Screen | Notes |
 |---|---|---|
-| Public Landing | Pre-rendered cinematic outdoor CG/video | CURRENT: the FEATURE-001 hero-media layer |
-| Authenticated Home / Plan | Pre-rendered looping preparation-room CG/video background with the React AI planning UI overlaid | CURRENT: the FEATURE-003 Home shell (`features/home`). `HomeMedia` (poster, plus the looping video from 768px wide with motion allowed) and the planner are siblings that share no state. A media background, not a scene: no Three.js, React Three Fiber, GLB/model asset, or interactive room object. The planner renders and works before the media loads and without it. Media files are in `Project/Frontend/public/media/home/` |
-| Pack | Real-time 3D avatar and gear visualization | PLANNED. The first place a 3D library enters the frontend; it needs lead approval and explicit 3D contracts first |
-| Adventure / Explore | Later interactive visual environment | PLANNED; implementation undefined |
+| `/` | Hero, then Discover | Public; signed-in → `/home`. Params `trail`, `memories=1`, `memory`; `/#discover` and `/?trail=` open at Discover |
+| `/auth/callback` | Keycloak return | Replaces itself with the destination or `/` |
+| `/home` | Planner over Home media | Protected |
+| `/trails/:trailId` | Trail Detail | Protected. `?rec=` shows "Why this trail" from the planner session. Date + **Choose this trail**. **Add a memory** link for non-synthetic trails |
+| `/trails/:trailId/prepare/:tripDate` | Trip Preparation | Protected. The address is the selection; no date → asks, no request. **Gear up** after a successful pack |
+| `/trails/:trailId/prepare/:tripDate/pack` | Gear Studio | Protected. Invalid/past date or pack `400` → Trip Preparation. Ends with **Finish preparation** |
+| `/gear` | My Gear | Protected |
+| `/memories`, `/new`, `/:memoryId`, `/:memoryId/edit` | My Memories | Protected. `/new?trail=<uuid>&date=<YYYY-MM-DD>` preselects (each optional; `date` only if ISO and ≤ today, else ignored) |
+| `/plans` | My Plans | Protected. `?plan=<id>` = the user-selected Plan (written with `replace`; dropped after a successful load without it) |
+| `*` | Not Found | Public; only user of `AppLayout` |
 
-No 3D dependency is installed in `Project/Frontend/` today, and none is needed before Pack's avatar work begins.
+`ProtectedRoute` renders nothing protected before a session is confirmed (presentation only; services enforce auth). The trip screens, My Gear, and My Memories use `components/layout/TripShell` + `TripHeader` (current link `aria-current="page"`). Route pages are lazy chunks (`pages/LazyRoutes.tsx`); the map and avatar runtimes are separate dynamic imports; a signed-out `/` loads no planner, Studio, `three`, or GLB code.
 
-Architectural rules derived from the backend:
+**Server state:** TanStack Query. Per-user keys include the subject and send nothing without one; public keys have none; `queryClient.clear()` on sign-out and expiry; mutations are not optimistic; pass `AbortSignal`. Selected trail and date live in the route.
 
-- Organize by product feature/domain, not by generic component type.
-- Keep request functions and TypeScript contracts within their owning feature, with a small shared authenticated HTTP layer.
-- Use TanStack Query for server state, cache invalidation, loading/error states, and gear mutation refreshes.
-- Keep selected trail/date in route/search state for the first slice because no saved-trip resource exists.
-- Keep backend enum wire values canonical and map them to human-readable labels only in the UI.
-- Centralize `ProblemDetail` parsing, while tolerating inconsistent/default error responses from trail and recommendation services.
+### Discover (`features/discover`; specs 006, 010)
 
-## 9. Planned User Flow
+- `PublicHomeScreen`: fixed `PublicHeader` + Hero (`features/landing`: three scenes, posters, rotation, reduced-motion poster, Pause/Play, **Explore trails**; `HeroNotice` hosts auth notices) + `DiscoverSection`. No planner.
+- **Viewport reads:** settled view → radius (centre to farthest corner × 1.15, clamped [2, 150] km, `map/viewport.ts`) → tokenless `/nearby`. Reported on `load` and 250 ms after `moveend` with no new movement, never during movement. Before or without the map, `DEFAULT_BOUNDS` (Vancouver / Lower Mainland). The map gets the whole result; the list gets trails inside the visible rectangle.
+- **List** (`TrailRow`, the keyboard and assistive path): nearest the centre first, "N trails in this area", ≤ 50 rows plus the selected one ("Showing the 50 nearest of N… Zoom in to see more."), "Zoom in to explore trails in this area." beyond 150 km, quiet "Updating trails…", empty state, alert + Retry on failure (never "0 trails").
+- **Map** (`map/TrailMap.tsx`; only `map/runtime/` imports `maplibre-gl`): loaded when Discover's first pixel enters the viewport, on Explore trails / header Discover, or at once on `/#discover` / `/?trail=`. Staying on the Hero loads no map code and makes no nearby request. Native clustering: source `discover-trails`, `clusterRadius` 50, `clusterMaxZoom` 12; cluster labels count **trails** only; points in three activity levels (base, 1–9, ≥ 10); a `discover-trail-focus` source keeps the selected/hovered trail out of clusters; cluster click eases to the expansion zoom; `cooperativeGestures`; no DOM per trail.
+- **Selection:** the `trail` search parameter (written with `replace`) drives list, map, and popup. It is removed when the current view's result no longer contains the trail. A deep link outside the result is read by id and the map centres on it.
+- **Popup** (`TrailPopup.tsx`, placed beside the trailhead by `map/popupPlacement.ts`): facts → today's activity + "Sample activity" → description, scenery → sample-data line (`isSampleTrailSource()`) → Community Memories (curated only) → **Sign in to plan this trip**, **Create account**, Close. No View trail, no route change.
+- **Activity:** one request for the viewer's local date; "N trips planned for today" / "1 trip planned for today" / "No trips planned for today yet"; non-`RECORDED` disclosed as "Sample activity"; unavailable never zero; synthetic trails show "Today's activity isn't available."
+- **Trail name search** (`TrailSearchField`, `search/`): combobox over the curated catalog (`GET /api/trails`, requested on first focus, `["trails", "list"]`) merged with the loaded nearby set; synthetic trails outside it are never fetched. Exact → prefix → contains, curated first, ≤ 12. Results replace the list and hide the popup. A pick writes `trail`, clears the query, and eases to the trailhead at zoom ≥ 12 (`TrailMapApi.focusOn`; instant under reduced motion). Typing sends no request.
+- **Queries:** `["trails", "nearby", lat 3dp, lon 3dp, radiusKm]` (`keepPreviousData`, current key only drives the screen) and `["trails", "activity", date]`; 5 min fresh, no focus refetch, no polling, no per-marker requests.
 
-| Stage | Intended experience | Current backend state |
-|---|---|---|
-| Home / Planning | Entry experience and natural-language trip request | CURRENT: primary recommendation query exists |
-| AI Trail Recommendation | Intent extraction and top-three results | CURRENT: OpenAI + weather + gear + scenery + proximity scoring |
-| Select Trail | View chosen trail details/route | PARTIAL: detail endpoint exists; demo routes and cover images are null |
-| Gear Recommendation | Required categories, weather, ownership, readiness | CURRENT: Pack combines trail baseline categories with weather requirements and evaluates category ownership/readiness |
-| Customize Gear | Choose owned items to wear/bring | PARTIAL frontend composition is possible from gear inventory, but no saved selection/trip API exists |
-| Avatar Update | Reflect equipped items on the real-time 3D avatar in Pack | FUTURE: no data/model/API support |
-| Adventure Scene | Animated trail/weather environment | FUTURE: no data/model/API support |
-| Explore | Map with simulated live hikers | PLANNED: activity-service is empty |
-| Memory | GPX/photos/recap/video | PLANNED: no backend module or endpoint exists |
+### Community Memories (`features/community-memories`; spec 010)
+
+- Popup section (curated trails): public count, ≤ 2 rows, **View all memories**; "No public memories yet."; "Community memories are unavailable." + Retry. Synthetic trail (`isSyntheticTrailSource()`): no section, no request.
+- Panel: ≥ 1024 px a docked non-modal `aside` over the map's right side (`--community-panel-width` on `section.discover[data-community-open]`); below, a `<dialog>` bottom sheet. The popup stays mounted but hidden and `inert` while it is open — never both visible. 8 per page, **Show older memories**; read-only Detail; a `404` or other-trail Memory shows "This memory is no longer available."
+- URL `?trail=&memories=1[&memory=]`; opening pushes an in-app-marked entry; Back/Close/Escape go back when marked, else `replace`. Invalid combinations are dropped; changing or clearing the trail removes both params in the same write.
+- Keys (no subject, separate from `["memories", …]`): `["community-memories", "trail", id, "preview" | "list"]`, `["community-memories", "detail", id]`; 5 min stale, 10 min gc. No author identity, owner controls, social features, or sign-in in the panel; a failure never blocks the popup, map, or list. Focus: heading on open, title on Detail, back to the opener on Close; Escape closes Detail, then the panel, never the popup.
+
+### Planner (`features/planning`, `features/home`; spec 003)
+
+`HomeMedia` (poster; looping video at ≥ 768 px with motion allowed) and the planner are siblings sharing no state. `plannerStore` holds messages, context, date, starting point, draft. Geolocation only on user action. Cards link to Trail Detail with `?rec=`; `trailContext.ts` is the one selector other features may use. **New Plan** resets the planner, not the loadout.
+
+### Trail Detail, Trip Preparation, Gear Studio (specs 004, 005, 011)
+
+- Trail query keyed by id (public read, shared); pack query keyed by subject + trail + date (runs on each Trip Preparation mount); gear list keyed by subject (runs on each Studio mount).
+- **Recommended** (pack, per trip) ≠ **Owned** (inventory) ≠ **Equipped** (loadout, per trip). Missing = recommended categories not owned. Nothing auto-equips; one equipped item per category.
+- **Gear Readiness** = share of recommended gear categories owned ("All recommended gear covered" / "N recommended items missing"); not the planner's Match score.
+- Studio: equip/unequip rows, inline **Add gear** (refetches gear and pack), "Equipped for this trip", avatar Stage. Equipped state is `loadout/state/loadoutStore.ts` (`useSyncExternalStore`), never cache or URL; `reconcileLoadout` drops removed or recategorized items.
+- **Avatar** (`features/avatar`): `avatarManifest.ts` names the GLBs (avatar `public/models/avatar/avatar-base-ready-to-go.glb`, the FEATURE-012 versioned copy holding `Idle` and `ready_to_go`; `public/models/gear/gear-backpack.glb`, `gear-trekking-poles.glb`, `gear-headlamp.glb`; fetched as `/models/...?v=<version>`, version 1). The FEATURE-005 `avatar-base.glb` stays on disk, unreferenced, as the rollback baseline: rollback is pointing `avatar.model` back at it (a file without `ready_to_go` gives the static completion). Spec 012 §14.4; the three-free `AvatarViewer` shell does the WebGL 2 check, one dynamic import (20 s), error boundary; `runtime/` (only `three`/R3F code) uses one canvas, on-demand frames, `GLTFLoader` only. Mounted at ≥ 768 px; gear selection works without it.
+- **Finish preparation** (`plans/components/FinishPreparation.tsx`): shown only when the Studio is `ready`, whatever the readiness. `createPlan` with the route's trail and `:tripDate` (authoritative; a now-past date sends nothing and links to Trip Preparation). `useCreatePlan`: `retry: false`, `networkMode: "always"`, no cache writes. Phases `idle → saving → celebrating → complete | failed` (`data-finish-phase`). On `201`/`200` it announces "Your plan is saved.", shows **Plan saved** (`aria-disabled`), and calls the optional `celebrate()` from `loadout/hooks/useReadyToGo.ts`, which cues the viewer (`readyCue` in, `readyClip: none | available | playing` out, `data-avatar-ready`) and resolves on the clip's end, no start within 1 s, viewer unavailable, Pause or reduced motion, or a 5 s safety; `FinishPreparation` adds a 6 s ceiling. The clip plays once (`LoopOnce`, 0.25 s crossfades from and back to `Idle`), never replays on remount or Retry, and gear controls stay enabled. Then **Ready for the trail.** + the saved line + **Continue** to `/plans`, or inline failure + Try again (announcer silenced, no clip). Spec 012 §10–§16. Nothing stored on the client; later loadout changes do not touch the Plan. Uses Studio class names, no CSS of its own.
+
+### My Gear (`features/gear`; spec 007)
+
+Grid, detail panel (non-modal ≥ 1024 px, sheet below), one Add/Edit dialog, inline remove, family filter; page state only. `PUT` always sends `name`, `category`, current `description`; `DELETE` 2xx or 404 = removed. `categories.ts` is the single label map; interim lucide art (`art/gearArtManifest`), no 3D. Never touches the loadout.
+
+### My Plans (`features/plans`; specs 013, 014)
+
+- Header: **Plans** before Gear in `TripHeader` (with `aria-current="page"` on `/plans`) and `HomeHeader`, row and Menu. The brand is the Planner entry; there is no Planner link.
+- List: `requestPlans` reads `GET /api/plans?page=n&size=50` for every page; more than 10 pages, or paging metadata still changing after one restart from page 0, is `PlanListIncompleteError` (a dedicated incomplete state, never a partial list). Key `["plans","mine",subject]`, disabled without a subject, `refetchOnMount: "always"` (so Continue shows the new Plan), no focus / reconnect refetch. `GET /api/plans/{id}` is not used.
+- Delete: `deletePlan` (2xx and `404` = removed), `useDeletePlan` (`retry: false`, `networkMode: "always"`, `setQueryData` filter then invalidate). Two-step inline confirmation.
+- Trails: `useQueries` over distinct trail ids with `trailDetailQueryOptions(id)` exported from `trails/hooks/useTrailDetail.ts` (the same key and policy as Trail Detail); `404` = "Trail unavailable", other failures = "Trail details couldn't be loaded." with Try again.
+- Upcoming `tripDate >= todayIso()` (server order), Past `<` (date descending); `useTodayIso` re-reads on visibility; calendar months from integers (`model/calendarMonth.ts`, Sunday first, 6 rows); only days with Plans are buttons. No `new Date("YYYY-MM-DD")`.
+- Actions: View trail (`trailDetailLocation`), Review gear on Upcoming only (`tripPreparationLocation`). No weather, readiness, or editing.
+- **Memory bridge** (spec 014; `components/PlanMemoryBridge.tsx`, `model/planMemory.ts`), in the selected Plan's detail only, after the context lines and before the actions:
+  - Status per Plan (`planMemoryStatus`): Upcoming (`tripDate >= today`), trail `loading` / `gone` / `failed`, or `isSyntheticTrailSource(source)` → nothing rendered. Otherwise from the screen-level index state (`memoryIndexState` in `MyPlansScreen.tsx`): a Try-again refetch → unavailable working state; error (even with cached data) → "Memory status is unavailable." + Try again (index `refetch()` only); pending / fetching / disabled / `no-session` → checking (no CTA; placeholder and hidden status after 500 ms); otherwise **View memory** (`memoryDetailLocation(id)`, line "You kept a memory of this trip.") or **How was your trip?** + **Add memory** (`newMemoryLocation(lowercased trailId, tripDate)`).
+  - Match: lowercased `trailId` + exact `tripDate` string over the owner index; first in server order (= most recently created) wins. Nothing stored on Plan or Memory.
+  - Index `useOwnerMemoryIndex(enabled)` (`memories/hooks/memoryQueries.ts`), enabled when the list is ready and some Past Plan's trail is not known synthetic or gone. Reserved row height; one polite change-only status region; focus moves only when the focused Try again is replaced. Calendar and collapsed rows carry nothing about Memories.
+
+### My Memories (`features/memories`; spec 009)
+
+- Keys `["memories", "mine", subject]` (infinite, 12) and `["memories", "detail", subject, id]`; 5 min stale, 10 min gc.
+- Owner index (spec 014): `requestAllMemories` reads `GET /api/memories?page=n&size=50` with a strict page reader (an unreadable item fails the read; the lenient `readMemoryPage` of the list is unchanged); more than 10 pages, or metadata / distinct count still changing after one restart, is `MemoryListIncompleteError` (failure kind `unusable`); never a partial array. Key `["memories","mine",subject,"all"]` (under the `mine` prefix, so every `refreshList` after create / update / delete / photo change invalidates it); own options: `refetchOnMount: "always"`, no focus / reconnect refetch, no polling, one retry on `unavailable`. Trail names via `["trails", "list"]` ("Trail unavailable" if absent); the picker lists curated trails only.
+- Create: one `POST` (ref guard), photos uploaded in order, at most one reorder, `replace` to Detail. Failed upload → "Memory saved, N of M photos added" with Retry/Remove. Timed-out `POST` reported as unconfirmed, never retried.
+- Edit: one `PUT` (never `trailId`); photo changes persist immediately, serialized. Move earlier / later; first photo is the cover.
+- Photo preparation (`photos/preparePhoto.ts`, not a privacy control): JPEG/PNG/WebP, orientation applied (`createImageBitmap` with `imageOrientation: "from-image"`, image fallback), long edge ≤ 2560 px, JPEG 0.88 (PNG only with transparency), ≤ 10 MB, ≤ 5 photos.
+- Leave guard (`useBlocker`, `beforeunload`; never on sign-out); its dirty check compares against the preselected trail and date (`initialTrail`, `initialDate`), so an untouched prefilled form is clean. Inline two-step Delete; notices via router state; nothing in web storage. Entry: header **Memories**, Trail Detail **Add a memory** (`newMemoryLocation(trailId)`), absent for synthetic trails, and a past curated Plan's **Add memory** (`newMemoryLocation(trailId, tripDate)`); preselected trail and date stay editable.
+
+**Signed photo URLs** (both Memory features): presentation only — never stored, put in a URL, or used as keys. `usePhotoRecovery`: a failed or already-expired image refetches its query once, only if that result is older than 60 s; otherwise "Photo couldn't be shown". Lists load covers lazily; gallery photos only in an opened Detail.
+
+## 9. Upcoming Feature Boundaries
+
+From spec 011 §4; each feature's spec refines them.
+
+- **FEATURE-012 Ready-to-Go 3D Completion:** PASS / FROZEN (2026-10-20); current behavior in §8. Continue goes to `/plans` since FEATURE-013 (`continueTo` in `GearStudioScreen.tsx`); it never appends `?plan=`.
+- **FEATURE-013 My Plans & Calendar:** PASS / FROZEN (2026-10-20); current behavior in §8 My Plans. Range filters, if ever needed, are additive optional params.
+- **FEATURE-014 Plan → Memory Bridge:** PASS / FROZEN (2026-10-20), the final product feature; current behavior in §8 My Plans (Memory bridge) and My Memories. Past Plans on synthetic trails have no bridge. There is no FEATURE-015; the feature freeze is active and Final Full Regression is next.
 
 ## 10. Frontend Feature Boundaries
 
-The CURRENT skeleton is intentionally smaller than the planned feature structure:
-
 ```text
-Project/Frontend/
-  src/
-    app/
-      providers/       # Query client and root provider boundary
-      router/          # Route objects and browser router
-    components/
-      layout/          # Minimal shared application layout; the FEATURE-004 shell (TripShell, TripHeader, announcer, Retry)
-      ui/              # shadcn/ui components (Button only)
-    features/
-      auth/            # Keycloak session (keycloak-js), auth states, route guards, landing boundary, account controls
-      home/            # Authenticated Home shell: header, layout over media, HomeMedia (poster, video, Pause / Play)
-      landing/         # Public Landing foreground, hero-media layer, sign-in gate actions
-      packing/         # Trip Preparation (FEATURE-004): gear category labels, the preparation scene's asset path
-        api/           #   POST /api/recommendations/pack, response checking, failure classification
-        components/    #   TripPreparationScreen, the gear briefing (readiness, gear, forecast), PreparationScene
-        hooks/         #   the pack recommendation as a TanStack Query query, keyed by subject
-        types/         #   contract types
-      planning/        # conversational planner (FEATURE-003) and the pending planning prompt
-        api/           #   POST /api/planner/turn, reply checking, failure classification
-        components/    #   ConversationalPlanner, conversation, composer, trip-context controls, recommendation cards (with the View trail link), New Plan, TripDateControl (shared with FEATURE-004)
-        hooks/         #   the turn as a TanStack Query mutation; geolocation on user action
-        state/         #   plannerStore: messages, PlanningContext, trip date, starting point, draft
-        storage/       #   planner state in session storage (one versioned key)
-        types/         #   contract types and conversation types
-        trailContext.ts #  the one read-only selector another feature may use: a recommendation found by (rec, trail id)
-      trails/          # Trail Detail (FEATURE-004): the trail id check, the two screens' addresses
-        api/           #   GET /api/trails/{id}, response checking, failure classification; the timed request both FEATURE-004 endpoints use
-        components/    #   TrailDetailScreen, trail visual, Why this trail, the decision row
-        hooks/         #   one trail as a TanStack Query query, shared with Trip Preparation
-        types/         #   contract types
-    lib/                # Shared class-name helper; media-query, dismissal, document-title, and elapsed-time hooks
-    pages/              # Thin route compositions and placeholders
-    services/           # Shared fetch/API base
-    App.tsx
-    index.css
-    main.tsx
+src/app/ (providers, router)  components/layout/ (TripShell, TripHeader, announcer, Retry)  components/ui/
+src/features/
+  auth/  landing/  discover/ (map/, map/runtime/, search/)  community-memories/  home/  planning/
+  trails/ (api/publicRequest, tripRoutes.ts, activity.ts, content.ts)  packing/  gear/  loadout/
+  avatar/ (runtime/)  memories/  plans/ (api/, components/, hooks/, types/)
+src/lib/  src/pages/ (LazyRoutes.tsx)  src/services/apiClient.ts
 ```
 
-Feature folders and frontend contract types are added only when the corresponding vertical slice begins; `auth`, `landing`, and `planning` exist from FEATURE-001, `home` from FEATURE-003, `trails` and `packing` from FEATURE-004, and no empty placeholder directories exist. Dependencies between them run one way: `packing` may import from `trails`; `trails` and `packing` take from `planning` only the read-only selector (`trailContext.ts`), the shared formatters (`presentation.ts`, `tripDate.ts`), and the trip-date control; `planning` imports nothing from either.
-
-Recommended organization:
-
-```text
-src/
-  app/                 # router, providers, QueryClient, runtime config
-  features/
-    auth/              # Keycloak lifecycle, route guard, token access
-    profile/           # current-user query and account display
-    planning/          # natural-language request and recommendation results
-    trails/            # search, nearby, cards, detail, route display
-    gear/              # owned inventory CRUD and GearCategory presentation
-    packing/           # pack request, readiness, owned-item customization
-  pages/               # thin route compositions: home/plan, trail detail, pack, gear, profile
-  shared/
-    api/               # authenticated HTTP client and ProblemDetail normalization
-    ui/                # shadcn/ui-based shared presentation primitives
-    lib/               # formatting and feature-independent helpers
-```
-
-Keep `planning` separate from `trails`: planning owns the AI request, intent-driven ranking, score breakdown, date, and origin; trails owns reusable trail discovery/detail data. Keep `packing` separate from `gear`: gear is the durable owned inventory, while packing is a trip-specific recommendation derived from trail, weather, and gear.
-
-Recommended pages justified now:
-
-- **Home / Plan**: a cinematic entry page containing the planning request rather than a dashboard. Its background is pre-rendered looping CG/video of a preparation room, not a real-time 3D scene, and the planner must not depend on it.
-- **Trail detail**: selected trail facts and a route area that handles null GeoJSON gracefully.
-- **Pack**: selected trail/date, weather availability, required categories, readiness, and matching owned items.
-- **Gear inventory**: create, edit, list, and delete owned gear.
-- **Profile/account**: optional lightweight account page or menu surface backed by `/api/users/me`.
-
-Deferred pages:
-
-- **Explore** and **Memory** are proposal-backed but should wait for APIs.
-- **Real-time 3D avatar and gear visualization in Pack** and the **Adventure scene** should wait for explicit 3D contracts and assets. The functional Pack page does not wait for them.
+- Organize by feature; request functions and contract types live in the owning feature; no empty placeholder folders.
+- One-way dependencies: `planning` imports no business feature; `trails`/`packing` take from `planning` only `trailContext.ts`, `presentation.ts`, `tripDate.ts`, and the date control. `packing` → `trails`, `gear` (labels). `loadout` → `packing`, `trails`, `gear`, `avatar`, `plans`. `gear` imports no `loadout`, `packing`, `avatar`, `discover`. `avatar` is a leaf. `discover` → `trails`, `landing`, `auth/authBoundary`, `community-memories`, `planning/presentation.ts`; nothing imports `discover`. `memories` → `trails`, `planning/tripDate.ts`, `auth`. `community-memories` → `trails/api/publicRequest` and `memories` presentation only (`MemoryImage`, `NoPhotoSurface`, `usePhotoRecovery`, `shortDate`; never owner queries; `memories.css` not imported). `plans` → `services`, `auth`, `trails` (trail detail api/hook/types, `trailId`, `tripRoutes`, `content`), `memories` (only `useOwnerMemoryIndex`, `memoryFailureKindOf`, the `MemorySummary` type), `planning/tripDate.ts`, `planning/presentation.ts`, layout, `lib/useDocumentTitle`; the Studio passes Finish's addresses as props. `memories` never imports `plans`, and `trails` never imports `memories` (Memory routes are built in `trails/tripRoutes.ts`).
+- Only `avatar/runtime/` imports `three`/R3F; only `discover/map/runtime/` imports `maplibre-gl`; only `avatarManifest.ts` names model files.
 
 ## 11. Known Missing Backend Capabilities
 
-### Required soon
-
-- Provide a usable browser path to recommendation-service: configure gateway routes/CORS or add a Vite recommendation proxy/base URL. There is currently no unified API origin.
-- Validate `RecommendationQueryRequest.tripDate` as required and within the available forecast range. The code currently has no `@NotNull` or `@FutureOrPresent` annotation on this field.
-- Define consistent error responses for recommendation validation, OpenAI failure, weather failure, trail-service failure, and missing trails. `TrailNotFoundException` and `WeatherServiceUnavailableException` are not mapped by the recommendation exception handler.
-- Decide how the results UI obtains the weather and distance used in ranking. `/query` computes both but does not return them. Without a contract change, the frontend can show score breakdown and trail facts but not the actual forecast that influenced the score.
-
-### Can wait
-
-- A saved plan/trip resource that persists selected trail, date, origin, recommendations, and later gear choices. Initial navigation can use route/search state.
-- Persisted per-trip selected gear. The first UI can combine pack categories with `GET /api/users/me/gear` locally, but selections will not survive reloads or devices.
-- Return actual matching owned gear item IDs/names in the pack response rather than only category-level `owned` booleans.
-- User preference editing, favorites, saved trails, recommendation history, and trip history.
-- Pagination/sorting for trails and gear if datasets grow.
-- Real route geometries, cover image values, broader trail ingestion, freshness/source metadata, and trail closure/safety information.
-- Explore endpoints for simulated hikers/activity and WebSocket updates.
-- Memory endpoints for GPX parsing, photo upload/storage, recap generation, and optional video.
-
-### Future visualization / 3D
-
-These apply from Pack onward. The Authenticated Home needs none of them: its room background is a pre-rendered media file with no backend, avatar, or 3D asset dependency.
-
-- Avatar profile/model selection and persistent avatar state.
-- Gear-to-visual-asset mapping, wearable slots, compatibility rules, transforms, and equipped-state persistence.
-- Render-ready trail/environment descriptors, terrain/route assets, weather/time-of-day scene state, and animation cues.
-- Asset manifests/versioning and delivery URLs for avatar, gear, and environment models/textures.
-- A stable handoff contract from packing selection to avatar equipment and from selected trail/weather to the adventure scene.
+- Production routing: no gateway routes or general CORS, so a deployed build reaches no API; Memories also need an S3 bucket.
+- `/query` does not validate `tripDate`; recommendation errors other than unsafe prompts and user-service outage can surface as `500`.
+- Recommendations omit weather, distance, derived gear, and intent; pack returns category booleans, not item ids.
+- Equipped gear per trip is session-only (Plans store no gear by design).
+- Activity stays `SIMULATED`; Plans do not feed it (no decision).
+- No real routes, cover images, trail ingestion, or closure data; no backend avatar state.
 
 ## 12. Known Technical Risks
 
-- **Prototype data:** all eight trails are hardcoded `DEMO_SEED` records. Route and cover image values are null in the migrations.
-- **No gateway routing:** port 8080 is not an API entry point despite the module name.
-- **Browser integration gap:** CORS exists only on trail-service and only for `http://localhost:5173`; the remaining `.env.example` lacks recommendation-service configuration.
-- **Query date contract:** `RecommendationQueryRequest.tripDate` is not validated as non-null/present/future. Open-Meteo also supports a limited forecast horizon, which is not checked before the external call.
-- **Recommendation fragility and latency:** `/query` performs one Open-Meteo request per nearby trail before selecting the top three, sequentially through the stream. One weather failure aborts the full query, and no timeout/retry/circuit-breaker/caching policy is visible.
-- **Inconsistent weather fallback:** `/pack` catches every exception from weather and returns baseline-only results with `weatherAvailable=false`; `/query` does not degrade gracefully.
-- **Incomplete exception mapping:** recommendation-service maps only unsafe prompts and user-service unavailability. A missing selected trail can surface as HTTP 500, as can unhandled weather/OpenAI/trail-client failures. Trail-service uses default Spring errors and returns an empty 404 body for detail; user-service uses custom `ProblemDetail` with `code`.
-- **Missing ranking context in response:** `/query` returns score/breakdown but omits extracted intent, weather, distance from user, and derived required gear, making explanation-rich UI difficult.
-- **DTO duplication:** trail summaries, nearby wrappers, gear responses, `GearCategory`, and difficulty/scenery concepts are duplicated across services. They currently mostly align but can drift without shared contract/integration tests.
-- **Loose nullability:** gear category is nullable in create/update DTOs and persistence; several trail scalar DTO fields use nullable wrapper types; frontend types must reflect this.
-- **JWT claim assumptions:** automatic profile creation requires a usable email and either `name` or `preferred_username`, while the database requires non-null unique email/display name. Missing claims or identity/email conflicts can fail as server errors.
-- **Keycloak setup is not reproducible from source:** no realm export exists. The documented `outdoor-trip` realm and `outdoor-web` client must already be configured, with the client settings in section 7. A redirect URI, post-logout URI, or web origin that does not match exactly breaks sign-in or sign-out.
-- **Session restore depends on browser cookie policy:** the hidden-frame check needs Keycloak's cookies inside a frame. A deployment that puts the application and Keycloak on different sites would lose restore-after-reload in browsers that block third-party cookies (users would sign in again; nothing is exposed).
-- **No API versioning:** all paths are under `/api/...` with no version segment.
-- **Temporary endpoint overlap:** `/api/recommendations/trails` and `/api/recommendations/query` can confuse frontend ownership. Use `/query` for the primary planner.
-- **Stale/unused artifacts:** `CreateUserRequest` is unused; `OpenMeteoDaily`/`OpenMeteoResponse` are defined but the client parses `JsonNode`; `RecommendationService.DEFAULT_RADIUS_KM` is unused; the root README title still refers to an invoice platform.
-- **Working tree state:** the inspected repository contains substantial pre-existing uncommitted backend changes and deleted legacy frontend files. Treat this document as a snapshot of the current working tree, not necessarily the last commit.
+- Prototype data; synthetic trails are disclosed as sample data (Trail Detail and popup via `isSampleTrailSource()`, planner cards via the description).
+- Keycloak is configured by hand; mismatched URIs break sign-in. Restore needs same-site cookies. Profile creation assumes `email` and a name claim.
+- Up to 15 sequential Open-Meteo calls per ready turn, with no timeout, retry, or cache.
+- Inconsistent error shapes; duplicated DTOs across services without contract tests; nullable wrapper fields.
+- Signed photo URLs outlive a switch to PRIVATE or a delete by up to 15 minutes; deleted Memories' photos are retained; re-encoding drops colour profiles; orientation unverified on Safari and phones; local photo URLs need same origin.
+- Not verified: signed-URL expiry in sessions over 15 minutes, real screen readers, Safari, phones; deep-linked Community Detail leaves focus on the body.
+- Plan → Memory bridge (accepted, spec 014 §30.1): above 50 Memories, offset paging can miss a change made in another tab during the read until the next visit; above 500 Memories the bridge shows "unavailable"; returning from a Memory to `/plans` re-requests each trail detail once (013 trail queries).
+- Discover: at very wide viewports the default view exceeds 150 km ("Zoom in…" on first sight); during a nearby error the map shows no points; an OpenFreeMap outage leaves the list working.
+- Local trail-service errors include stack traces (devtools); production must not.
+- The working tree carries substantial uncommitted changes; this document describes it, not the last commit.
 
-## 13. First Frontend Vertical Slice
+## 13. Cross-Cutting Do-Not-Break Rules
 
-Implement one authenticated **Plan -> Select Trail -> Pack** path before building broad infrastructure:
-
-1. Extend the existing React/Vite application shell with Keycloak Authorization Code + PKCE integration, an authenticated route boundary, and bearer-token support in the shared HTTP function. FEATURE-002 delivers the first two; FEATURE-003 delivers bearer-token support in the shared HTTP function (`authenticatedApiRequest()`).
-2. Bootstrap the account with `GET /api/users/me`.
-3. Build the Home / Plan experience with message, trip date, origin coordinates (browser geolocation with an explicit fallback/input), and optional radius.
-4. Submit one turn at a time to `POST /api/planner/turn`, retaining returned `PlanningContext` client-side between turns, and render clarification messages or up to three trail cards with core facts, total score, and score breakdown. `/api/recommendations/query` remains available for a one-shot request. Handle empty results and dependency errors explicitly.
-5. Let the user select a result and open trail detail using `GET /api/trails/{id}`; render a graceful placeholder when route/image data is null.
-6. Continue to Pack using the selected trail ID and trip date. Call `POST /api/recommendations/pack` and `GET /api/users/me/gear`; display weather availability, required categories, owned/missing state, and readiness.
-7. Include the smallest useful gear action, such as adding a missing owned item, then invalidate gear and pack queries so readiness updates.
-
-This slice validates authentication, all three implemented services, the primary AI recommendation path, selection continuity, and the core Plan-to-Pack product promise. The Trail Detail contract now supplies the baseline packing data used by Pack. Do not block this slice on Explore, Memory, dashboards, 3D avatars, or scene rendering.
+- Never fabricate data; a missing contract is a reported gap. Unavailable is never shown as zero.
+- Owner identity is always the server's view of the token `sub`; per-user state and keys are bound to the subject and cleared on sign-out.
+- PRIVATE Memories, author identity, and owner subjects never reach a public surface or a log.
+- Synthetic trails: plannable, preparable, and savable as Plans, shown in Discover with disclosure; no activity figure, no Add Memory, no Community Memories.
+- Public reads are tokenless; authenticated requests go only through `authenticatedApiRequest()`.
+- The avatar, map, and media are enhancements: gear selection, the trail list, and planning work without them.
+- Plan completion UI only after a confirmed `201` / `200`.
+- Plan → Memory: unknown or incomplete Memory data is never "no Memory" (no Add memory); detection uses owner data only, never `/api/memories/public`; Plans and Memories stay unlinked (no stored relationship, no cascade either way).
 
 ## 14. Agent Instructions
 
-Future AI agents should read this file before performing frontend-related work.
-
-Do not re-scan the entire repository unless:
-1. this document does not contain the information required for the task;
-2. the relevant backend code has changed;
-3. the documented API contract appears inconsistent with the current source code.
-
-When modifying an API contract, backend architecture, authentication flow, or frontend architectural decision, update this document as part of the same change.
+Read this file before frontend work; it is the contract reference. Re-inspect backend source only when it lacks the answer or disagrees with the code. When an API contract, auth flow, route, or frontend architecture decision changes, update this file in the same change, as current state. Feature history, acceptance criteria, QA results, and repairs belong in the feature spec and checkpoint.
