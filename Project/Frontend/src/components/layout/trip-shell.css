@@ -361,6 +361,13 @@
     background-color: var(--trip-snow-12);
   }
 
+  /* The current page, on /gear (FEATURE-007 section 21.2) and on /memories
+     exactly (FEATURE-009 D4): the hover underline kept at rest. Shape, not
+     hue; hover adds nothing. */
+  .trip-nav-link[aria-current="page"] {
+    text-decoration-line: underline;
+  }
+
   /* Identity, 24px after Gear; Sign out, 12px after the identity. */
   .trip-account {
     display: flex;
@@ -429,6 +436,30 @@
 
   .trip-menu-link:active {
     background-color: var(--trip-ink-10);
+  }
+
+  /* The current page in the Menu (FEATURE-007 section 21.2): a 3px `ink`
+     bar on the row's inline-start edge, inset, and weight 600. */
+  .trip-menu-link[aria-current="page"] {
+    position: relative;
+    font-weight: 600;
+  }
+
+  .trip-menu-link[aria-current="page"]::before {
+    content: "";
+    position: absolute;
+    inset-block: 12px;
+    inset-inline-start: 0;
+    width: 3px;
+    border-radius: 2px;
+    background-color: var(--color-ink);
+  }
+
+  @media (forced-colors: active) {
+    .trip-menu-link[aria-current="page"]::before {
+      forced-color-adjust: none;
+      background-color: CanvasText;
+    }
   }
 
   /* ------------------------------------------------------------------ *

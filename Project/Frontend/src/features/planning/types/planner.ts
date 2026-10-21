@@ -17,15 +17,39 @@ export type SceneryType =
   | "OCEAN"
 
 /**
+ * How `maxDurationMin` is meant: around, at most, or at least that long.
+ * Null only when there is no duration.
+ */
+export type DurationMode = "APPROXIMATE" | "MAXIMUM" | "MINIMUM"
+
+/** A preference the planner can ask about, or that can be left open. */
+export type PlanningDimension = "DIFFICULTY" | "SCENERY" | "TRIP_LENGTH"
+
+/**
  * The backend's structured planning state. The frontend stores the latest
  * copy and sends it back unmodified; it never builds or edits one.
+ *
+ * `openPreferences` and `lastAsked` are always present in a current reply.
+ * They are optional here because a context stored in the tab before they
+ * existed has neither; it is restored and sent back as it is, and the
+ * backend fills in what is missing.
  */
 export type PlanningContext = {
   difficulty: TrailDifficulty | null
   maxDistanceKm: number | null
   maxElevationGainM: number | null
+  /** The trip length in minutes, read by `durationMode`. */
   maxDurationMin: number | null
+  /**
+   * Always present in a current reply. Optional because a context stored
+   * before it existed has none; the backend reads that as `MAXIMUM`.
+   */
+  durationMode?: DurationMode | null
   preferredScenery: SceneryType[]
+  /** Dimensions the user answered "no preference" to. */
+  openPreferences?: PlanningDimension[]
+  /** The dimension the planner's latest question asked about. */
+  lastAsked?: PlanningDimension | null
 }
 
 export type PlannerTurnStatus = "NEEDS_CLARIFICATION" | "READY_TO_RECOMMEND"

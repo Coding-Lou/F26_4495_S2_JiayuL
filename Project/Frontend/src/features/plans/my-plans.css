@@ -1,0 +1,1235 @@
+/*
+ * FEATURE-013 — My Plans: one `paper` collection sheet on the trip shell's
+ * `ink` base, the user's Plans as a typographic itinerary, and one month
+ * calendar beside it.
+ *
+ * Imported by MyPlansScreen, so it arrives with the /plans chunk only. Every
+ * rule is scoped to .my-plans. The shell, the header, the focus ring, the
+ * secondary button (`trip-button`), the entrance keyframes, and the spinner
+ * are in components/layout/trip-shell.css. The delete confirmation follows
+ * the My Gear recipe (DS §36.9), copied here because that file's rules are
+ * scoped to .my-gear.
+ *
+ * Tokens come from docs/DESIGN_SYSTEM.md Version 2. Feature-level values come
+ * from docs/features/013-my-plans-calendar.md; section numbers in comments
+ * refer to that specification. Tiers: XL ≥1680, L 1440–1679, M 1280–1439,
+ * S 1024–1279, T 768–1023, N <768.
+ */
+
+@layer components {
+  /* ------------------------------------------------------------------ *
+   * Per-tier values (§10.1–§10.6, §10.9). N is the unprefixed block only
+   * because min-width queries cascade upward; desktop is the primary design.
+   * ------------------------------------------------------------------ */
+  .my-plans {
+    --plans-ink-04: color-mix(in srgb, var(--color-ink) 4%, transparent);
+    --plans-ink-06: color-mix(in srgb, var(--color-ink) 6%, transparent);
+    --plans-ink-08: color-mix(in srgb, var(--color-ink) 8%, transparent);
+    --plans-ink-10: color-mix(in srgb, var(--color-ink) 10%, transparent);
+    --plans-ink-12: color-mix(in srgb, var(--color-ink) 12%, transparent);
+
+    /* N, below 768px */
+    --plans-sheet-top: 8px;
+    --plans-sheet-bottom: 16px;
+    --plans-sheet-pad: 20px;
+    --plans-sheet-radius: 20px;
+    --plans-h1-size: 1.75rem;
+    --plans-h1-line: 2.125rem;
+    --plans-support-size: 0.875rem;
+    --plans-support-line: 1.25rem;
+    --plans-h2-size: 1.25rem;
+    --plans-h2-line: 1.625rem;
+    --plans-date-col: 0px;
+    --plans-entry-gap: 12px;
+    --plans-calendar-pad: 24px;
+    --plans-cell-height: 44px;
+    --plans-cell-number-size: 0.875rem;
+    --plans-cell-number-line: 1.125rem;
+    --plans-cell-spacing: 2px;
+    --plans-circle: 36px;
+    --plans-filter-button-height: 36px;
+    --plans-quiet-height: 36px;
+
+    @media (width < 360px) {
+      --plans-sheet-pad: 16px;
+    }
+
+    /* T, 768–1023px */
+    @media (width >= 768px) {
+      --plans-sheet-top: 16px;
+      --plans-sheet-bottom: 24px;
+      --plans-sheet-pad: 32px;
+      --plans-sheet-radius: 24px;
+      --plans-h1-size: 2rem;
+      --plans-h1-line: 2.375rem;
+      --plans-support-size: 1rem;
+      --plans-support-line: 1.5rem;
+      --plans-h2-size: 1.375rem;
+      --plans-h2-line: 1.75rem;
+      --plans-date-col: 112px;
+      --plans-entry-gap: 16px;
+      --plans-calendar-pad: 20px;
+      --plans-cell-height: 52px;
+      --plans-cell-number-size: 1rem;
+      --plans-cell-number-line: 1.25rem;
+      --plans-cell-spacing: 4px;
+    }
+
+    /* S, 1024–1279px */
+    @media (width >= 1024px) {
+      --plans-calendar-w: 344px;
+      --plans-gap: 32px;
+      --plans-cell-height: 44px;
+      --plans-cell-number-size: 0.875rem;
+      --plans-cell-number-line: 1.125rem;
+    }
+
+    @media (width >= 1024px) and (pointer: coarse) {
+      --plans-cell-spacing: 2px;
+    }
+
+    /* M, 1280–1439px */
+    @media (width >= 1280px) {
+      --plans-sheet-pad: 40px;
+      --plans-date-col: 128px;
+      --plans-entry-gap: 20px;
+      --plans-calendar-w: 416px;
+      --plans-gap: 40px;
+      --plans-calendar-pad: 24px;
+      --plans-cell-height: 48px;
+      --plans-cell-number-size: 1rem;
+      --plans-cell-number-line: 1.25rem;
+      --plans-cell-spacing: 4px;
+    }
+
+    /* L, 1440–1679px */
+    @media (width >= 1440px) {
+      --plans-sheet-bottom: 40px;
+      --plans-sheet-pad: 48px;
+      --plans-h1-size: 2.25rem;
+      --plans-h1-line: 2.625rem;
+      --plans-calendar-w: 440px;
+      --plans-gap: 48px;
+      --plans-cell-height: 52px;
+    }
+
+    /* XL, from 1680px. Wider than that, the sheet's 1600px cap leaves the
+       extra width beside the sheet; entries do not stretch. */
+    @media (width >= 1680px) {
+      --plans-sheet-pad: 56px;
+      --plans-calendar-w: 512px;
+      --plans-gap: 64px;
+      --plans-calendar-pad: 28px;
+      --plans-cell-height: 56px;
+    }
+
+    /* Every control is 44px on a coarse pointer (§10.9). */
+    @media (pointer: coarse) {
+      --plans-circle: 44px;
+      --plans-filter-button-height: 44px;
+      --plans-quiet-height: 44px;
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Collection sheet (§10.1, DS §36.2). No shadow, texture, or
+   * `overflow: hidden`, so no focus ring inside it is ever clipped. The
+   * transparent border is an edge in forced colors.
+   * ------------------------------------------------------------------ */
+  .my-plans .plans-sheet {
+    box-sizing: border-box;
+    width: min(100% - 2 * var(--trip-gutter), 1600px);
+    min-height: calc(
+      var(--trip-vh) - var(--trip-header-height) - var(--plans-sheet-top) -
+        var(--plans-sheet-bottom)
+    );
+    margin: var(--plans-sheet-top) auto var(--plans-sheet-bottom);
+    padding: var(--plans-sheet-pad);
+    border: 1px solid transparent;
+    border-radius: var(--plans-sheet-radius);
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+  }
+
+  /* Title block (§10.1) */
+  .my-plans .plans-title-block {
+    margin-bottom: 32px;
+  }
+
+  .my-plans .plans-title {
+    margin: 0;
+    font-size: var(--plans-h1-size);
+    line-height: var(--plans-h1-line);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+
+  .my-plans .plans-support {
+    margin: 8px 0 0;
+    color: var(--color-stone);
+    font-size: var(--plans-support-size);
+    line-height: var(--plans-support-line);
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Collection row (§10.2): list, then calendar, in the DOM at every
+   * width. Two columns from 1024px; stacked below.
+   * ------------------------------------------------------------------ */
+  .my-plans .plans-collection {
+    display: block;
+  }
+
+  .my-plans .plans-list {
+    min-width: 0;
+  }
+
+  @media (width >= 1024px) {
+    .my-plans .plans-collection {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) var(--plans-calendar-w);
+      column-gap: var(--plans-gap);
+      align-items: start;
+    }
+  }
+
+  /* Section headings (§10.7) */
+  .my-plans .plans-section + .plans-section {
+    margin-top: 48px;
+  }
+
+  .my-plans .plans-section-heading {
+    margin: 0 0 12px;
+    font-size: var(--plans-h2-size);
+    line-height: var(--plans-h2-line);
+    font-weight: 600;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Plan entry (§10.3). Rule-separated, no card container.
+   * ------------------------------------------------------------------ */
+  .my-plans .plan-entries {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .my-plans .plan-item {
+    border-top: 1px solid var(--plans-ink-12);
+  }
+
+  .my-plans .plan-item:last-child {
+    border-bottom: 1px solid var(--plans-ink-12);
+  }
+
+  .my-plans .plan-entry {
+    box-sizing: border-box;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 20px;
+    grid-template-areas:
+      "date chevron"
+      "main chevron"
+      "status chevron";
+    column-gap: var(--plans-entry-gap);
+    align-items: start;
+    width: 100%;
+    padding: 14px 8px;
+    border: 0;
+    border-radius: 12px;
+    background-color: transparent;
+    color: var(--color-ink);
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  @media (width >= 768px) {
+    .my-plans .plan-entry {
+      grid-template-columns: var(--plans-date-col) minmax(0, 1fr) 20px;
+      grid-template-areas:
+        "date main chevron"
+        "date status chevron";
+      padding: 16px 12px;
+    }
+
+    .my-plans .plan-item[data-section="past"] .plan-entry {
+      padding: 12px;
+    }
+  }
+
+  /* XL–M: the status sits at the row end (§10.3). */
+  @media (width >= 1280px) {
+    .my-plans .plan-entry {
+      grid-template-columns: var(--plans-date-col) minmax(0, 1fr) auto 20px;
+      grid-template-areas: "date main status chevron";
+    }
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .my-plans .plan-entry:not([data-skeleton]):hover {
+      background-color: var(--plans-ink-04);
+    }
+
+    .my-plans .plan-entry:not([data-skeleton]):hover .plan-name {
+      text-decoration-line: underline;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 3px;
+    }
+  }
+
+  .my-plans .plan-entry:not([data-skeleton]):active {
+    background-color: var(--plans-ink-08);
+  }
+
+  .my-plans .plan-entry[data-skeleton] {
+    cursor: default;
+  }
+
+  /* Date column */
+  .my-plans .plan-date {
+    grid-area: date;
+    display: block;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .my-plans .plan-item[data-section="past"] .plan-date {
+    color: var(--color-stone);
+    font-weight: 500;
+  }
+
+  .my-plans .plan-today {
+    display: inline;
+  }
+
+  /* N: one top line, "Sat, Oct 24 · Today" (§10.9). */
+  .my-plans .plan-today::before {
+    content: " · ";
+  }
+
+  .my-plans .plan-main {
+    grid-area: main;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    margin-top: 4px;
+  }
+
+  @media (width >= 768px) {
+    .my-plans .plan-date {
+      font-size: 1rem;
+      line-height: 1.375rem;
+    }
+
+    .my-plans .plan-today {
+      display: block;
+      margin-top: 4px;
+      color: var(--color-conifer-press);
+      font-size: 0.875rem;
+      line-height: 1.25rem;
+      font-weight: 600;
+    }
+
+    .my-plans .plan-today::before {
+      content: none;
+    }
+
+    .my-plans .plan-main {
+      margin-top: 0;
+    }
+  }
+
+  .my-plans .plan-name {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    font-size: 1rem;
+    line-height: 1.375rem;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+
+  @media (width >= 768px) {
+    .my-plans .plan-item[data-section="upcoming"] .plan-name {
+      font-size: 1.125rem;
+      line-height: 1.5rem;
+    }
+  }
+
+  /* Gone or failed trail (§10.3 fallbacks) */
+  .my-plans .plan-name[data-fallback] {
+    color: var(--color-stone);
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: 500;
+  }
+
+  .my-plans .plan-facts {
+    margin-top: 4px;
+    color: var(--color-stone);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .my-plans .plan-status {
+    grid-area: status;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .my-plans .plan-status > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    color: var(--color-conifer);
+  }
+
+  @media (width >= 1280px) {
+    .my-plans .plan-status {
+      margin-top: 2px;
+    }
+  }
+
+  .my-plans .plan-chevron {
+    grid-area: chevron;
+    width: 20px;
+    height: 20px;
+    margin-top: 1px;
+    color: var(--color-stone);
+    transition: transform var(--duration-fast) var(--ease-ui);
+  }
+
+  @media (width >= 768px) {
+    .my-plans .plan-chevron {
+      margin-top: 2px;
+    }
+  }
+
+  /* Placeholders: static, no shimmer (§10.3, §10.6) */
+  .my-plans .plans-bar {
+    display: block;
+    border-radius: 6px;
+    background-color: var(--plans-ink-08);
+  }
+
+  .my-plans .plans-heading-bar {
+    width: 120px;
+    height: 22px;
+    margin: 3px 0 15px;
+  }
+
+  .my-plans .plan-date-bar {
+    width: 80px;
+    height: 14px;
+    margin-top: 4px;
+  }
+
+  .my-plans .plan-name-bar {
+    width: 55%;
+    height: 16px;
+    margin-top: 4px;
+  }
+
+  .my-plans .plan-facts-bar {
+    width: 35%;
+    height: 12px;
+    margin-top: 8px;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Selected Plan and inline detail (§10.4): a `snow` surface pressed in by
+   * a 2px inset `ink` ring. The rules beside it are hidden.
+   * ------------------------------------------------------------------ */
+  .my-plans .plan-item[data-selected] {
+    border-radius: 16px;
+    border-top-color: transparent;
+    background-color: var(--color-snow);
+    box-shadow: inset 0 0 0 2px var(--color-ink);
+  }
+
+  .my-plans .plan-item[data-selected]:last-child {
+    border-bottom-color: transparent;
+  }
+
+  .my-plans .plan-item[data-selected] + .plan-item {
+    border-top-color: transparent;
+  }
+
+  .my-plans .plan-item[data-selected] .plan-chevron {
+    transform: rotate(180deg);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .my-plans .plan-item[data-selected] .plan-entry:hover {
+      background-color: transparent;
+    }
+  }
+
+  .my-plans .plan-detail {
+    padding: 0 12px 20px;
+    animation: trip-enter var(--duration-base) var(--ease-ui) both;
+  }
+
+  @media (width < 768px) {
+    .my-plans .plan-detail {
+      padding-inline: 8px;
+    }
+  }
+
+  @media (width >= 768px) {
+    .my-plans .plan-detail {
+      padding-inline-start: calc(
+        12px + var(--plans-date-col) + var(--plans-entry-gap)
+      );
+    }
+  }
+
+  .my-plans .plan-long-date {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: 500;
+  }
+
+  .my-plans .plan-trail-retry {
+    margin-top: 12px;
+  }
+
+  .my-plans .plan-fact-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 32px;
+    margin: 12px 0 0;
+  }
+
+  .my-plans .plan-fact dt {
+    color: var(--color-stone);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .my-plans .plan-fact dd {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: 600;
+  }
+
+  .my-plans .plan-context {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 12px;
+    color: var(--color-stone);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .my-plans .plan-context > p {
+    margin: 0;
+  }
+
+  .my-plans .plan-actions-area {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--plans-ink-12);
+  }
+
+  .my-plans .plan-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* Below 768px View trail and Review gear share a line; Delete plan sits on
+     its own line below (§10.4). */
+  .my-plans .plan-actions-break {
+    flex-basis: 100%;
+    height: 0;
+  }
+
+  .my-plans .plan-link {
+    flex: 1 1 0;
+  }
+
+  @media (width >= 768px) {
+    .my-plans .plan-actions-break {
+      display: none;
+    }
+
+    .my-plans .plan-link {
+      flex: none;
+    }
+
+    .my-plans .plans-quiet-danger {
+      margin-inline-start: auto;
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Memory bridge (FEATURE-014 §10): a quiet postscript under the context
+   * lines of a selected Past Plan, one line over one secondary control,
+   * stacked at every width. The band keeps its resolved height while the
+   * state is unknown, so the rule and the actions below never move.
+   * ------------------------------------------------------------------ */
+  .my-plans .plan-memory {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    min-height: calc(1.5rem + 8px + var(--trip-button-height));
+    margin-top: 16px;
+    color: var(--color-ink);
+  }
+
+  .my-plans .plan-memory-line {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: 600;
+  }
+
+  .my-plans .plan-memory[data-state="unavailable"] .plan-memory-line {
+    font-weight: 500;
+  }
+
+  /* Full width below 768px, content width above (§10.3). */
+  .my-plans .plan-memory-link {
+    align-self: stretch;
+  }
+
+  @media (width >= 768px) {
+    .my-plans .plan-memory-link {
+      align-self: flex-start;
+    }
+  }
+
+  /* After 500 ms of checking: static, no shimmer, no fade (§10.2). */
+  .my-plans .plan-memory-line-bar {
+    width: 144px;
+    height: 14px;
+    margin-block: 5px;
+  }
+
+  .my-plans .plan-memory-control-bar {
+    width: 136px;
+    height: var(--trip-button-height);
+    border-radius: 10px;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Buttons on paper
+   * ------------------------------------------------------------------ */
+
+  /* Secondary on paper (004 §21.17): the trip button, 16px side padding. */
+  .my-plans .plans-secondary {
+    padding: 0 16px;
+    text-decoration: none;
+  }
+
+  /* Review gear: the page's one filled action (§10.4). */
+  .my-plans .plans-filled {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: var(--trip-button-height);
+    padding: 0 16px;
+    border-radius: 10px;
+    background-color: var(--color-conifer);
+    color: var(--color-snow);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  .my-plans .plans-filled > svg,
+  .my-plans .plans-quiet-danger > svg,
+  .my-plans .plans-danger > svg,
+  .my-plans .plans-primary > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+  }
+
+  @media (hover: hover) {
+    .my-plans .plans-filled:hover {
+      background-color: var(--color-conifer-deep);
+    }
+  }
+
+  .my-plans .plans-filled:active {
+    background-color: var(--color-conifer-press);
+  }
+
+  /* Delete plan: the quiet destructive text button (007 §21.8). */
+  .my-plans .plans-quiet-danger {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: var(--trip-button-height);
+    padding: 0 10px;
+    border: 0;
+    border-radius: 10px;
+    background-color: transparent;
+    color: var(--color-ink);
+    font: inherit;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  .my-plans .plans-quiet-danger > svg {
+    color: var(--color-ember);
+  }
+
+  @media (hover: hover) {
+    .my-plans .plans-quiet-danger:hover {
+      background-color: var(--plans-ink-04);
+      text-decoration-line: underline;
+      text-underline-offset: 3px;
+    }
+  }
+
+  .my-plans .plans-quiet-danger:active {
+    background-color: var(--plans-ink-08);
+  }
+
+  /* Plan a trip, primary (§10.7: the 004 / 007 recipe). */
+  .my-plans .plans-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 20px;
+    border-radius: 12px;
+    background-color: var(--color-conifer);
+    color: var(--color-snow);
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  @media (hover: hover) {
+    .my-plans .plans-primary:hover {
+      background-color: var(--color-conifer-deep);
+    }
+  }
+
+  .my-plans .plans-primary:active {
+    background-color: var(--color-conifer-press);
+  }
+
+  /* Try again: regular in the list states, quiet under a failed trail. */
+  .my-plans .plans-retry {
+    padding: 0 16px;
+  }
+
+  .my-plans .plans-retry[data-size="quiet"] {
+    min-height: var(--plans-quiet-height);
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Delete confirmation (§10.8, DS §36.9; the My Gear recipe)
+   * ------------------------------------------------------------------ */
+  .my-plans .plans-confirm-question {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: 600;
+  }
+
+  .my-plans .plans-confirm-body {
+    margin: 4px 0 0;
+    color: var(--color-stone);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  /* PL24: always in the document, so its message is announced; it takes no
+     space while empty. 12 above the buttons when shown. */
+  .my-plans .plans-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+    overflow-wrap: anywhere;
+  }
+
+  .my-plans .plans-alert:not(:empty) {
+    margin-top: 16px;
+  }
+
+  .my-plans .plans-alert > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+    color: var(--color-ember);
+  }
+
+  .my-plans .plans-confirm-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  .my-plans .plans-alert:not(:empty) + .plans-confirm-actions {
+    margin-top: 12px;
+  }
+
+  .my-plans .plans-danger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: var(--trip-button-height);
+    padding: 0 16px;
+    border: 0;
+    border-radius: 10px;
+    background-color: var(--color-ember);
+    color: var(--color-snow);
+    font: inherit;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  @media (hover: hover) {
+    .my-plans .plans-danger:not([aria-disabled="true"]):hover {
+      background-color: color-mix(in srgb, var(--color-ember) 88%, var(--color-ink));
+    }
+  }
+
+  .my-plans .plans-danger:not([aria-disabled="true"]):active {
+    background-color: color-mix(in srgb, var(--color-ember) 76%, var(--color-ink));
+  }
+
+  @media (width < 768px) {
+    .my-plans .plans-confirm-actions {
+      flex-direction: column;
+    }
+
+    .my-plans .plans-confirm-actions > button {
+      width: 100%;
+    }
+  }
+
+  /* Working controls keep focus and ignore activation. */
+  .my-plans [aria-disabled="true"]:is(.plans-danger, .trip-button) {
+    cursor: progress;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Day filter (§10.5)
+   * ------------------------------------------------------------------ */
+  .my-plans .plans-filter {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 16px;
+    margin-bottom: 12px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background-color: var(--plans-ink-04);
+  }
+
+  .my-plans .plans-filter-line {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: 600;
+  }
+
+  .my-plans .plans-show-all {
+    min-height: var(--plans-filter-button-height);
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Screen states (§10.7)
+   * ------------------------------------------------------------------ */
+  .my-plans .plans-state {
+    max-width: 480px;
+    margin-top: 16px;
+  }
+
+  .my-plans .plans-state-heading {
+    margin: 0;
+    font-size: 1.375rem;
+    line-height: 1.75rem;
+    font-weight: 600;
+  }
+
+  .my-plans .plans-state-body {
+    margin: 8px 0 24px;
+    color: var(--color-stone);
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+
+  .my-plans .plans-state-action {
+    margin-top: 24px;
+  }
+
+  @media (width < 768px) {
+    .my-plans .plans-state .plans-primary {
+      width: 100%;
+    }
+  }
+
+  .my-plans .plans-no-upcoming > p {
+    margin: 0 0 12px;
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Monthly calendar (§10.6). A panel from 768px; on N it sits on the
+   * paper after a rule.
+   * ------------------------------------------------------------------ */
+  .my-plans .plans-calendar {
+    box-sizing: border-box;
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid var(--plans-ink-12);
+  }
+
+  @media (width >= 768px) {
+    .my-plans .plans-calendar {
+      width: min(100%, 480px);
+      margin-top: 40px;
+      padding: var(--plans-calendar-pad);
+      border: 1px solid var(--plans-ink-12);
+      border-radius: 20px;
+      background-color: var(--color-snow);
+    }
+  }
+
+  @media (width >= 1024px) {
+    .my-plans .plans-calendar {
+      width: auto;
+      margin-top: 0;
+    }
+  }
+
+  /* Sticky only when it fits (§10.2). */
+  @media (width >= 1024px) and (height >= 600px) {
+    .my-plans .plans-calendar {
+      position: sticky;
+      top: 24px;
+    }
+  }
+
+  .my-plans .plans-calendar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 44px;
+    margin-bottom: 8px;
+  }
+
+  .my-plans .plans-month {
+    margin: 0;
+    font-size: 1.125rem;
+    line-height: 1.5rem;
+    font-weight: 600;
+  }
+
+  .my-plans .plans-month-bar {
+    width: 140px;
+    height: 20px;
+  }
+
+  .my-plans .plans-month-nav {
+    display: flex;
+    gap: 8px;
+  }
+
+  .my-plans .plans-circle {
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--plans-circle);
+    height: var(--plans-circle);
+    padding: 0;
+    border: 1px solid var(--plans-ink-12);
+    border-radius: 9999px;
+    background-color: var(--color-snow);
+    color: var(--color-ink);
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  .my-plans .plans-circle > svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .my-plans .plans-circle[data-placeholder] {
+    border-color: var(--plans-ink-08);
+    background-color: transparent;
+    cursor: default;
+  }
+
+  @media (hover: hover) {
+    .my-plans .plans-circle:not([data-placeholder]):hover {
+      background-color: var(--color-paper);
+    }
+  }
+
+  .my-plans .plans-circle:not([data-placeholder]):active {
+    background-color: var(--plans-ink-08);
+  }
+
+  .my-plans .plans-grid {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: separate;
+    border-spacing: var(--plans-cell-spacing);
+  }
+
+  .my-plans .plans-grid th {
+    height: 28px;
+    padding: 0;
+    color: var(--color-stone);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+    text-align: center;
+  }
+
+  .my-plans .plans-grid td {
+    padding: 0;
+    height: var(--plans-cell-height);
+    vertical-align: top;
+  }
+
+  /* One day: radius 10, number top-centred 6 from the top, a 14px mark row
+     4 below it. */
+  .my-plans .plans-day {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+    height: var(--plans-cell-height);
+    padding: 6px 0 0;
+    border: 0;
+    border-radius: 10px;
+    background-color: transparent;
+    color: var(--color-stone);
+    font: inherit;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .my-plans .plans-day-number {
+    font-size: var(--plans-cell-number-size);
+    line-height: var(--plans-cell-number-line);
+    font-weight: 400;
+  }
+
+  /* Today: a 1.5px inset `ink` outline and a heavier number. */
+  .my-plans span.plans-day[data-today] {
+    box-shadow: inset 0 0 0 1.5px var(--color-ink);
+    color: var(--color-ink);
+  }
+
+  .my-plans .plans-day[data-today] .plans-day-number {
+    font-weight: 600;
+  }
+
+  /* A day with Plans is a button. */
+  .my-plans button.plans-day {
+    color: var(--color-ink);
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  .my-plans button.plans-day[data-kind="upcoming"] .plans-day-number {
+    font-weight: 600;
+  }
+
+  .my-plans button.plans-day[data-kind="past"] .plans-day-number {
+    font-weight: 500;
+  }
+
+  .my-plans button.plans-day[data-today] {
+    --trip-edge: inset 0 0 0 1.5px var(--color-ink);
+  }
+
+  @media (hover: hover) {
+    .my-plans button.plans-day[aria-pressed="false"]:hover {
+      background-color: var(--plans-ink-06);
+    }
+  }
+
+  .my-plans button.plans-day[aria-pressed="false"]:active {
+    background-color: var(--plans-ink-10);
+  }
+
+  /* Selected: solid `ink`, everything in `snow`. Fill vs outline keeps it
+     apart from today; both = the fill plus an inner `paper` ring. */
+  .my-plans button.plans-day[aria-pressed="true"] {
+    background-color: var(--color-ink);
+    color: var(--color-snow);
+  }
+
+  .my-plans button.plans-day[aria-pressed="true"][data-today] {
+    --trip-edge:
+      inset 0 0 0 3px var(--color-ink), inset 0 0 0 4.5px var(--color-paper);
+  }
+
+  .my-plans .plans-day-marks {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    height: 14px;
+  }
+
+  .my-plans .plans-mark {
+    box-sizing: border-box;
+    display: inline-block;
+    flex: none;
+    width: 6px;
+    height: 6px;
+    border-radius: 9999px;
+  }
+
+  .my-plans .plans-mark[data-kind="upcoming"] {
+    background-color: var(--color-conifer);
+  }
+
+  .my-plans .plans-mark[data-kind="past"] {
+    border: 1.5px solid var(--color-stone);
+  }
+
+  .my-plans .plans-count {
+    color: var(--color-conifer-press);
+    font-size: 0.875rem;
+    line-height: 0.875rem;
+    font-weight: 600;
+  }
+
+  .my-plans button.plans-day[data-kind="past"] .plans-count {
+    color: var(--color-stone);
+  }
+
+  .my-plans button.plans-day[aria-pressed="true"] .plans-mark[data-kind="upcoming"] {
+    background-color: var(--color-snow);
+  }
+
+  .my-plans button.plans-day[aria-pressed="true"] .plans-mark[data-kind="past"] {
+    border-color: var(--color-snow);
+  }
+
+  .my-plans button.plans-day[aria-pressed="true"] .plans-count {
+    color: var(--color-snow);
+  }
+
+  /* Legend (§10.6) */
+  .my-plans .plans-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 16px;
+    margin: 16px 0 0;
+    padding: 0;
+    list-style: none;
+    color: var(--color-stone);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .my-plans .plans-legend > li {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Forced colors (§10.3, §10.6)
+   * ------------------------------------------------------------------ */
+  @media (forced-colors: active) {
+    .my-plans .plan-item,
+    .my-plans .plan-item:last-child,
+    .my-plans .plan-actions-area {
+      border-color: CanvasText;
+    }
+
+    .my-plans .plan-item[data-selected] {
+      border: 2px solid CanvasText;
+    }
+
+    .my-plans span.plans-day[data-today],
+    .my-plans button.plans-day[data-today] {
+      outline: 2px solid CanvasText;
+      outline-offset: -2px;
+    }
+
+    .my-plans button.plans-day[aria-pressed="true"] {
+      forced-color-adjust: none;
+      background-color: Highlight;
+      color: HighlightText;
+    }
+
+    .my-plans .plans-mark {
+      forced-color-adjust: none;
+      border: 1.5px solid CanvasText;
+    }
+
+    .my-plans .plans-mark[data-kind="upcoming"] {
+      background-color: CanvasText;
+    }
+
+    .my-plans button.plans-day[aria-pressed="true"] .plans-mark {
+      border-color: HighlightText;
+    }
+
+    .my-plans button.plans-day[aria-pressed="true"] .plans-mark[data-kind="upcoming"] {
+      background-color: HighlightText;
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Reduced motion (§10.10): no rise, no fade, no rotation transition.
+   * The spinner is stopped by the shell.
+   * ------------------------------------------------------------------ */
+  @media (prefers-reduced-motion: reduce) {
+    .my-plans .plan-detail {
+      animation: none;
+    }
+
+    .my-plans .plan-chevron {
+      transition: none;
+    }
+  }
+}

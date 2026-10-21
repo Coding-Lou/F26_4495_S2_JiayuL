@@ -20,9 +20,15 @@ import { isIsoDate, todayIso } from "@/features/planning/tripDate"
 import { useDocumentTitle } from "@/lib/useDocumentTitle"
 import { useElapsed } from "@/lib/useElapsed"
 import { trailFailureKindOf } from "../api/trailDetail"
-import { SAMPLE_DATA_SOURCE, trailContent, tripContent } from "../content"
+import {
+  isSampleTrailSource,
+  isSyntheticTrailSource,
+  trailContent,
+  tripContent,
+} from "../content"
 import { useTrailDetail } from "../hooks/useTrailDetail"
 import { isTrailId } from "../trailId"
+import { newMemoryLocation } from "../tripRoutes"
 import type { TrailDetail, TrailFailureKind } from "../types/trail"
 import { TrailDecision } from "./TrailDecision"
 import { TrailVisual } from "./TrailVisual"
@@ -242,6 +248,23 @@ function TrailDetailView({
                 scenery={sceneryLabels(recommendation?.scenery ?? [])}
               />
             ) : null}
+
+            {/* After the trip (FEATURE-009 section 18.2, D25): one quiet
+                link at the end of the reading column, never in the rail.
+                A generated (synthetic) trail offers none. */}
+            {view.kind === "trail" &&
+            trailId !== null &&
+            !isSyntheticTrailSource(view.trail.source) ? (
+              <p className="trail-memory">
+                {trailContent.memoryLeadIn}{" "}
+                <Link
+                  to={newMemoryLocation(trailId)}
+                  className="trip-control trail-memory-link"
+                >
+                  {trailContent.addMemory}
+                </Link>
+              </p>
+            ) : null}
           </div>
 
           {/* The rail: why it was recommended, then the one decision. It is
@@ -409,7 +432,7 @@ function TrailBriefing({ trail, scenery }: TrailBriefingProps) {
         <p className="trail-description">{trail.description}</p>
       ) : null}
 
-      {trail.source === SAMPLE_DATA_SOURCE ? (
+      {isSampleTrailSource(trail.source) ? (
         <p className="trail-sample">{trailContent.sampleData}</p>
       ) : null}
     </>

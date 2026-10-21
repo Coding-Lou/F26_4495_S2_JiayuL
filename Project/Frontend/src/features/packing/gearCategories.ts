@@ -1,35 +1,16 @@
+import { GEAR_CATEGORY_VALUES, gearCategoryLabel } from "@/features/gear"
 import type { PackItemStatus } from "./types/pack"
 
 /**
- * Where `GearCategory` wire values become words (FEATURE-004 section 18).
- * They are mapped to labels here and nowhere else; a raw wire value is never
- * shown. The order of this list is the enum's order (section 5.2).
+ * `GearCategory` labels live in `features/gear` (FEATURE-007 D3). They are
+ * re-exported here so every screen that took them from `packing` keeps doing
+ * so with the same words. The order used below is the enum's (section 5.2).
  */
-const GEAR_CATEGORIES: readonly (readonly [string, string])[] = [
-  ["FOOTWEAR", "Hiking footwear"],
-  ["RAIN_GEAR", "Rain gear"],
-  ["WARM_LAYER", "Warm layer"],
-  ["WIND_LAYER", "Wind layer"],
-  ["TREKKING_POLES", "Trekking poles"],
-  ["TRACTION", "Traction"],
-  ["HEADLAMP", "Headlamp"],
-  ["BACKPACK", "Backpack"],
-  ["WATER", "Water"],
-  ["FOOD", "Food"],
-  ["SUN_PROTECTION", "Sun protection"],
-]
+export { gearCategoryLabel }
 
-/** A category this list does not know is still shown, under this label. */
-const OTHER_GEAR_LABEL = "Other gear"
-
-const LABELS = new Map<string, string>(GEAR_CATEGORIES)
 const POSITIONS = new Map<string, number>(
-  GEAR_CATEGORIES.map(([category], index) => [category, index]),
+  GEAR_CATEGORY_VALUES.map((category, index) => [category, index]),
 )
-
-export function gearCategoryLabel(category: string): string {
-  return LABELS.get(category) ?? OTHER_GEAR_LABEL
-}
 
 export type GearRow = {
   key: string
@@ -50,7 +31,7 @@ export function gearRows(requiredGear: readonly PackItemStatus[]): GearRow[] {
       key: `${index}-${item.category}`,
       label: gearCategoryLabel(item.category),
       owned: item.owned,
-      position: POSITIONS.get(item.category) ?? GEAR_CATEGORIES.length,
+      position: POSITIONS.get(item.category) ?? GEAR_CATEGORY_VALUES.length,
       arrival: index,
     }))
     .sort(

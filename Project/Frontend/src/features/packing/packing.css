@@ -231,12 +231,74 @@
     font-weight: 600;
   }
 
-  /* 44px tall. The control is at the start; the end stays empty (§21.18). */
+  /* 44px tall. The control is at the start; the end is FEATURE-005's call to
+     action (its §16.12), at least 12px away. The row's height is unchanged. */
   .prep-date-row {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
+    gap: 8px 12px;
     min-height: 44px;
     margin-top: 12px;
+  }
+
+  /* "Gear up" (FEATURE-005 §16.12): the on-panel primary, `paper` fill with
+     an `ink` label. Geometry as Choose this trail: 44 tall, radius 12, not a
+     pill. Never disabled. It appears with the briefing, by opacity only. */
+  .prep-gear-up {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;
+    margin-inline-start: auto;
+    padding: 0 20px;
+    /* An edge in forced-colors mode. */
+    border: 1px solid transparent;
+    border-radius: 12px;
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+    animation: trip-fade-in var(--duration-base) var(--ease-ui);
+  }
+
+  .prep-gear-up > svg {
+    flex: none;
+    width: 18px;
+    height: 18px;
+  }
+
+  @media (hover: hover) {
+    .prep-gear-up:hover {
+      background-color: color-mix(
+        in srgb,
+        var(--color-ink) 8%,
+        var(--color-paper)
+      );
+    }
+  }
+
+  .prep-gear-up:active {
+    background-color: color-mix(
+      in srgb,
+      var(--color-ink) 16%,
+      var(--color-paper)
+    );
+  }
+
+  /* Below 480px, when the row cannot hold both, the action takes the second
+     line at full width under the date control. */
+  @media (width < 480px) {
+    .prep-gear-up {
+      flex: 1 1 100%;
+      margin-inline-start: 0;
+    }
   }
 
   /* The message slot takes no height while it is empty. */
@@ -335,7 +397,7 @@
   }
 
   /* ------------------------------------------------------------------ *
-   * Packing readiness (§21.12). One appearance at every value.
+   * Gear Readiness (§21.12). One appearance at every value.
    * ------------------------------------------------------------------ */
   .prep-readiness-row {
     display: flex;
@@ -534,6 +596,7 @@
 
   .prep-panel,
   .prep-briefing-content,
+  .prep-gear-up,
   .prep-dots > span {
     animation: none;
   }

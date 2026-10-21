@@ -1,5 +1,7 @@
 import type { TrailDetail, TrailFailureKind } from "../types/trail"
-import { isRecord, readNumber, readText, tripRequest } from "./tripRequest"
+import { publicRequest } from "./publicRequest"
+import { readPosition } from "./trailList"
+import { isRecord, readNumber, readText } from "./tripRequest"
 
 /**
  * A trail request that produced no trail. It carries only which of the
@@ -23,14 +25,17 @@ export function trailFailureKindOf(error: unknown): TrailFailureKind {
  * Loads one trail (section 5.1) and returns it checked. `trailId` must
  * already be known to be a UUID: anything else is answered without a request
  * by the caller (section 9).
+ *
+ * The trail is public data: it is requested without a token for every
+ * visitor (FEATURE-006 section 9.1, I1). Trail Detail, Trip Preparation,
+ * and the Studio share this request.
  */
 export async function requestTrailDetail(
   trailId: string,
   cancel: AbortSignal,
 ): Promise<TrailDetail> {
-  const outcome = await tripRequest(
+  const outcome = await publicRequest(
     `/api/trails/${encodeURIComponent(trailId)}`,
-    { method: "GET" },
     cancel,
   )
 
@@ -48,8 +53,6 @@ export async function requestTrailDetail(
       throw new TrailDetailError("refused")
     case "timeout":
       throw new TrailDetailError("timeout")
-    case "no-session":
-      throw new TrailDetailError("no-session")
     case "network":
       throw new TrailDetailError("unavailable")
   }
@@ -84,6 +87,7 @@ export function readTrailDetail(body: unknown): TrailDetail | null {
     distanceKm: readNumber(body.distanceKm),
     elevationGainM: readNumber(body.elevationGainM),
     estimatedDurationMin: readNumber(body.estimatedDurationMin),
+    position: readPosition(body.latitude, body.longitude),
     source: readText(body.source),
     coverImageUrl: readText(body.coverImageUrl),
   }

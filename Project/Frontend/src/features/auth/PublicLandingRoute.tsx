@@ -6,7 +6,8 @@ import { AuthWaitingScreen } from "./AuthWaitingScreen"
 import { useAuth } from "./useAuth"
 
 /**
- * Wraps the Public Landing (FEATURE-002 §5, D7). The landing renders and
+ * Wraps `/`, the public homepage (FEATURE-006 section 8.1: the Hero, then
+ * Discover; FEATURE-002 §5, D7). The page renders and
  * works in full while authentication is still being decided; a signed-in
  * user is taken on to the authenticated home instead.
  */

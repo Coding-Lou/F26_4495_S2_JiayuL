@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react"
 import { Menu } from "lucide-react"
-import { Link } from "react-router-dom"
+import { Link, useMatch } from "react-router-dom"
 import { AccountControls } from "@/features/auth"
 import { useDismissable } from "@/lib/useDismissable"
 import { useMediaQuery } from "@/lib/useMediaQuery"
@@ -8,10 +8,26 @@ import { useMediaQuery } from "@/lib/useMediaQuery"
 /** From here the header is one row; below it, a Menu holds the account. */
 const WIDE_HEADER_QUERY = "(min-width: 768px)"
 
+/** The Plans link marks itself as the current page here only (FEATURE-013 D3). */
+const PLANS_PATH = "/plans"
+
+/** The Gear link marks itself as the current page here only (FEATURE-007 D13). */
+const GEAR_PATH = "/gear"
+
+/**
+ * The Memories link marks itself as the current page on `/memories` exactly,
+ * never on a Memory, Add, or Edit page (FEATURE-009 D4).
+ */
+const MEMORIES_PATH = "/memories"
+
 const HEADER_CONTENT = {
   brandStart: "Outdoor Trip",
   brandEnd: "Companion",
+  /** FEATURE-013 PL1 */
+  plans: "Plans",
   gear: "Gear",
+  /** FEATURE-009 MM7 */
+  memories: "Memories",
   menu: "Menu",
 } as const
 
@@ -52,11 +68,15 @@ function TripAccount({ part }: TripAccountProps) {
  * clears the planner's conversation and belongs to `/home` only. Nothing
  * takes its place.
  *
- * DOM order is the visual order at every width: brand, Gear, identity,
- * Sign out. Below 768px the account and Gear move into a Menu.
+ * DOM order is the visual order at every width: brand, Plans, Gear,
+ * Memories, identity, Sign out. Below 768px the account, Plans, Gear, and
+ * Memories move into a Menu.
  */
 export function TripHeader({ surface }: TripHeaderProps) {
   const wide = useMediaQuery(WIDE_HEADER_QUERY)
+  const onPlans = useMatch({ path: PLANS_PATH, end: true }) !== null
+  const onGear = useMatch({ path: GEAR_PATH, end: true }) !== null
+  const onMemories = useMatch({ path: MEMORIES_PATH, end: true }) !== null
 
   return (
     <header className="trip-header" data-surface={surface}>
@@ -67,24 +87,52 @@ export function TripHeader({ surface }: TripHeaderProps) {
 
       {wide ? (
         <div className="trip-header-end">
-          <Link to="/gear" className="trip-control trip-nav-link">
+          <Link
+            to={PLANS_PATH}
+            className="trip-control trip-nav-link"
+            aria-current={onPlans ? "page" : undefined}
+          >
+            {HEADER_CONTENT.plans}
+          </Link>
+          <Link
+            to={GEAR_PATH}
+            className="trip-control trip-nav-link"
+            aria-current={onGear ? "page" : undefined}
+          >
             {HEADER_CONTENT.gear}
+          </Link>
+          <Link
+            to={MEMORIES_PATH}
+            className="trip-control trip-nav-link"
+            aria-current={onMemories ? "page" : undefined}
+          >
+            {HEADER_CONTENT.memories}
           </Link>
           <TripAccount />
         </div>
       ) : (
-        <TripMenu />
+        <TripMenu onPlans={onPlans} onGear={onGear} onMemories={onMemories} />
       )}
     </header>
   )
 }
 
+type TripMenuProps = {
+  /** The page is My Plans: its row is marked as the current page. */
+  onPlans: boolean
+  /** The page is My Gear: its row is marked as the current page. */
+  onGear: boolean
+  /** The page is My Memories: its row is marked as the current page. */
+  onMemories: boolean
+}
+
 /**
- * Below 768px: a Menu holding the identity, Gear, and Sign out. It closes on
- * Escape, a press outside, or focus leaving it. While sign-out is working it
- * stays open and its row shows the working state.
+ * Below 768px: a Menu holding the identity, Plans, Gear, Memories, and Sign
+ * out. It
+ * closes on Escape, a press outside, or focus leaving it. While sign-out is
+ * working it stays open and its row shows the working state.
  */
-function TripMenu() {
+function TripMenu({ onPlans, onGear, onMemories }: TripMenuProps) {
   const [open, setOpen] = useState(false)
   const menuId = useId()
   const buttonId = useId()
@@ -136,8 +184,26 @@ function TripMenu() {
           aria-labelledby={buttonId}
         >
           <TripAccount part="identity" />
-          <Link to="/gear" className="trip-control trip-menu-link">
+          <Link
+            to={PLANS_PATH}
+            className="trip-control trip-menu-link"
+            aria-current={onPlans ? "page" : undefined}
+          >
+            {HEADER_CONTENT.plans}
+          </Link>
+          <Link
+            to={GEAR_PATH}
+            className="trip-control trip-menu-link"
+            aria-current={onGear ? "page" : undefined}
+          >
             {HEADER_CONTENT.gear}
+          </Link>
+          <Link
+            to={MEMORIES_PATH}
+            className="trip-control trip-menu-link"
+            aria-current={onMemories ? "page" : undefined}
+          >
+            {HEADER_CONTENT.memories}
           </Link>
           <TripAccount part="sign-out" />
         </div>

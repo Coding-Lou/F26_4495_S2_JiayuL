@@ -1,7 +1,8 @@
 /**
  * Authentication, as the rest of the application uses it (FEATURE-002).
  *
- * The Public Landing has its own, narrower entry: `./authBoundary`.
+ * The public homepage (the Hero and Discover, FEATURE-006) starts sign-in
+ * only through its own, narrower entry: `./authBoundary`.
  */
 export { AccountControls } from "./AccountControls"
 export { AuthCallbackRoute } from "./AuthCallbackRoute"

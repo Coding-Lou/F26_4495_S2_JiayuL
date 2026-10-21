@@ -1,0 +1,1224 @@
+/*
+ * FEATURE-007 — My Gear: one `paper` collection sheet on the trip shell's
+ * `ink` base, the user's gear laid out on it as slots, and one inspection
+ * panel beside it.
+ *
+ * Imported by MyGearScreen, so it arrives with the /gear chunk only. Every
+ * rule is scoped to .my-gear. The shell, the header, the focus ring, the
+ * secondary button (`trip-button`), and the spinner are in
+ * components/layout/trip-shell.css.
+ *
+ * Tokens come from docs/DESIGN_SYSTEM.md Version 2. Feature-level values come
+ * from docs/features/007-gear-inventory.md; section numbers in comments refer
+ * to that specification. Tiers: XL ≥1680, L 1440–1679, M 1280–1439,
+ * S 1024–1279, T 768–1023, N <768.
+ */
+
+@layer components {
+  /* ------------------------------------------------------------------ *
+   * Per-tier values (§21.1–§21.4, §21.8). N is the unprefixed block only
+   * because min-width queries cascade upward; desktop is the primary design.
+   * ------------------------------------------------------------------ */
+  .my-gear {
+    /* The slot plate (§21.6, §21.19): the same value as `map-land`. */
+    --gear-plate: #ece8dd;
+
+    --gear-ink-04: color-mix(in srgb, var(--color-ink) 4%, transparent);
+    --gear-ink-16: color-mix(in srgb, var(--color-ink) 16%, transparent);
+    --gear-ink-24: color-mix(in srgb, var(--color-ink) 24%, transparent);
+    --gear-ink-32: color-mix(in srgb, var(--color-ink) 32%, transparent);
+    --gear-ink-40: color-mix(in srgb, var(--color-ink) 40%, transparent);
+    --gear-snow-pressed: color-mix(in srgb, var(--color-ink) 4%, var(--color-snow));
+    --gear-snow-active: color-mix(in srgb, var(--color-ink) 8%, var(--color-snow));
+
+    /* N, below 768px */
+    --gear-sheet-top: 8px;
+    --gear-sheet-bottom: 16px;
+    --gear-sheet-pad: 20px;
+    --gear-sheet-radius: 20px;
+    --gear-h1-size: 1.75rem;
+    --gear-h1-line: 2.125rem;
+    --gear-support-size: 0.875rem;
+    --gear-support-line: 1.25rem;
+    --gear-grid-gap: 12px;
+    --gear-card-min: 168px;
+    --gear-card-name-size: 0.875rem;
+    --gear-card-name-line: 1.25rem;
+    --gear-row-gap: 24px;
+    --gear-panel-width: 320px;
+    --gear-panel-pad: 24px;
+    --gear-panel-name-size: 1.375rem;
+    --gear-panel-name-line: 1.75rem;
+    --gear-circle: 36px;
+    --gear-pill-height: 36px;
+    --gear-tile-height: 52px;
+
+    @media (width < 360px) {
+      --gear-sheet-pad: 16px;
+    }
+
+    /* T, 768–1023px */
+    @media (width >= 768px) {
+      --gear-sheet-top: 16px;
+      --gear-sheet-bottom: 24px;
+      --gear-sheet-pad: 32px;
+      --gear-sheet-radius: 24px;
+      --gear-h1-size: 2rem;
+      --gear-h1-line: 2.375rem;
+      --gear-support-size: 1rem;
+      --gear-support-line: 1.5rem;
+      --gear-grid-gap: 16px;
+      --gear-card-name-size: 1rem;
+      --gear-card-name-line: 1.375rem;
+    }
+
+    /* S, 1024–1279px */
+    @media (width >= 1024px) {
+      --gear-card-min: 200px;
+    }
+
+    /* M, 1280–1439px */
+    @media (width >= 1280px) {
+      --gear-sheet-pad: 40px;
+      --gear-grid-gap: 20px;
+      --gear-panel-width: 336px;
+    }
+
+    /* L, 1440–1679px */
+    @media (width >= 1440px) {
+      --gear-sheet-bottom: 40px;
+      --gear-sheet-pad: 48px;
+      --gear-h1-size: 2.25rem;
+      --gear-h1-line: 2.625rem;
+      --gear-panel-width: 328px;
+    }
+
+    /* XL, from 1680px. Wider than that, the sheet's 1600px cap leaves the
+       extra width beside the sheet; cards do not grow. */
+    @media (width >= 1680px) {
+      --gear-sheet-pad: 56px;
+      --gear-grid-gap: 24px;
+      --gear-row-gap: 32px;
+      --gear-panel-width: 400px;
+      --gear-panel-pad: 28px;
+      --gear-panel-name-size: 1.5rem;
+      --gear-panel-name-line: 1.875rem;
+    }
+
+    /* Every control is 44px on a coarse pointer (§21.18). */
+    @media (pointer: coarse) {
+      --gear-circle: 44px;
+      --gear-pill-height: 44px;
+      --gear-tile-height: 56px;
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Collection sheet (§21.1). No shadow, texture, or `overflow: hidden`,
+   * so no focus ring inside it is ever clipped. The transparent border is
+   * an edge in forced colors.
+   * ------------------------------------------------------------------ */
+  .my-gear .gear-sheet {
+    box-sizing: border-box;
+    width: min(100% - 2 * var(--trip-gutter), 1600px);
+    min-height: calc(
+      var(--trip-vh) - var(--trip-header-height) - var(--gear-sheet-top) -
+        var(--gear-sheet-bottom)
+    );
+    margin: var(--gear-sheet-top) auto var(--gear-sheet-bottom);
+    padding: var(--gear-sheet-pad);
+    border: 1px solid transparent;
+    border-radius: var(--gear-sheet-radius);
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Title block (§21.2)
+   * ------------------------------------------------------------------ */
+  .my-gear .gear-title-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+  }
+
+  .my-gear .gear-title-text {
+    min-width: 0;
+  }
+
+  .my-gear .gear-title {
+    margin: 0;
+    font-size: var(--gear-h1-size);
+    line-height: var(--gear-h1-line);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+
+  .my-gear .gear-support {
+    margin: 8px 0 0;
+    color: var(--color-stone);
+    font-size: var(--gear-support-size);
+    line-height: var(--gear-support-line);
+  }
+
+  .my-gear .gear-summary {
+    margin: 4px 0 0;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Primary action: Add Gear and Add your first item (§21.2). Centred on
+     the h1's first line. */
+  .my-gear .gear-primary {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;
+    margin-top: calc((var(--gear-h1-line) - 44px) / 2);
+    padding: 0 20px;
+    border-radius: 12px;
+    background-color: var(--color-conifer);
+    color: var(--color-snow);
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  .my-gear .gear-primary > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+  }
+
+  @media (hover: hover) {
+    .my-gear .gear-primary:hover {
+      background-color: var(--color-conifer-deep);
+    }
+  }
+
+  .my-gear .gear-primary:active {
+    background-color: var(--color-conifer-press);
+  }
+
+  /* Below 768px Add Gear moves under the summary, 16 below, full width. */
+  @media (width < 768px) {
+    .my-gear .gear-title-row {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 16px;
+    }
+
+    .my-gear .gear-title-row > .gear-primary {
+      width: 100%;
+      margin-top: 0;
+    }
+  }
+
+  /* Notice slot (§21.12): takes no space while empty. */
+  .my-gear .gear-notice:not(:empty) {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-top: 24px;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .my-gear .gear-notice > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+    color: var(--color-stone);
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Family selector (§21.7): radio pills. Outline → solid `ink` when
+   * chosen, a value and shape change rather than a hue.
+   * ------------------------------------------------------------------ */
+  .my-gear .gear-families {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-width: 0;
+    margin: 32px 0 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .my-gear .gear-pill {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--gear-pill-height);
+    padding: 0 16px;
+    border: 1px solid var(--gear-ink-16);
+    border-radius: 9999px;
+    color: var(--color-ink);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  @media (hover: hover) {
+    .my-gear .gear-pill:hover {
+      background-color: var(--trip-ink-06);
+    }
+  }
+
+  .my-gear .gear-pill:active {
+    background-color: var(--trip-ink-10);
+  }
+
+  .my-gear .gear-pill:has(:checked) {
+    border-color: var(--color-ink);
+    background-color: var(--color-ink);
+    color: var(--color-snow);
+  }
+
+  .my-gear .gear-pill:has(:focus-visible) {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    box-shadow: var(--focus-ring);
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Collection row and grid (§21.3, §21.4)
+   * ------------------------------------------------------------------ */
+  .my-gear .gear-row,
+  .my-gear .gear-title-row ~ .gear-collection {
+    margin-top: 32px;
+  }
+
+  .my-gear .gear-families + .gear-row {
+    margin-top: 20px;
+  }
+
+  .my-gear .gear-row {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--gear-row-gap);
+  }
+
+  .my-gear .gear-row > .gear-collection {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .my-gear .gear-grid {
+    display: grid;
+    grid-template-columns: repeat(
+      auto-fill,
+      minmax(min(100%, var(--gear-card-min)), 1fr)
+    );
+    gap: var(--gear-grid-gap);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  @media (width < 768px) {
+    .my-gear .gear-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .my-gear .gear-slot {
+    display: flex;
+    min-width: 0;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Item card (§21.5). The edge is an inset shadow carried by
+   * `--trip-edge`, so the focus ring of `.trip-control` adds to it and no
+   * state change shifts layout.
+   * ------------------------------------------------------------------ */
+  .my-gear .gear-card {
+    --trip-edge: inset 0 0 0 1px var(--trip-ink-10);
+
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    min-width: 0;
+    padding: 8px 8px 10px;
+    border-radius: 18px;
+    background-color: var(--color-snow);
+    color: var(--color-ink);
+    text-align: start;
+    cursor: pointer;
+    transition:
+      background-color var(--duration-fast) var(--ease-ui),
+      box-shadow var(--duration-fast) var(--ease-ui);
+  }
+
+  @media (hover: hover) {
+    .my-gear .gear-card:hover {
+      --trip-edge: inset 0 0 0 1px var(--gear-ink-32);
+    }
+  }
+
+  .my-gear .gear-card:active {
+    --trip-edge: inset 0 0 0 1px var(--gear-ink-32);
+
+    background-color: var(--gear-snow-pressed);
+  }
+
+  /* Selected: a 2px `ink` ring and a `paper` fill, so the slot reads as
+     pressed in. No glow, lift, or colour accent; hover adds nothing. */
+  .my-gear .gear-card[aria-expanded="true"] {
+    --trip-edge: inset 0 0 0 2px var(--color-ink);
+
+    background-color: var(--color-paper);
+  }
+
+  .my-gear .gear-card-name {
+    display: -webkit-box;
+    margin: 12px 6px 0;
+    overflow: hidden;
+    font-size: var(--gear-card-name-size);
+    line-height: var(--gear-card-name-line);
+    font-weight: 600;
+    overflow-wrap: anywhere;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+
+  .my-gear .gear-card-category {
+    display: block;
+    margin: 4px 6px 0;
+    overflow: hidden;
+    color: var(--color-stone);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  /* Arrival of a newly added card: once, on that card only (§21.5). */
+  .my-gear .gear-card[data-arrived] {
+    animation: gear-arrive var(--duration-base) var(--ease-ui) both;
+  }
+
+  /* Loading slot: the card's geometry, static (§21.5). */
+  .my-gear .gear-skeleton {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    padding: 8px 8px 10px;
+    border-radius: 18px;
+    background-color: var(--color-snow);
+    box-shadow: inset 0 0 0 1px var(--trip-ink-08);
+  }
+
+  .my-gear .gear-skeleton-plate {
+    aspect-ratio: 5 / 4;
+    border-radius: 10px;
+    background-color: var(--trip-ink-06);
+  }
+
+  .my-gear .gear-skeleton-bar {
+    width: 60%;
+    height: 14px;
+    margin: 12px 6px 0;
+    border-radius: 6px;
+    background-color: var(--trip-ink-08);
+  }
+
+  .my-gear .gear-skeleton-bar[data-short] {
+    width: 40%;
+    height: 12px;
+    margin-top: 8px;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Slot plate and art (§21.6). One plate for every category: no tint.
+   * Both art tiers draw into the art box, so final art replaces interim
+   * art with no layout change.
+   * ------------------------------------------------------------------ */
+  .my-gear .gear-plate {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--gear-plate);
+    background-image: radial-gradient(
+      var(--color-paper) 0%,
+      var(--gear-plate) 70%
+    );
+  }
+
+  .my-gear .gear-plate[data-variant="card"] {
+    width: 100%;
+    aspect-ratio: 5 / 4;
+    border-radius: 10px;
+  }
+
+  .my-gear .gear-plate[data-variant="panel"] {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    border-radius: 12px;
+  }
+
+  .my-gear .gear-plate[data-variant="sheet"] {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    max-height: 180px;
+    border-radius: 12px;
+  }
+
+  .my-gear .gear-plate[data-variant="tile"] {
+    flex: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+  }
+
+  .my-gear .gear-art-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 72%;
+    aspect-ratio: 1;
+  }
+
+  .my-gear .gear-art-box > img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  /* Interim pictogram: 60% of the art box, `conifer-press`, line only. The
+     stroke keeps its stated width at every size. */
+  .my-gear .gear-pictogram {
+    width: 60%;
+    height: 60%;
+    color: var(--color-conifer-press);
+  }
+
+  .my-gear .gear-pictogram * {
+    vector-effect: non-scaling-stroke;
+  }
+
+  .my-gear .gear-plate[data-variant="tile"] .gear-pictogram {
+    width: 24px;
+    height: 24px;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Item detail panel, from 1024px (§21.8): non-modal, in flow, sticky.
+   * ------------------------------------------------------------------ */
+  .my-gear .gear-panel {
+    position: sticky;
+    top: 24px;
+    flex: none;
+    box-sizing: border-box;
+    width: var(--gear-panel-width);
+    max-height: calc(var(--trip-vh) - 48px);
+    padding: var(--gear-panel-pad);
+    overflow-y: auto;
+    border: 1px solid var(--trip-ink-12);
+    border-radius: 20px;
+    background-color: var(--color-snow);
+    animation: gear-panel-in var(--duration-base) var(--ease-ui) both;
+  }
+
+  .my-gear .gear-detail-name {
+    margin: 20px 0 0;
+    font-size: var(--gear-panel-name-size);
+    line-height: var(--gear-panel-name-line);
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+
+  .my-gear .gear-detail-category {
+    margin: 6px 0 0;
+    color: var(--color-stone);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+  }
+
+  .my-gear .gear-detail-description {
+    margin: 16px 0 0;
+    font-size: 1rem;
+    line-height: 1.5rem;
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+  }
+
+  .my-gear .gear-detail-context {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 16px;
+    color: var(--color-stone);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .my-gear .gear-detail-context > p {
+    margin: 0;
+  }
+
+  .my-gear .gear-detail-actions-area {
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid var(--trip-ink-12);
+  }
+
+  .my-gear .gear-detail-actions,
+  .my-gear .gear-confirm-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* Remove from My Gear: a quiet destructive text button (§21.8). */
+  .my-gear .gear-remove-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: var(--trip-button-height);
+    padding: 0 10px;
+    border-radius: 10px;
+    color: var(--color-ink);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  .my-gear .gear-remove-link > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    color: var(--color-ember);
+  }
+
+  @media (hover: hover) {
+    .my-gear .gear-remove-link:hover {
+      background-color: var(--gear-ink-04);
+      text-decoration-line: underline;
+    }
+  }
+
+  .my-gear .gear-remove-link:active {
+    background-color: var(--trip-ink-08);
+  }
+
+  /* Close (§21.8): the circle icon action of DS §14. In the panel and the
+     sheet it sits over the plate's corner; in the dialog, at the end of the
+     header row. */
+  .my-gear .gear-close {
+    --trip-edge: inset 0 0 0 1px var(--trip-ink-12);
+
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+    width: var(--gear-circle);
+    height: var(--gear-circle);
+    border-radius: 50%;
+    background-color: var(--color-snow);
+    color: var(--color-ink);
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  .my-gear .gear-close[data-placement="corner"] {
+    position: absolute;
+    top: 12px;
+    inset-inline-end: 12px;
+  }
+
+  .my-gear .gear-close > svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  @media (hover: hover) {
+    .my-gear .gear-close:not([aria-disabled="true"]):hover {
+      background-color: var(--color-paper);
+    }
+  }
+
+  .my-gear .gear-close:not([aria-disabled="true"]):active {
+    background-color: var(--gear-snow-active);
+  }
+
+  .my-gear .gear-close[aria-disabled="true"] {
+    cursor: default;
+  }
+
+  /* Inline remove confirmation (§21.11) */
+  .my-gear .gear-confirm-question {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+
+  .my-gear .gear-confirm-body {
+    margin: 4px 0 0;
+    color: var(--color-stone);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .my-gear .gear-confirm-actions {
+    margin-top: 16px;
+  }
+
+  .my-gear .gear-danger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: var(--trip-button-height);
+    padding: 0 16px;
+    border-radius: 10px;
+    background-color: var(--color-ember);
+    color: var(--color-snow);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  .my-gear .gear-danger > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+  }
+
+  @media (hover: hover) {
+    .my-gear .gear-danger:not([aria-disabled="true"]):hover {
+      background-color: color-mix(in srgb, var(--color-ember) 88%, var(--color-ink));
+    }
+  }
+
+  .my-gear .gear-danger:not([aria-disabled="true"]):active {
+    background-color: color-mix(in srgb, var(--color-ember) 76%, var(--color-ink));
+  }
+
+  /* A request error (§21.10, §21.11): `ember` icon, `ink` text. It is always
+     in the document, so its message is announced, and takes no space while
+     empty. */
+  .my-gear .gear-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+    overflow-wrap: anywhere;
+  }
+
+  .my-gear .gear-confirm .gear-alert:not(:empty) {
+    margin-top: 16px;
+  }
+
+  .my-gear .gear-alert > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+    color: var(--color-ember);
+  }
+
+  /* Working controls keep focus and ignore activation. */
+  .my-gear [aria-disabled="true"]:is(.gear-submit, .gear-danger, .trip-button) {
+    cursor: progress;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Item detail below 1024px: a modal bottom sheet (§21.9)
+   * ------------------------------------------------------------------ */
+  .my-gear .gear-detail-sheet {
+    box-sizing: border-box;
+    width: min(560px, 100vw - 32px);
+    max-width: none;
+    max-height: 85dvh;
+    margin: auto auto 0;
+    padding: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border: 0;
+    border-radius: 20px 20px 0 0;
+    background-color: var(--color-snow);
+    color: var(--color-ink);
+  }
+
+  .my-gear .gear-detail-sheet-body {
+    position: relative;
+    padding: 24px 24px calc(24px + env(safe-area-inset-bottom, 0px));
+  }
+
+  @media (width < 768px) {
+    .my-gear .gear-detail-sheet {
+      width: 100%;
+    }
+
+    .my-gear .gear-detail-sheet-body {
+      padding: 20px 20px calc(20px + env(safe-area-inset-bottom, 0px));
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Add Gear and Edit Gear dialog (§21.10)
+   * ------------------------------------------------------------------ */
+  .my-gear .gear-dialog {
+    box-sizing: border-box;
+    width: 560px;
+    max-width: calc(100vw - 32px);
+    max-height: calc(100dvh - 32px);
+    padding: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border: 0;
+    border-radius: 20px;
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    box-shadow: 0 8px 32px rgb(11 28 32 / 0.24);
+  }
+
+  .my-gear .gear-dialog-body {
+    padding: 32px;
+  }
+
+  @media (width < 768px) {
+    .my-gear .gear-dialog {
+      width: 100%;
+      max-width: 100%;
+      max-height: 92dvh;
+      margin: auto 0 0;
+      border-radius: 20px 20px 0 0;
+    }
+
+    .my-gear .gear-dialog-body {
+      padding: 20px 20px calc(20px + env(safe-area-inset-bottom, 0px));
+    }
+  }
+
+  .my-gear .gear-dialog::backdrop,
+  .my-gear .gear-detail-sheet::backdrop {
+    background-color: rgb(11 28 32 / 0.4);
+  }
+
+  .my-gear .gear-dialog[open],
+  .my-gear .gear-detail-sheet[open] {
+    animation: gear-rise var(--duration-base) var(--ease-ui) both;
+  }
+
+  .my-gear .gear-dialog[open]::backdrop,
+  .my-gear .gear-detail-sheet[open]::backdrop {
+    animation: gear-fade var(--duration-fast) var(--ease-ui) both;
+  }
+
+  .my-gear .gear-dialog-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .my-gear .gear-dialog-title {
+    margin: 0;
+    font-size: 1.375rem;
+    line-height: 1.75rem;
+    font-weight: 600;
+  }
+
+  .my-gear .gear-field-label {
+    padding: 0;
+    color: var(--color-ink);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+  }
+
+  .my-gear .gear-field-help,
+  .my-gear .gear-field-error {
+    margin: 4px 0 0;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .my-gear .gear-field-help {
+    color: var(--color-stone);
+  }
+
+  .my-gear .gear-field-error {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    color: var(--color-ink);
+    font-weight: 500;
+  }
+
+  .my-gear .gear-field-error > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+    color: var(--color-ember);
+  }
+
+  /* Category picker (§21.10.1): eleven radio tiles in family order. */
+  .my-gear .gear-picker {
+    min-width: 0;
+    margin: 24px 0 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .my-gear .gear-tiles {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  @media (width < 768px) {
+    .my-gear .gear-tiles {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (width < 360px) {
+    .my-gear .gear-tiles {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  .my-gear .gear-tile {
+    --gear-tile-edge: inset 0 0 0 1px var(--gear-ink-16);
+
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    min-height: var(--gear-tile-height);
+    padding: 6px 10px 6px 6px;
+    border-radius: 12px;
+    background-color: var(--color-snow);
+    box-shadow: var(--gear-tile-edge);
+    cursor: pointer;
+    transition:
+      background-color var(--duration-fast) var(--ease-ui),
+      box-shadow var(--duration-fast) var(--ease-ui);
+  }
+
+  @media (hover: hover) {
+    .my-gear .gear-tile:hover {
+      --gear-tile-edge: inset 0 0 0 1px var(--gear-ink-32);
+    }
+  }
+
+  .my-gear .gear-tile:active {
+    background-color: var(--gear-snow-pressed);
+  }
+
+  .my-gear .gear-tile:has(:checked) {
+    --gear-tile-edge: inset 0 0 0 2px var(--color-ink);
+  }
+
+  .my-gear .gear-tile:has(:focus-visible) {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    box-shadow: var(--gear-tile-edge), var(--focus-ring);
+  }
+
+  .my-gear .gear-tile-label {
+    display: -webkit-box;
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+    overflow-wrap: anywhere;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+
+  .my-gear .gear-tile:has(:checked) .gear-tile-label {
+    font-weight: 600;
+  }
+
+  /* Space is reserved, so choosing a tile shifts nothing. */
+  .my-gear .gear-tile-check {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    color: var(--color-ink);
+    visibility: hidden;
+  }
+
+  .my-gear .gear-tile:has(:checked) .gear-tile-check {
+    visibility: visible;
+  }
+
+  /* Item name (§21.10) */
+  .my-gear .gear-name-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 24px;
+  }
+
+  .my-gear .gear-input {
+    box-sizing: border-box;
+    width: 100%;
+    height: 44px;
+    padding: 0 12px;
+    border: 1px solid var(--color-stone);
+    border-radius: 10px;
+    background-color: var(--color-snow);
+    color: var(--color-ink);
+    font: inherit;
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+
+  @media (hover: hover) {
+    .my-gear .gear-input:hover {
+      border-color: var(--color-ink);
+    }
+  }
+
+  .my-gear .gear-input[aria-invalid="true"] {
+    padding: 0 11px;
+    border: 2px solid var(--color-ember);
+  }
+
+  .my-gear .gear-name-meta {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .my-gear .gear-name-meta > p {
+    margin: 0;
+  }
+
+  .my-gear .gear-counter {
+    flex: none;
+    color: var(--color-stone);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* The request error sits 20 above the actions; the actions are 28 below
+     the name when there is none. */
+  .my-gear .gear-dialog-alert:not(:empty) {
+    margin-top: 28px;
+  }
+
+  .my-gear .gear-dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 28px;
+  }
+
+  .my-gear .gear-dialog-alert:not(:empty) + .gear-dialog-actions {
+    margin-top: 20px;
+  }
+
+  @media (width < 768px) {
+    .my-gear .gear-dialog-actions {
+      flex-direction: column-reverse;
+    }
+
+    .my-gear .gear-dialog-actions > button {
+      width: 100%;
+    }
+  }
+
+  .my-gear .gear-submit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: var(--trip-button-height);
+    padding: 0 16px;
+    border-radius: 10px;
+    background-color: var(--color-conifer);
+    color: var(--color-snow);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  .my-gear .gear-submit > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+  }
+
+  @media (hover: hover) {
+    .my-gear .gear-submit:not([aria-disabled="true"]):hover {
+      background-color: var(--color-conifer-deep);
+    }
+  }
+
+  .my-gear .gear-submit:not([aria-disabled="true"]):active {
+    background-color: var(--color-conifer-press);
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Empty and unavailable (§21.12)
+   * ------------------------------------------------------------------ */
+  .my-gear .gear-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: 480px;
+    margin: 0 auto;
+    padding-top: 48px;
+    text-align: center;
+  }
+
+  .my-gear .gear-empty-slots {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .my-gear .gear-empty-slots > span {
+    width: 72px;
+    height: 72px;
+    border: 1.5px dashed var(--gear-ink-24);
+    border-radius: 12px;
+  }
+
+  .my-gear .gear-state-title {
+    margin: 0;
+    font-size: 1.375rem;
+    line-height: 1.75rem;
+    font-weight: 600;
+  }
+
+  .my-gear .gear-state-body {
+    margin: 8px 0 0;
+    color: var(--color-stone);
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+
+  .my-gear .gear-state-action {
+    margin-top: 24px;
+  }
+}
+
+/* While a modal is open the page behind it does not scroll (§21.10). */
+:root:has(.my-gear .gear-dialog[open], .my-gear .gear-detail-sheet[open]) {
+  overflow: hidden;
+}
+
+/* Forced colors (§21.5, §21.6, §21.7, §21.10.1): box-shadow edges are not
+   drawn, so each state becomes a real border of the same meaning. */
+@media (forced-colors: active) {
+  .my-gear .gear-card {
+    padding: 7px 7px 9px;
+    border: 1px solid CanvasText;
+  }
+
+  .my-gear .gear-card[aria-expanded="true"] {
+    padding: 5px 5px 7px;
+    border-width: 3px;
+  }
+
+  .my-gear .gear-plate {
+    background: none;
+  }
+
+  .my-gear .gear-pictogram {
+    color: CanvasText;
+  }
+
+  .my-gear .gear-pill:has(:checked) {
+    padding: 0 14px;
+    border-width: 3px;
+  }
+
+  .my-gear .gear-tile {
+    padding: 5px 9px 5px 5px;
+    border: 1px solid CanvasText;
+  }
+
+  .my-gear .gear-tile:has(:checked) {
+    padding: 3px 7px 3px 3px;
+    border-width: 3px;
+  }
+
+  .my-gear .gear-close,
+  .my-gear .gear-panel,
+  .my-gear .gear-skeleton {
+    border: 1px solid CanvasText;
+  }
+}
+
+@keyframes gear-arrive {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+}
+
+/* The panel opens with a 4px slide from the right (§21.13). */
+@keyframes gear-panel-in {
+  from {
+    opacity: 0;
+    transform: translateX(4px);
+  }
+}
+
+/* A dialog or sheet opens with a 4px rise (§21.13). */
+@keyframes gear-rise {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+@keyframes gear-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Reduced motion (§21.13): nothing moves or fades. Colour-only hover and
+   press changes are kept; the spinner is static (trip-shell.css). */
+@media (prefers-reduced-motion: reduce) {
+  .my-gear .gear-card[data-arrived],
+  .my-gear .gear-panel,
+  .my-gear .gear-dialog[open],
+  .my-gear .gear-detail-sheet[open],
+  .my-gear .gear-dialog[open]::backdrop,
+  .my-gear .gear-detail-sheet[open]::backdrop {
+    animation: none;
+  }
+}

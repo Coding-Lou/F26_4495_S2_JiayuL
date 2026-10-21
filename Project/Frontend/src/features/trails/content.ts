@@ -46,6 +46,10 @@ export const trailContent = {
   noRoute: "Route maps aren't available yet.",
   /** TD6 */
   sampleData: "This is sample trail data.",
+  /** FEATURE-009 MM150: the lead-in to Add a memory. */
+  memoryLeadIn: "Been on this trail already?",
+  /** FEATURE-009 MM151 */
+  addMemory: "Add a memory",
 
   why: {
     /** TD7 */
@@ -89,5 +93,53 @@ export const trailContent = {
   loadedAnnouncement: "Trail details loaded.",
 } as const
 
-/** The wire value of the seeded sample trails (section 7.1). Never shown. */
-export const SAMPLE_DATA_SOURCE = "DEMO_SEED"
+/**
+ * The wire values of sample trails (section 7.1), never shown: the curated
+ * seed (`DEMO_SEED`) and the generated planner candidates (`SYNTHETIC_DEMO`).
+ */
+const CURATED_SAMPLE_SOURCE = "DEMO_SEED"
+const SYNTHETIC_SAMPLE_SOURCE = "SYNTHETIC_DEMO"
+
+const SAMPLE_DATA_SOURCES: ReadonlySet<string> = new Set([
+  CURATED_SAMPLE_SOURCE,
+  SYNTHETIC_SAMPLE_SOURCE,
+])
+
+/** Whether a trail's `source` marks it as sample data to disclose. */
+export function isSampleTrailSource(source: string | null): boolean {
+  return source !== null && SAMPLE_DATA_SOURCES.has(source)
+}
+
+/**
+ * Whether a trail is a generated planner candidate (`SYNTHETIC_DEMO`), not a
+ * curated trail. Such a trail offers no Add a memory entry.
+ */
+export function isSyntheticTrailSource(source: string | null): boolean {
+  return source === SYNTHETIC_SAMPLE_SOURCE
+}
+
+/**
+ * Daily Trail Activity (FEATURE-006 sections 7.3, 16.9.6, 16.17). Planning
+ * wording only: no string here, or anywhere activity is shown, says that
+ * anyone is on a trail, or uses the words section 7.3 forbids.
+ */
+const activityCount = new Intl.NumberFormat("en-US")
+
+export const activityContent = {
+  /** TA1, TA2 */
+  planned: (count: number) =>
+    count === 1
+      ? "1 trip planned for today"
+      : `${activityCount.format(count)} trips planned for today`,
+  /** TA3 */
+  none: "No trips planned for today yet",
+  /** TA4 */
+  unavailable: "Today's activity isn't available.",
+  /** TA5 */
+  loading: "Loading today's activity…",
+  /** TA6 */
+  sample: "Sample activity",
+  /** TA7 */
+  sampleCaption:
+    "Sample activity: these daily figures are examples, not real trip plans.",
+} as const

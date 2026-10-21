@@ -28,9 +28,11 @@ export type TrailDetailResponse = {
 
 /**
  * A trail as the screens hold it: only the fields FEATURE-004 shows, each a
- * checked value or null. The trailhead, the route, the scenery, and the
- * baseline gear are part of the contract and are not read: nothing here
- * displays them (sections 7.1, D10).
+ * checked value or null. The route, the scenery, and the baseline gear are
+ * part of the contract and are not read: nothing here displays them
+ * (sections 7.1, D10). The trailhead is read only so that Discover can
+ * centre its map on a `?trail=` deep link outside its first results; no
+ * trip screen displays it.
  */
 export type TrailDetail = {
   id: string | null
@@ -40,9 +42,54 @@ export type TrailDetail = {
   distanceKm: number | null
   elevationGainM: number | null
   estimatedDurationMin: number | null
+  /** The trailhead, only when both coordinates are finite and in range. */
+  position: { lat: number; lng: number } | null
   source: string | null
   coverImageUrl: string | null
 }
+
+/**
+ * One trail of `GET /api/trails` (and of `GET /api/trails/nearby`) as Discover holds it (FEATURE-006 sections
+ * 5.2, 9.1, 10): only what the list, the markers, and the Trail Detail popup
+ * show. A trail without a usable id is not kept at all.
+ */
+export type TrailSummary = {
+  /** A UUID, written in lower case. */
+  id: string
+  name: string | null
+  description: string | null
+  difficulty: string | null
+  distanceKm: number | null
+  elevationGainM: number | null
+  estimatedDurationMin: number | null
+  /** The trailhead, only when both coordinates are finite and in range. */
+  position: { lat: number; lng: number } | null
+  /** Wire values as received; mapped to labels only where shown. */
+  scenery: string[]
+  source: string | null
+  coverImageUrl: string | null
+}
+
+/**
+ * `GET /api/trails/activity?date=` as the screens hold it (FEATURE-006
+ * section 6.2). A trail with no usable entry is absent from `counts`: its
+ * activity is unknown, never zero.
+ */
+export type TrailActivity = {
+  date: string
+  /** True unless the source is exactly `RECORDED` (D11). */
+  sample: boolean
+  /** Lower-case trail id to a non-negative integer count. */
+  counts: ReadonlyMap<string, number>
+}
+
+/** Why a public read of trail data produced nothing usable. */
+export type TrailReadFailureKind =
+  | "timeout"
+  /** A network error or a server failure. Worth one more attempt. */
+  | "unavailable"
+  /** Refused, or a body that cannot be read. */
+  | "refused"
 
 /**
  * Why a trail request produced no trail, as far as the browser can tell

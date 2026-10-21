@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react"
-import { ArrowLeft, CircleAlert, Info } from "lucide-react"
+import { ArrowLeft, ArrowRight, CircleAlert, Info } from "lucide-react"
 import {
   Link,
   useNavigate,
@@ -26,6 +26,7 @@ import { tripContent } from "@/features/trails/content"
 import { useTrailDetail } from "@/features/trails/hooks/useTrailDetail"
 import { isTrailId } from "@/features/trails/trailId"
 import {
+  gearStudioLocation,
   trailDetailLocation,
   tripPreparationLocation,
 } from "@/features/trails/tripRoutes"
@@ -37,7 +38,7 @@ import { packContent } from "../content"
 import { gearRows } from "../gearCategories"
 import { usePackRecommendation } from "../hooks/usePackRecommendation"
 import { preparationScene } from "../preparationSceneConfig"
-import { countGearRows, wholePercent } from "../presentation"
+import { countGearRows, readinessLine, wholePercent } from "../presentation"
 import type { PackFailureKind, PackRecommendation } from "../types/pack"
 import { PackBriefing } from "./PackBriefing"
 import { PreparationScene } from "./PreparationScene"
@@ -364,9 +365,11 @@ function PreparationPanel({
             <>
               {trail !== null ? <TrailFactsLine trail={trail} /> : null}
 
-              {/* The trip date at the start. The end of this row is kept
-                  empty: it is the position reserved for the next feature's
-                  action, and nothing is rendered there (section 21.18, D11). */}
+              {/* The trip date at the start. The end of this row is the
+                  position section 21.18 reserved: FEATURE-005's call to
+                  action stands there (its section 16.12), only once the pack
+                  request has succeeded. Never a placeholder or a disabled
+                  form, and never a request of its own: it is navigation. */}
               <div className="prep-date-row">
                 <TripDateControl
                   // S8 does not show the address's unusable date. S12 keeps
@@ -379,6 +382,15 @@ function PreparationPanel({
                   placement="below"
                   describedBy={`${descriptionId} ${alertId}`}
                 />
+                {view.kind === "ready" && trailId !== null && tripDate !== null ? (
+                  <Link
+                    to={gearStudioLocation(trailId, tripDate, rec)}
+                    className="trip-control prep-gear-up"
+                  >
+                    {packContent.gearUp}
+                    <ArrowRight aria-hidden="true" strokeWidth={2} />
+                  </Link>
+                ) : null}
               </div>
 
               {/* S8: the control's description, not a live message. */}
@@ -514,8 +526,8 @@ function packPhase(view: PackView): string {
 }
 
 /**
- * Section 23.3: "Gear list loaded. Packing readiness 60%. 2 missing, 3
- * owned." The rows themselves are not read out; they are read in place.
+ * Section 23.3: "Gear list loaded. Gear Readiness 60%. 2 recommended items
+ * missing, 3 owned." The rows themselves are not read out; they are read in place.
  */
 function packLoadedAnnouncement(pack: PackRecommendation): string {
   const { announcements, gear, forecast } = packContent
@@ -526,7 +538,7 @@ function packLoadedAnnouncement(pack: PackRecommendation): string {
     const counts = countGearRows(rows)
     parts.push(
       `${announcements.readiness} ${wholePercent(pack.readinessPercentage)}%.`,
-      `${counts.missing} ${gear.missing}, ${counts.owned} ${gear.owned}.`,
+      `${readinessLine(pack.readinessPercentage, pack.requiredGear)}, ${counts.owned} ${gear.owned}.`,
     )
   } else {
     parts.push(gear.none)

@@ -3,8 +3,17 @@ import { CircleCheck, CircleDashed, Info } from "lucide-react"
 import { formatTripDateShort, todayIso } from "@/features/planning/tripDate"
 import { packContent } from "../content"
 import { gearRows, type GearRow } from "../gearCategories"
-import { countGearRows, wholeNumber, wholePercent } from "../presentation"
-import type { PackRecommendation, TrailWeather } from "../types/pack"
+import {
+  countGearRows,
+  readinessLine,
+  wholeNumber,
+  wholePercent,
+} from "../presentation"
+import type {
+  PackItemStatus,
+  PackRecommendation,
+  TrailWeather,
+} from "../types/pack"
 
 type PackBriefingProps = {
   pack: PackRecommendation
@@ -13,8 +22,8 @@ type PackBriefingProps = {
 }
 
 /**
- * The gear briefing (FEATURE-004 sections 17–19, 21.12–21.14): packing
- * readiness, the recommended gear with Owned or Missing for each, and the
+ * The gear briefing (FEATURE-004 sections 17–19, 21.12–21.14): Gear
+ * Readiness, the recommended gear with Owned or Missing for each, and the
  * forecast the list was built for. In that order, which is the order of
  * importance (D21).
  *
@@ -31,7 +40,10 @@ export function PackBriefing({ pack, tripDate }: PackBriefingProps) {
       {/* With nothing recommended the backend still answers 100; a
           percentage would overstate, so the block is not shown (G9). */}
       {rows.length > 0 ? (
-        <PackingReadiness percentage={pack.readinessPercentage} />
+        <GearReadiness
+          percentage={pack.readinessPercentage}
+          requiredGear={pack.requiredGear}
+        />
       ) : null}
 
       <RecommendedGear rows={rows} weatherUnavailable={weatherUnavailable} />
@@ -41,12 +53,18 @@ export function PackBriefing({ pack, tripDate }: PackBriefingProps) {
   )
 }
 
+type GearReadinessProps = {
+  percentage: number
+  requiredGear: readonly PackItemStatus[]
+}
+
 /**
  * The backend's number, as returned, with a meter drawn from the same number
  * (section 21.12). One appearance at every value: no threshold, no verdict
- * color, and nothing extra at 100%. The number is always present as text.
+ * color. The number is always present as text, and the line under it says
+ * what it covers: gear owned, nothing about the trail or the trip.
  */
-function PackingReadiness({ percentage }: { percentage: number }) {
+function GearReadiness({ percentage, requiredGear }: GearReadinessProps) {
   const headingId = useId()
   const { readiness } = packContent
   const shown = wholePercent(percentage)
@@ -76,7 +94,7 @@ function PackingReadiness({ percentage }: { percentage: number }) {
         <span style={{ width: `${percentage}%` }} />
       </div>
 
-      <p className="prep-note">{readiness.explanation}</p>
+      <p className="prep-note">{readinessLine(percentage, requiredGear)}</p>
     </section>
   )
 }

@@ -20,8 +20,13 @@ export default defineConfig({
     // recommendation service has no CORS policy and the gateway has no
     // routes, so the browser reaches the planner same-origin through here.
     // FEATURE-004 section 26, D7 adds the trail service and the one pack
-    // endpoint in the same way. Nothing else is proxied: not `/api/users`,
-    // and not the rest of `/api/recommendations`.
+    // endpoint in the same way. FEATURE-005 section 36, D10 adds the owned
+    // gear list of the user service, and nothing else of it: not
+    // `/api/users/me`. Not the rest of `/api/recommendations` either.
+    // FEATURE-009 D26 adds the memory service: the owner Memory endpoints and,
+    // in its local storage mode, the signed photo URLs under
+    // `/api/memories/local-photos/`, which are root-relative.
+    // FEATURE-011 adds plan-service: the owner Plan endpoints, `/api/plans`.
     proxy: {
       "/api/planner": {
         target: "http://localhost:8083",
@@ -31,6 +36,15 @@ export default defineConfig({
       },
       "/api/recommendations/pack": {
         target: "http://localhost:8083",
+      },
+      "/api/users/me/gear": {
+        target: "http://localhost:8081",
+      },
+      "/api/memories": {
+        target: "http://localhost:8085",
+      },
+      "/api/plans": {
+        target: "http://localhost:8086",
       },
     },
   },

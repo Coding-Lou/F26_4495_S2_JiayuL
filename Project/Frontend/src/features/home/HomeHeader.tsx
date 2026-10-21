@@ -12,7 +12,11 @@ const WIDE_HEADER_QUERY = "(min-width: 768px)"
 const HEADER_CONTENT = {
   brandStart: "Outdoor Trip",
   brandEnd: "Companion",
+  /** FEATURE-013 PL1 */
+  plans: "Plans",
   gear: "Gear",
+  /** FEATURE-009 MM7 */
+  memories: "Memories",
   menu: "Menu",
 } as const
 
@@ -44,8 +48,8 @@ function HomeAccount({ part }: HomeAccountProps) {
  * so the action sits above the thing it clears. Below 768px the account and
  * Gear move into a Menu.
  *
- * DOM order is the visual order at every width: brand, New Plan, Gear,
- * identity, Sign out.
+ * DOM order is the visual order at every width: brand, New Plan, Plans,
+ * Gear, Memories, identity, Sign out.
  */
 export function HomeHeader() {
   const wide = useMediaQuery(WIDE_HEADER_QUERY)
@@ -62,8 +66,14 @@ export function HomeHeader() {
 
       {wide ? (
         <div className="home-header-end">
+          <Link to="/plans" className="home-control home-nav-link">
+            {HEADER_CONTENT.plans}
+          </Link>
           <Link to="/gear" className="home-control home-nav-link">
             {HEADER_CONTENT.gear}
+          </Link>
+          <Link to="/memories" className="home-control home-nav-link">
+            {HEADER_CONTENT.memories}
           </Link>
           <HomeAccount />
         </div>
@@ -75,7 +85,8 @@ export function HomeHeader() {
 }
 
 /**
- * Below 768px: a Menu holding the identity, Gear, and Sign out (section
+ * Below 768px: a Menu holding the identity, Plans, Gear, Memories, and Sign
+ * out (section
  * 17.2). It closes on Escape, a press outside, or focus leaving it. While
  * sign-out is working it stays open and its row shows the working state.
  */
@@ -131,8 +142,14 @@ function HomeMenu() {
           aria-labelledby={buttonId}
         >
           <HomeAccount part="identity" />
+          <Link to="/plans" className="home-control home-menu-link">
+            {HEADER_CONTENT.plans}
+          </Link>
           <Link to="/gear" className="home-control home-menu-link">
             {HEADER_CONTENT.gear}
+          </Link>
+          <Link to="/memories" className="home-control home-menu-link">
+            {HEADER_CONTENT.memories}
           </Link>
           <HomeAccount part="sign-out" />
         </div>

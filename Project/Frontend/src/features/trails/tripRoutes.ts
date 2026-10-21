@@ -34,3 +34,44 @@ export function tripPreparationLocation(
     search: recSearch(rec),
   }
 }
+
+/**
+ * The Gear Customization Studio (FEATURE-005 sections 4.2, 10): the
+ * Preparation address extended by one segment. It holds the same trail and
+ * date and nothing else: no gear, no item, no equipped state.
+ */
+export function gearStudioLocation(
+  trailId: string,
+  tripDate: string,
+  rec: string | null,
+): TripLocation {
+  const preparation = tripPreparationLocation(trailId, tripDate, rec)
+  return {
+    pathname: `${preparation.pathname}/pack`,
+    search: preparation.search,
+  }
+}
+
+/**
+ * Add a memory for this trail (FEATURE-009 sections 10.2, 18.2, D25): the
+ * Memory editor with the trail preselected. Built here so that `trails`
+ * imports nothing from `memories`. The parameters carry the trail id and,
+ * from a past Plan (FEATURE-014 section 11), its trip date; both are only a
+ * prefill.
+ */
+export function newMemoryLocation(
+  trailId: string,
+  tripDate?: string,
+): TripLocation {
+  const date =
+    tripDate !== undefined ? `&date=${encodeURIComponent(tripDate)}` : ""
+  return {
+    pathname: "/memories/new",
+    search: `?trail=${encodeURIComponent(trailId)}${date}`,
+  }
+}
+
+/** One of the user's own Memories (FEATURE-014 section 12), never Community. */
+export function memoryDetailLocation(memoryId: string): string {
+  return `/memories/${encodeURIComponent(memoryId)}`
+}

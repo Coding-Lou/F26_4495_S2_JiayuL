@@ -163,7 +163,8 @@ export function readPlannerTurnResponse(body: unknown): PlannerTurnResult | null
   return {
     status,
     assistantMessage,
-    // Kept exactly as it arrived: it is the backend's, and goes back unchanged.
+    // Kept exactly as it arrived: it is the backend's, and goes back unchanged,
+    // including `openPreferences` and `lastAsked`.
     context: context as PlanningContext,
     recommendations: items,
   }

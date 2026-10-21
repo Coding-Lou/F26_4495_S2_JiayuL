@@ -37,10 +37,20 @@ export const packContent = {
     timeout: "That took too long, so we stopped waiting. Try again.",
   },
 
+  /**
+   * Gear Readiness: the share of recommended gear categories the user owns.
+   * Gear coverage only: never a trail match, a trip score, a safety score, or
+   * a chance of success.
+   */
   readiness: {
     /** TP9 */
-    heading: "Packing readiness",
-    /** TP11 */
+    heading: "Gear Readiness",
+    /** TP11: the line under the percentage, with nothing missing. */
+    covered: "All recommended gear covered",
+    /** TP11: recommended categories not owned. */
+    missing: (n: number) =>
+      n === 1 ? "1 recommended item missing" : `${n} recommended items missing`,
+    /** TP11: only if the numbers disagree (none missing, under 100%). */
     explanation: "Counts how many of the recommended gear categories you own.",
     /** TP25, after "{n}%". */
     valueText: "of recommended gear categories owned",
@@ -81,6 +91,9 @@ export const packContent = {
   /** TP24 */
   briefingName: "Gear list and forecast",
 
+  /** PC1 (FEATURE-005 section 16.12): the call to action to the Studio. */
+  gearUp: "Gear up",
+
   /** DT2 */
   title: {
     suffix: "Trip preparation · Outdoor Trip Companion",
@@ -91,6 +104,6 @@ export const packContent = {
   announcements: {
     loading: "Loading your gear list.",
     loaded: "Gear list loaded.",
-    readiness: "Packing readiness",
+    readiness: "Gear Readiness",
   },
 } as const

@@ -2,6 +2,7 @@ import { plannerContent } from "./content"
 import { formatTripDateShort } from "./tripDate"
 import type {
   PlanningContext,
+  PlanningDimension,
   ScoreBreakdown,
   StartingPointKind,
   TrailRecommendation,
@@ -140,7 +141,9 @@ export function scoreParts(breakdown: ScoreBreakdown | null): ScorePart[] {
 /**
  * The plan summary line (section 10.2.8): what the stored `PlanningContext`
  * holds, in words. Null when it holds nothing to show. It reads the backend's
- * context and nothing else; message text is never consulted.
+ * context and nothing else; message text is never consulted. A dimension in
+ * `openPreferences` with no value set reads "Any difficulty", "Any trip
+ * length", or "Any scenery".
  */
 export function planSummary(context: PlanningContext | null): string | null {
   if (context === null) {
@@ -148,28 +151,84 @@ export function planSummary(context: PlanningContext | null): string | null {
   }
 
   const parts: string[] = []
+  // A dimension the user left open is said as such, unless a value is set.
+  const open = openDimensions(context.openPreferences)
+  const { anyDifficulty, anyScenery, anyTripLength } = plannerContent.summary
 
   const difficulty = difficultyLabel(context.difficulty)
   if (difficulty !== null) {
     parts.push(difficulty)
+  } else if (open.has("DIFFICULTY")) {
+    parts.push(anyDifficulty)
   }
 
-  for (const limit of [
-    formatDuration(context.maxDurationMin),
+  const duration = durationSummary(context)
+  if (duration !== null) {
+    parts.push(duration)
+  }
+  const limits = [
     formatDistance(context.maxDistanceKm),
     formatElevationGain(context.maxElevationGainM),
-  ]) {
-    if (limit !== null) {
-      parts.push(`up to ${limit}`)
-    }
+  ].filter((limit): limit is string => limit !== null)
+  for (const limit of limits) {
+    parts.push(`up to ${limit}`)
+  }
+  if (duration === null && limits.length === 0 && open.has("TRIP_LENGTH")) {
+    parts.push(anyTripLength)
   }
 
   const scenery = sceneryLabels(context.preferredScenery)
   if (scenery.length > 0) {
     parts.push(scenery.join(", "))
+  } else if (open.has("SCENERY")) {
+    parts.push(anyScenery)
   }
 
   return parts.length > 0 ? `So far: ${parts.join(" · ")}` : null
+}
+
+/**
+ * The trip length read by its mode: "Around 4 h", "Up to 4 h", "At least
+ * 4 h". A value with no mode (a context stored before the field existed) or
+ * an unrecognized mode reads as a maximum, as the backend reads it.
+ */
+function durationSummary(context: PlanningContext): string | null {
+  const duration = formatDuration(context.maxDurationMin)
+  if (duration === null) {
+    return null
+  }
+
+  const { durationApproximate, durationMaximum, durationMinimum } =
+    plannerContent.summary
+  const template =
+    context.durationMode === "APPROXIMATE"
+      ? durationApproximate
+      : context.durationMode === "MINIMUM"
+        ? durationMinimum
+        : durationMaximum
+  return template.replace("{duration}", duration)
+}
+
+const PLANNING_DIMENSIONS: ReadonlySet<string> = new Set<PlanningDimension>([
+  "DIFFICULTY",
+  "SCENERY",
+  "TRIP_LENGTH",
+])
+
+/**
+ * The context's open dimensions. A context stored before the field existed
+ * has none; an unknown value is left out.
+ */
+function openDimensions(values: unknown): ReadonlySet<PlanningDimension> {
+  const open = new Set<PlanningDimension>()
+  if (Array.isArray(values)) {
+    for (const value of values) {
+      if (typeof value === "string" && PLANNING_DIMENSIONS.has(value)) {
+        open.add(value as PlanningDimension)
+      }
+    }
+  }
+  return open
 }
 
 /** "For Sat, Oct 17 · from Vancouver" (section 12.3.1). */

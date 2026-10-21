@@ -1,0 +1,1854 @@
+/*
+ * FEATURE-009 — My Memories: an open field journal on warm paper. The
+ * collection is one `paper` sheet of photo-led cards; a Memory and its editor
+ * open as a two-page spread on a journal sheet, the only ornament a single
+ * spine rule.
+ *
+ * Imported by the Memory screens, so it arrives with their chunks only. Every
+ * rule is scoped to .memories. The shell, the header, the focus ring, the
+ * secondary button (`trip-button`), the Back link (`trip-link`), and the
+ * spinner are in components/layout/trip-shell.css.
+ *
+ * Tokens come from docs/DESIGN_SYSTEM.md Version 2; values from
+ * docs/features/009-my-memories.md, whose section numbers are cited. Tiers:
+ * XL ≥1680, L 1440–1679, M 1280–1439, S 1024–1279, T 768–1023, N <768.
+ */
+
+@layer components {
+  /* ------------------------------------------------------------------ *
+   * Per-tier values (§22.1, §22.3, §22.7, §22.9). N is the unprefixed
+   * block only because min-width queries cascade upward.
+   * ------------------------------------------------------------------ */
+  .memories {
+    /* `paper-shade` (§22, §22.19): the value of `map-land` and `gear-plate`. */
+    --memory-paper-shade: #ece8dd;
+
+    --memory-ink-04: color-mix(in srgb, var(--color-ink) 4%, transparent);
+    --memory-ink-07: color-mix(in srgb, var(--color-ink) 7%, transparent);
+    --memory-ink-16: color-mix(in srgb, var(--color-ink) 16%, transparent);
+    --memory-ink-32: color-mix(in srgb, var(--color-ink) 32%, transparent);
+    --memory-snow-pressed: color-mix(in srgb, var(--color-ink) 4%, var(--color-snow));
+
+    /* N, below 768px */
+    --memory-sheet-top: 8px;
+    --memory-sheet-bottom: 16px;
+    --memory-sheet-pad: 20px;
+    --memory-sheet-radius: 20px;
+    --memory-back-top: 0px;
+    --memory-back-gap: 8px;
+    --memory-h1-size: 1.75rem;
+    --memory-h1-line: 2.125rem;
+    --memory-detail-h1-size: 1.75rem;
+    --memory-detail-h1-line: 2.125rem;
+    --memory-support-size: 0.875rem;
+    --memory-support-line: 1.25rem;
+    --memory-card-min: 240px;
+    --memory-col-gap: 20px;
+    --memory-row-gap: 28px;
+    --memory-card-title-size: 1rem;
+    --memory-card-title-line: 1.375rem;
+    --memory-spread-gap: 0px;
+    --memory-mat-pad: 12px;
+    --memory-thumb: 56px;
+    --memory-story-size: 1rem;
+    --memory-story-line: 1.625rem;
+    --memory-story-min: 180px;
+    --memory-tile-preview-w: 80px;
+    --memory-tile-preview-h: 60px;
+    --memory-icon-action: 36px;
+    --memory-small-height: 32px;
+
+    @media (width < 360px) {
+      --memory-sheet-pad: 16px;
+    }
+
+    /* T, 768–1023px */
+    @media (width >= 768px) {
+      --memory-sheet-top: 16px;
+      --memory-sheet-bottom: 24px;
+      --memory-sheet-pad: 32px;
+      --memory-sheet-radius: 24px;
+      --memory-h1-size: 2rem;
+      --memory-h1-line: 2.375rem;
+      --memory-detail-h1-size: 2rem;
+      --memory-detail-h1-line: 2.375rem;
+      --memory-support-size: 1rem;
+      --memory-support-line: 1.5rem;
+      --memory-col-gap: 24px;
+      --memory-row-gap: 32px;
+      --memory-story-min: 240px;
+      --memory-tile-preview-w: 96px;
+      --memory-tile-preview-h: 72px;
+    }
+
+    /* S, 1024–1279px */
+    @media (width >= 1024px) {
+      --memory-card-title-size: 1.125rem;
+      --memory-card-title-line: 1.5rem;
+    }
+
+    /* M, 1280–1439px */
+    @media (width >= 1280px) {
+      --memory-sheet-pad: 40px;
+      --memory-card-min: 260px;
+      --memory-col-gap: 28px;
+      --memory-row-gap: 36px;
+      --memory-detail-h1-size: 2.25rem;
+      --memory-detail-h1-line: 2.625rem;
+      --memory-spread-gap: 32px;
+      --memory-mat-pad: 16px;
+      --memory-thumb: 64px;
+      --memory-story-size: 1.125rem;
+      --memory-story-line: 1.875rem;
+      --memory-tile-preview-w: 120px;
+      --memory-tile-preview-h: 90px;
+    }
+
+    /* L, 1440–1679px */
+    @media (width >= 1440px) {
+      --memory-sheet-bottom: 40px;
+      --memory-sheet-pad: 48px;
+      --memory-back-top: 8px;
+      --memory-back-gap: 12px;
+      --memory-h1-size: 2.25rem;
+      --memory-h1-line: 2.625rem;
+      --memory-detail-h1-size: 2.5rem;
+      --memory-detail-h1-line: 2.875rem;
+      --memory-card-min: 272px;
+      --memory-col-gap: 32px;
+      --memory-row-gap: 40px;
+      --memory-spread-gap: 40px;
+      --memory-story-min: 300px;
+    }
+
+    /* XL, from 1680px */
+    @media (width >= 1680px) {
+      --memory-sheet-pad: 56px;
+      --memory-card-min: 300px;
+      --memory-col-gap: 40px;
+      --memory-row-gap: 48px;
+      --memory-spread-gap: 56px;
+    }
+
+    @media (pointer: coarse) {
+      --memory-icon-action: 44px;
+      --memory-small-height: 44px;
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Sheets (§22.1): the collection sheet (DS §36.2, capped at 1600) and
+   * the journal sheet (capped at 1440, under its Back row). No shadow,
+   * texture, or `overflow: hidden`, so no focus ring is clipped.
+   * ------------------------------------------------------------------ */
+  .memories .memory-sheet {
+    box-sizing: border-box;
+    padding: var(--memory-sheet-pad);
+    border: 1px solid transparent;
+    border-radius: var(--memory-sheet-radius);
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+  }
+
+  .memories .memory-collection {
+    width: min(100% - 2 * var(--trip-gutter), 1600px);
+    min-height: calc(
+      var(--trip-vh) - var(--trip-header-height) - var(--memory-sheet-top) -
+        var(--memory-sheet-bottom)
+    );
+    margin: var(--memory-sheet-top) auto var(--memory-sheet-bottom);
+  }
+
+  .memories .memory-journal {
+    width: min(100% - 2 * var(--trip-gutter), 1440px);
+    margin: var(--memory-back-top) auto var(--memory-sheet-bottom);
+  }
+
+  /* The Back row: the icon's left edge on the sheet's left edge. */
+  .memories .memory-back {
+    margin-bottom: var(--memory-back-gap);
+    margin-inline-start: -12px;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Shared text pieces
+   * ------------------------------------------------------------------ */
+  .memories .memory-support {
+    margin-top: 8px;
+    color: var(--color-stone);
+    font-size: var(--memory-support-size);
+    line-height: var(--memory-support-line);
+  }
+
+  .memories .memory-skeleton-bar {
+    display: block;
+    height: 12px;
+    border-radius: 6px;
+    background-color: var(--trip-ink-08);
+  }
+
+  /* Primary action: Add memory, Add your first memory (§22.3). */
+  .memories .memory-primary,
+  .memories .memory-submit {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 20px;
+    border-radius: 12px;
+    background-color: var(--color-conifer);
+    color: var(--color-snow);
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  .memories .memory-primary > svg,
+  .memories .memory-submit > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+  }
+
+  @media (hover: hover) {
+    .memories .memory-primary:hover,
+    .memories .memory-submit:not([aria-disabled="true"]):hover {
+      background-color: var(--color-conifer-deep);
+    }
+  }
+
+  .memories .memory-primary:active,
+  .memories .memory-submit:not([aria-disabled="true"]):active {
+    background-color: var(--color-conifer-press);
+  }
+
+  .memories [aria-disabled="true"]:is(.memory-submit, .trip-button, .memory-danger) {
+    cursor: progress;
+  }
+
+  /* A secondary button in its smaller form (§22.9, §22.10). */
+  .memories .trip-button[data-compact] {
+    min-height: 36px;
+  }
+
+  @media (pointer: coarse) {
+    .memories .trip-button[data-compact] {
+      min-height: 44px;
+    }
+  }
+
+  /* A request error: `ember` icon, `ink` text. No space while empty. */
+  .memories .memory-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+    overflow-wrap: anywhere;
+  }
+
+  .memories .memory-alert > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+    color: var(--color-ember);
+  }
+
+  /* Notice slot (§22.3): no space while empty. */
+  .memories .memory-notice:not(:empty) {
+    margin-top: 24px;
+  }
+
+  .memories .memory-journal-sheet > .memory-notice:not(:empty) {
+    margin: 0 0 24px;
+  }
+
+  .memories .memory-notice-box {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    width: fit-content;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background-color: var(--memory-ink-04);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+  }
+
+  .memories .memory-notice-box > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Collection title block (§22.3)
+   * ------------------------------------------------------------------ */
+  .memories .memory-title-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+  }
+
+  .memories .memory-title-text {
+    min-width: 0;
+  }
+
+  .memories .memory-collection-title {
+    font-size: var(--memory-h1-size);
+    line-height: var(--memory-h1-line);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+
+  .memories .memory-count {
+    margin-top: 4px;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .memories .memory-title-row > .memory-primary {
+    margin-top: calc((var(--memory-h1-line) - 44px) / 2);
+  }
+
+  @media (width < 768px) {
+    .memories .memory-title-row {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 16px;
+    }
+
+    .memories .memory-title-row > .memory-primary {
+      width: 100%;
+      margin-top: 0;
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Grid (§22.3)
+   * ------------------------------------------------------------------ */
+  .memories .memory-grid-section {
+    margin-top: 32px;
+  }
+
+  .memories .memory-grid {
+    display: grid;
+    grid-template-columns: repeat(
+      auto-fill,
+      minmax(min(100%, var(--memory-card-min)), 1fr)
+    );
+    column-gap: var(--memory-col-gap);
+    row-gap: var(--memory-row-gap);
+    list-style: none;
+  }
+
+  .memories .memory-card-item {
+    display: flex;
+    min-width: 0;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Card (§22.4): the photograph is the card; the caption sits on paper.
+   * ------------------------------------------------------------------ */
+  .memories .memory-card {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-width: 0;
+    padding: 0 0 4px;
+    border-radius: 14px;
+    color: var(--color-ink);
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .memories .memory-cover {
+    position: relative;
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    border-radius: 12px;
+    background-color: var(--memory-paper-shade);
+  }
+
+  /* The 1px inset edge above the photo, so a pale photo keeps an edge. */
+  .memories .memory-card .memory-cover::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: inset 0 0 0 1px var(--trip-ink-08);
+    pointer-events: none;
+    transition:
+      box-shadow var(--duration-fast) var(--ease-ui),
+      background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  .memories .memory-card-title {
+    display: -webkit-box;
+    margin-top: 14px;
+    overflow: hidden;
+    font-size: var(--memory-card-title-size);
+    line-height: var(--memory-card-title-line);
+    font-weight: 600;
+    overflow-wrap: anywhere;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+
+  .memories .memory-card-trail {
+    display: block;
+    margin-top: 6px;
+    overflow: hidden;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .memories .memory-card-trail[data-kind="missing"] {
+    color: var(--color-stone);
+  }
+
+  .memories .memory-card-trail > .memory-skeleton-bar {
+    width: 50%;
+    margin-block: 4px;
+  }
+
+  .memories .memory-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px 12px;
+    margin-top: 4px;
+  }
+
+  .memories .memory-card-date {
+    color: var(--color-stone);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .memories .memory-visibility {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--color-stone);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+  }
+
+  .memories .memory-visibility > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+  }
+
+  @media (hover: hover) {
+    .memories .memory-card:hover .memory-card-title {
+      text-decoration-line: underline;
+    }
+
+    .memories .memory-card:hover .memory-cover::after {
+      box-shadow: inset 0 0 0 1px var(--memory-ink-32);
+    }
+  }
+
+  .memories .memory-card:active .memory-card-title {
+    text-decoration-line: underline;
+  }
+
+  .memories .memory-card:active .memory-cover::after {
+    background-color: var(--trip-ink-08);
+  }
+
+  /* Skeleton (§22.4): same geometry, static. */
+  .memories .memory-card-skeleton {
+    cursor: default;
+  }
+
+  .memories .memory-card-skeleton > .memory-cover {
+    background-color: var(--trip-ink-06);
+  }
+
+  .memories .memory-card-skeleton > .memory-skeleton-bar {
+    margin-top: 10px;
+  }
+
+  .memories .memory-card-skeleton > [data-bar="title"] {
+    width: 70%;
+    height: 16px;
+    margin-top: 14px;
+  }
+
+  .memories .memory-card-skeleton > [data-bar="trail"] {
+    width: 50%;
+  }
+
+  .memories .memory-card-skeleton > [data-bar="meta"] {
+    width: 35%;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Photos (§22.4, §22.5, §22.13): fade in once loaded; never a broken
+   * image.
+   * ------------------------------------------------------------------ */
+  .memories .memory-photo {
+    display: block;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    object-fit: cover;
+    object-position: 50% 50%;
+    opacity: 0;
+    transition: opacity var(--duration-base) var(--ease-ui);
+  }
+
+  .memories .memory-photo[data-loaded] {
+    opacity: 1;
+  }
+
+  .memories .memory-cover > .memory-photo {
+    position: absolute;
+    inset: 0;
+  }
+
+  .memories .memory-photo[data-variant="large"] {
+    position: absolute;
+    inset: var(--memory-mat-pad);
+    width: calc(100% - 2 * var(--memory-mat-pad));
+    height: calc(100% - 2 * var(--memory-mat-pad));
+    border-radius: 2px;
+    object-fit: contain;
+    transition-duration: var(--duration-fast);
+  }
+
+  .memories .memory-photo-fallback {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    background-color: var(--memory-paper-shade);
+    text-align: center;
+  }
+
+  .memories .memory-photo-fallback[data-variant="large"] {
+    border-radius: 16px;
+  }
+
+  .memories .memory-photo-fallback-text {
+    color: var(--color-stone);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+  }
+
+  /* No-photo surface (§22.5): `paper-shade`, a soft contour, a glyph. */
+  .memories .memory-nophoto {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding-bottom: 16px;
+    border-radius: inherit;
+    background-color: var(--memory-paper-shade);
+    background-image: repeating-radial-gradient(
+      ellipse at 72% 118%,
+      transparent 0 18px,
+      var(--memory-ink-07) 18px 19px
+    );
+    color: var(--color-stone);
+  }
+
+  .memories .memory-nophoto[data-size="empty"] {
+    padding-bottom: 0;
+  }
+
+  .memories .memory-nophoto-glyph {
+    flex: none;
+  }
+
+  .memories .memory-nophoto-caption {
+    margin-top: 10px;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Load more (§22.3)
+   * ------------------------------------------------------------------ */
+  .memories .memory-more {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 40px;
+  }
+
+  .memories .memory-more-alert:not(:empty) {
+    justify-content: center;
+    margin-bottom: 12px;
+  }
+
+  .memories .memory-more-button {
+    padding: 0 16px;
+  }
+
+  @media (width < 768px) {
+    .memories .memory-more-button {
+      width: 100%;
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Collection states (§22.6)
+   * ------------------------------------------------------------------ */
+  .memories .memory-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: 480px;
+    margin: 0 auto;
+    padding-top: 48px;
+    text-align: center;
+  }
+
+  .memories .memory-state-art {
+    position: relative;
+    width: min(240px, 100%);
+    aspect-ratio: 4 / 3;
+    margin-bottom: 24px;
+    border-radius: 12px;
+  }
+
+  .memories .memory-state-title {
+    font-size: 1.375rem;
+    line-height: 1.75rem;
+    font-weight: 600;
+  }
+
+  .memories .memory-state-body {
+    margin-top: 8px;
+    color: var(--color-stone);
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+
+  .memories .memory-state-action {
+    margin-top: 24px;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Memory Detail (§22.7). One column below 1280; a spread from there.
+   * ------------------------------------------------------------------ */
+  .memories .memory-entry,
+  .memories .memory-detail-state {
+    max-width: 760px;
+    margin-inline: auto;
+  }
+
+  .memories .memory-detail-title,
+  .memories .memory-editor-title {
+    font-size: var(--memory-detail-h1-size);
+    line-height: var(--memory-detail-h1-line);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    overflow-wrap: anywhere;
+  }
+
+  .memories .memory-editor-title {
+    font-size: var(--memory-h1-size);
+    line-height: var(--memory-h1-line);
+  }
+
+  .memories .memory-detail-title > [data-bar="h1"],
+  .memories .memory-editor-title > [data-bar="h1"] {
+    width: 60%;
+    height: 32px;
+    margin-block: calc((var(--memory-detail-h1-line) - 32px) / 2);
+  }
+
+  .memories .memory-entry-head > [data-bar="meta"] {
+    width: 40%;
+    height: 16px;
+    margin-top: 16px;
+  }
+
+  .memories .memory-meta {
+    margin-top: 12px;
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+
+  .memories .memory-meta-trail {
+    font-weight: 500;
+  }
+
+  .memories .memory-meta-quiet,
+  .memories .memory-meta-date {
+    color: var(--color-stone);
+  }
+
+  .memories .memory-meta > [data-bar="trail-name"] {
+    display: inline-block;
+    width: 160px;
+    height: 14px;
+    vertical-align: middle;
+  }
+
+  .memories .memory-visibility-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px 8px;
+    margin-top: 8px;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .memories .memory-visibility-line > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+  }
+
+  .memories .memory-visibility-word {
+    font-weight: 600;
+  }
+
+  .memories .memory-visibility-meaning {
+    color: var(--color-stone);
+  }
+
+  /* Photo figure: the mat and the whole photograph. */
+  .memories .memory-figure {
+    min-width: 0;
+    margin-top: 32px;
+  }
+
+  .memories .memory-frame {
+    position: relative;
+    aspect-ratio: 3 / 2;
+    border-radius: 16px;
+    background-color: var(--memory-paper-shade);
+  }
+
+  .memories .memory-frame[data-skeleton] {
+    background-color: var(--trip-ink-06);
+  }
+
+  .memories .memory-caption {
+    margin-top: 8px;
+    color: var(--color-stone);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .memories .memory-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 12px;
+    list-style: none;
+  }
+
+  .memories .memory-thumb {
+    position: relative;
+    display: block;
+    width: var(--memory-thumb);
+    height: var(--memory-thumb);
+    overflow: hidden;
+    border-radius: 8px;
+    background-color: var(--memory-paper-shade);
+    cursor: pointer;
+    transition: box-shadow var(--duration-fast) var(--ease-ui);
+  }
+
+  .memories .memory-thumb::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .memories .memory-thumb[aria-current="true"] {
+    --trip-edge: 0 0 0 2px var(--color-paper), 0 0 0 4px var(--color-ink);
+  }
+
+  @media (hover: hover) {
+    .memories .memory-thumb:not([aria-current="true"]):hover {
+      --trip-edge: 0 0 0 2px var(--color-paper), 0 0 0 3px var(--memory-ink-32);
+    }
+  }
+
+  .memories .memory-thumb:active::after {
+    background-color: var(--trip-ink-12);
+  }
+
+  /* While focused, the focus ring replaces the selection ring. */
+  .memories .memory-thumb:focus-visible {
+    box-shadow: var(--focus-ring);
+  }
+
+  .memories .memory-story {
+    margin-top: 32px;
+  }
+
+  .memories .memory-story-text {
+    max-width: 66ch;
+    font-size: var(--memory-story-size);
+    line-height: var(--memory-story-line);
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+  }
+
+  .memories .memory-story-skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 32px;
+  }
+
+  .memories .memory-story-skeleton > [data-bar="short"] {
+    width: 60%;
+  }
+
+  .memories .memory-actions {
+    margin-top: 32px;
+    padding-top: 20px;
+    border-top: 1px solid var(--trip-ink-12);
+  }
+
+  .memories .memory-actions-row,
+  .memories .memory-confirm-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* Delete memory, the quiet destructive text button (DS §36.9). */
+  .memories .memory-quiet-danger {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: var(--trip-button-height);
+    padding: 0 10px;
+    border-radius: 10px;
+    color: var(--color-ink);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  .memories .memory-quiet-danger > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    color: var(--color-ember);
+  }
+
+  @media (hover: hover) {
+    .memories .memory-quiet-danger:hover {
+      background-color: var(--memory-ink-04);
+      text-decoration-line: underline;
+    }
+  }
+
+  .memories .memory-quiet-danger:active {
+    background-color: var(--trip-ink-08);
+  }
+
+  /* The `ember` confirm (DS §36.9, §22.8). */
+  .memories .memory-danger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: var(--trip-button-height);
+    padding: 0 16px;
+    border-radius: 10px;
+    background-color: var(--color-ember);
+    color: var(--color-snow);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  .memories .memory-danger > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+  }
+
+  @media (hover: hover) {
+    .memories .memory-danger:not([aria-disabled="true"]):hover {
+      background-color: color-mix(in srgb, var(--color-ember) 88%, var(--color-ink));
+    }
+  }
+
+  .memories .memory-danger:not([aria-disabled="true"]):active {
+    background-color: color-mix(in srgb, var(--color-ember) 76%, var(--color-ink));
+  }
+
+  .memories .memory-confirm-question {
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+
+  .memories .memory-confirm-body {
+    margin-top: 4px;
+    color: var(--color-stone);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .memories .memory-confirm-alert:not(:empty) {
+    margin-top: 16px;
+  }
+
+  .memories .memory-confirm-actions {
+    margin-top: 16px;
+  }
+
+  .memories .memory-spine {
+    display: none;
+  }
+
+  /* The spread (§22.1, §22.7): photographs left, writing right, one spine. */
+  @media (width >= 1280px) {
+    .memories [data-layout="spread"] .memory-entry {
+      display: grid;
+      grid-template-columns: minmax(0, 7fr) 1px minmax(0, 5fr);
+      grid-template-rows: auto auto auto 1fr;
+      column-gap: var(--memory-spread-gap);
+      max-width: none;
+    }
+
+    .memories [data-layout="spread"] .memory-entry > .memory-entry-head {
+      grid-column: 3;
+      grid-row: 1;
+    }
+
+    .memories [data-layout="spread"] .memory-entry > .memory-story,
+    .memories [data-layout="spread"] .memory-entry > .memory-story-skeleton {
+      grid-column: 3;
+      grid-row: 2;
+      margin-top: 24px;
+      padding-top: 24px;
+      border-top: 1px solid var(--trip-ink-12);
+    }
+
+    .memories [data-layout="spread"] .memory-entry > .memory-actions {
+      grid-column: 3;
+      grid-row: 3;
+      align-self: start;
+    }
+
+    .memories [data-layout="spread"] .memory-entry > .memory-figure {
+      grid-column: 1;
+      grid-row: 1 / -1;
+      align-self: start;
+      margin-top: 0;
+    }
+
+    .memories [data-layout="spread"] .memory-entry > .memory-spine {
+      display: block;
+      grid-column: 2;
+      grid-row: 1 / -1;
+      background-color: var(--trip-ink-10);
+    }
+
+    .memories [data-layout="spread"] .memory-frame {
+      aspect-ratio: 4 / 3;
+    }
+  }
+
+  /* The photograph stays beside a long story, on a tall enough viewport. */
+  @media (width >= 1280px) and (height >= 720px) {
+    .memories [data-layout="spread"] .memory-entry > .memory-figure {
+      position: sticky;
+      inset-block-start: 24px;
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Editor (§22.9–§22.12)
+   * ------------------------------------------------------------------ */
+  .memories .memory-editor-head,
+  .memories .memory-editor {
+    max-width: 760px;
+    margin-inline: auto;
+  }
+
+  .memories .memory-editor-support {
+    margin-top: 8px;
+    color: var(--color-stone);
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+
+  .memories .memory-form {
+    margin-top: 32px;
+  }
+
+  .memories .memory-editor-side {
+    min-width: 0;
+    margin-top: 32px;
+  }
+
+  @media (width >= 1280px) {
+    .memories [data-layout="editor"] .memory-editor-head,
+    .memories [data-layout="editor"] .memory-editor {
+      max-width: none;
+    }
+
+    .memories .memory-editor-spread {
+      display: grid;
+      grid-template-columns: minmax(0, 7fr) 1px minmax(0, 5fr);
+      column-gap: var(--memory-spread-gap);
+    }
+
+    .memories .memory-editor-spread > .memory-spine {
+      display: block;
+      background-color: var(--trip-ink-10);
+    }
+
+    .memories .memory-editor-side {
+      margin-top: 0;
+    }
+  }
+
+  .memories .memory-editor-entry {
+    min-width: 0;
+  }
+
+  .memories .memory-field-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .memories .memory-field-trail {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .memories .memory-field-date {
+    flex: none;
+    width: 220px;
+  }
+
+  @media (width < 768px) {
+    .memories .memory-field-row {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 24px;
+    }
+
+    .memories .memory-field-date {
+      width: auto;
+    }
+  }
+
+  .memories .memory-field-title,
+  .memories .memory-field-story {
+    margin-top: 24px;
+  }
+
+  .memories .memory-field-label {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 8px;
+    margin-bottom: 6px;
+  }
+
+  .memories .memory-field-name {
+    color: var(--color-ink);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+  }
+
+  .memories .memory-field-marker {
+    color: var(--color-stone);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+  }
+
+  /* A text control (§22.9): `snow`, a 1px `stone` border, radius 10. The
+     invalid edge is drawn inset, so no state shifts the layout. */
+  .memories .memory-control {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    border: 1px solid var(--color-stone);
+    border-radius: 10px;
+    background-color: var(--color-snow);
+    color: var(--color-ink);
+    font-size: 1rem;
+    line-height: 1.5rem;
+    transition: border-color var(--duration-fast) var(--ease-ui);
+  }
+
+  @media (hover: hover) {
+    .memories .memory-control:not([readonly], :disabled):hover {
+      border-color: var(--color-ink);
+    }
+  }
+
+  .memories .memory-control[aria-invalid="true"] {
+    --trip-edge: inset 0 0 0 1px var(--color-ember);
+
+    border-color: var(--color-ember);
+  }
+
+  .memories .memory-control[readonly] {
+    border-color: var(--trip-ink-12);
+    background-color: var(--memory-ink-04);
+  }
+
+  .memories .memory-select-box {
+    position: relative;
+  }
+
+  .memories .memory-select {
+    height: 44px;
+    padding: 0 40px 0 12px;
+    appearance: none;
+    cursor: pointer;
+  }
+
+  .memories .memory-select:disabled {
+    cursor: default;
+    opacity: 0.6;
+  }
+
+  .memories .memory-select-icon {
+    position: absolute;
+    top: 14px;
+    inset-inline-end: 12px;
+    width: 16px;
+    height: 16px;
+    color: var(--color-ink);
+    pointer-events: none;
+  }
+
+  .memories .memory-date {
+    height: 44px;
+    padding: 0 12px;
+    color-scheme: light;
+  }
+
+  .memories .memory-title-input {
+    height: 52px;
+    padding: 0 14px;
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+    font-weight: 600;
+  }
+
+  .memories .memory-story-input {
+    min-height: var(--memory-story-min);
+    padding: 16px 18px;
+    border-radius: 12px;
+    font-size: 1rem;
+    line-height: 1.625rem;
+    resize: vertical;
+  }
+
+  .memories .memory-field-meta {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 6px;
+  }
+
+  .memories .memory-field-help,
+  .memories .memory-counter {
+    color: var(--color-stone);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .memories .memory-field-trail > .memory-field-help {
+    margin-top: 6px;
+  }
+
+  .memories .memory-counter {
+    flex: none;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .memories .memory-field-help-icon {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .memories .memory-field-help-icon > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+  }
+
+  .memories .memory-field-error {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    color: var(--color-ink);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+  }
+
+  .memories .memory-field-trail > .memory-field-error {
+    margin-top: 6px;
+  }
+
+  .memories .memory-field-error > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+    color: var(--color-ember);
+  }
+
+  .memories .memory-trail-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-top: 4px;
+    color: var(--color-stone);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .memories .memory-trail-note > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+  }
+
+  .memories .memory-trail-failed {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    margin-top: 6px;
+  }
+
+  .memories .memory-trail-readonly {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 12px;
+    border-radius: 10px;
+    background-color: var(--memory-ink-04);
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+
+  .memories .memory-trail-readonly > [data-bar="trail-name"] {
+    width: 160px;
+    height: 14px;
+  }
+
+  /* Photos section (§22.10) */
+  .memories .memory-section-heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 8px;
+    color: var(--color-ink);
+    font-size: 1.125rem;
+    line-height: 1.5rem;
+    font-weight: 600;
+  }
+
+  .memories .memory-photo-lines {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 8px;
+    color: var(--color-stone);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .memories .memory-photo-add {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  .memories .memory-photo-add > .trip-button[aria-disabled="true"] {
+    cursor: not-allowed;
+    opacity: 0.4;
+  }
+
+  .memories .memory-photo-remaining {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+  }
+
+  .memories .memory-photo-status {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-top: 12px;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+    overflow-wrap: anywhere;
+  }
+
+  .memories .memory-photo-status > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+  }
+
+  .memories .memory-photo-status[data-tone="error"] > svg {
+    color: var(--color-ember);
+  }
+
+  .memories .memory-tiles {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 16px;
+    list-style: none;
+  }
+
+  .memories .memory-tile {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 16px;
+    padding: 8px;
+    border-radius: 12px;
+    background-color: var(--color-snow);
+    box-shadow: inset 0 0 0 1px var(--trip-ink-10);
+    animation: memory-fade var(--duration-base) var(--ease-ui) both;
+  }
+
+  .memories .memory-tile-preview {
+    position: relative;
+    flex: none;
+    width: var(--memory-tile-preview-w);
+    height: var(--memory-tile-preview-h);
+    overflow: hidden;
+    border-radius: 8px;
+    background-color: var(--memory-paper-shade);
+  }
+
+  .memories .memory-tile[data-status="failed"] .memory-tile-preview > * {
+    opacity: 0.5;
+  }
+
+  .memories .memory-tile-text {
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .memories .memory-tile-name {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+  }
+
+  .memories .memory-cover-tag {
+    display: inline-flex;
+    align-items: center;
+    height: 24px;
+    padding: 0 6px;
+    border-radius: 6px;
+    box-shadow: inset 0 0 0 1px var(--memory-ink-32);
+    font-weight: 600;
+  }
+
+  .memories .memory-tile-state {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--color-stone);
+  }
+
+  .memories .memory-tile-state > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+  }
+
+  .memories .memory-tile-state[data-strong] {
+    color: var(--color-ink);
+    font-weight: 500;
+  }
+
+  .memories .memory-tile-state[data-failed] {
+    color: var(--color-ink);
+    font-weight: 500;
+  }
+
+  .memories .memory-tile-state[data-failed] > svg {
+    color: var(--color-ember);
+  }
+
+  .memories .memory-tile-reason {
+    color: var(--color-stone);
+    overflow-wrap: anywhere;
+  }
+
+  .memories .memory-tile-controls {
+    display: flex;
+    flex: none;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .memories .memory-tile-retry,
+  .memories .memory-tile-small {
+    min-height: var(--memory-small-height);
+  }
+
+  .memories .memory-icon-action {
+    --trip-edge: inset 0 0 0 1px var(--memory-ink-16);
+
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+    width: var(--memory-icon-action);
+    height: var(--memory-icon-action);
+    border-radius: 50%;
+    color: var(--color-ink);
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  .memories .memory-icon-action > svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  @media (hover: hover) {
+    .memories .memory-icon-action:not([aria-disabled="true"]):hover {
+      background-color: var(--trip-ink-06);
+    }
+  }
+
+  .memories .memory-icon-action:not([aria-disabled="true"]):active {
+    background-color: var(--trip-ink-10);
+  }
+
+  .memories .memory-icon-action[aria-disabled="true"],
+  .memories .memory-tile-retry[aria-disabled="true"] {
+    cursor: not-allowed;
+    opacity: 0.4;
+  }
+
+  .memories .memory-tile-confirm {
+    display: flex;
+    flex: 1 0 100%;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 16px;
+  }
+
+  .memories .memory-tile-question {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+  }
+
+  .memories .memory-tile-confirm-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  /* Below 768px the controls wrap under the text, start-aligned. */
+  @media (width < 768px) {
+    .memories .memory-tile-text {
+      flex-basis: calc(100% - var(--memory-tile-preview-w) - 16px);
+    }
+
+    .memories .memory-tile-controls {
+      flex-basis: 100%;
+    }
+  }
+
+  /* Visibility choice tiles (§22.11, DS §36.6) */
+  .memories .memory-visibility-choice {
+    min-width: 0;
+    margin-top: 24px;
+  }
+
+  .memories .memory-choice-tiles {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .memories .memory-choice {
+    display: grid;
+    grid-template-columns: 20px minmax(0, 1fr) 18px;
+    align-items: center;
+    gap: 12px;
+    min-height: 72px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background-color: var(--color-snow);
+    box-shadow: inset 0 0 0 1px var(--memory-ink-16);
+    cursor: pointer;
+    transition:
+      background-color var(--duration-fast) var(--ease-ui),
+      box-shadow var(--duration-fast) var(--ease-ui);
+  }
+
+  @media (hover: hover) {
+    .memories .memory-choice:hover {
+      box-shadow: inset 0 0 0 1px var(--memory-ink-32);
+    }
+  }
+
+  .memories .memory-choice:active {
+    background-color: var(--memory-snow-pressed);
+  }
+
+  .memories .memory-choice:has(:checked) {
+    box-shadow: inset 0 0 0 2px var(--color-ink);
+  }
+
+  .memories .memory-choice:has(:focus-visible) {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    box-shadow:
+      inset 0 0 0 1px var(--memory-ink-16),
+      var(--focus-ring);
+  }
+
+  .memories .memory-choice:has(:checked:focus-visible) {
+    box-shadow:
+      inset 0 0 0 2px var(--color-ink),
+      var(--focus-ring);
+  }
+
+  .memories .memory-choice-icon {
+    width: 20px;
+    height: 20px;
+    color: var(--color-ink);
+  }
+
+  .memories .memory-choice-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .memories .memory-choice-label {
+    font-size: 1rem;
+    line-height: 1.375rem;
+    font-weight: 600;
+  }
+
+  .memories .memory-choice-meaning {
+    color: var(--color-stone);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .memories .memory-choice-check {
+    width: 18px;
+    height: 18px;
+    color: var(--color-ink);
+    visibility: hidden;
+  }
+
+  .memories .memory-choice:has(:checked) .memory-choice-check {
+    visibility: visible;
+  }
+
+  .memories [data-readonly] .memory-choice {
+    cursor: default;
+  }
+
+  .memories [data-readonly] .memory-choice:not(:has(:checked)) {
+    opacity: 0.5;
+  }
+
+  /* Footer (§22.12) */
+  .memories .memory-footer {
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid var(--trip-ink-12);
+  }
+
+  .memories .memory-form-alert:not(:empty) {
+    margin-bottom: 16px;
+  }
+
+  .memories .memory-footer-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  .memories .memory-footer-wait {
+    margin-inline-end: 8px;
+    color: var(--color-stone);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .memories .memory-footer-note {
+    margin-top: 12px;
+    color: var(--color-stone);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    text-align: end;
+  }
+
+  @media (width < 768px) {
+    /* Save first: the editor renders the buttons in this order below
+       768px, so the stack follows the DOM (no reverse). */
+    .memories .memory-footer-buttons {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .memories .memory-footer-wait {
+      margin: 0;
+    }
+
+    .memories .memory-footer-note {
+      text-align: start;
+    }
+  }
+
+  /* Status blocks (§22.12): the unconfirmed save and the saved state. */
+  .memories .memory-status-block {
+    margin-top: 24px;
+    padding: 16px 20px;
+    border-radius: 12px;
+    background-color: var(--memory-ink-04);
+  }
+
+  .memories .memory-status-block[data-kind="saved"] {
+    padding: 20px 24px;
+  }
+
+  .memories .memory-status-title {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: 600;
+  }
+
+  .memories .memory-status-title > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin-top: 4px;
+    color: var(--color-ember);
+  }
+
+  .memories .memory-status-body {
+    margin-top: 4px;
+    color: var(--color-stone);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .memories .memory-status-action {
+    margin-top: 12px;
+  }
+
+  .memories .memory-saved-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+    font-weight: 600;
+  }
+
+  .memories .memory-saved-title > svg {
+    flex: none;
+    width: 20px;
+    height: 20px;
+  }
+
+  .memories .memory-saved-line {
+    margin-top: 4px;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+  }
+
+  /* Leave without saving (§22.12, DS §36.7): 440 wide; a sheet below 768. */
+  .memories .memory-dialog {
+    box-sizing: border-box;
+    width: 440px;
+    max-width: calc(100vw - 32px);
+    max-height: calc(100dvh - 32px);
+    margin: auto;
+    padding: 0;
+    overflow-y: auto;
+    border: 0;
+    border-radius: 20px;
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    box-shadow: 0 8px 32px rgb(11 28 32 / 0.24);
+  }
+
+  .memories .memory-dialog[open] {
+    animation: memory-rise var(--duration-base) var(--ease-ui) both;
+  }
+
+  .memories .memory-dialog::backdrop {
+    background-color: rgb(11 28 32 / 0.4);
+  }
+
+  .memories .memory-dialog-body {
+    padding: 28px;
+  }
+
+  @media (width < 768px) {
+    .memories .memory-dialog {
+      width: 100%;
+      max-width: 100%;
+      margin: auto 0 0;
+      border-radius: 20px 20px 0 0;
+    }
+
+    .memories .memory-dialog-body {
+      padding: 20px 20px calc(20px + env(safe-area-inset-bottom, 0px));
+    }
+  }
+
+  .memories .memory-dialog-title {
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+    font-weight: 600;
+  }
+
+  .memories .memory-dialog-text {
+    margin-top: 8px;
+    color: var(--color-stone);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .memories .memory-dialog-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 24px;
+  }
+}
+
+/* While the leave dialog is open the page behind it does not scroll. */
+:root:has(.memories .memory-dialog[open]) {
+  overflow: hidden;
+}
+
+@keyframes memory-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes memory-rise {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+/* Forced colors (§22.16): edges drawn with shadows become real borders. */
+@media (forced-colors: active) {
+  .memories .memory-cover,
+  .memories .memory-frame,
+  .memories .memory-tile,
+  .memories .memory-thumb,
+  .memories .memory-choice {
+    border: 1px solid CanvasText;
+  }
+
+  .memories .memory-thumb[aria-current="true"],
+  .memories .memory-choice:has(:checked) {
+    border-width: 3px;
+  }
+
+  .memories .memory-nophoto {
+    background-image: none;
+  }
+}
+
+/* Reduced motion (§22.13): nothing moves; colour changes stay. */
+@media (prefers-reduced-motion: reduce) {
+  .memories .memory-photo,
+  .memories .memory-card .memory-cover::after,
+  .memories .memory-thumb {
+    transition: none;
+  }
+
+  .memories .memory-tile,
+  .memories .memory-dialog[open] {
+    animation: none;
+  }
+}

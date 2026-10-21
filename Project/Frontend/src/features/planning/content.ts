@@ -123,6 +123,17 @@ export const plannerContent = {
     },
   },
 
+  /** The plan summary line: a preference the user left open (post-freeze). */
+  summary: {
+    anyDifficulty: "Any difficulty",
+    anyTripLength: "Any trip length",
+    anyScenery: "Any scenery",
+    /** The trip length by its meaning; `{duration}` is e.g. "4 h". */
+    durationApproximate: "Around {duration}",
+    durationMaximum: "Up to {duration}",
+    durationMinimum: "At least {duration}",
+  },
+
   results: {
     matchScore: "Match score",
     scoreOutOf: "out of 100",

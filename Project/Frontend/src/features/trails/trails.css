@@ -297,6 +297,50 @@
     line-height: 1.25rem;
   }
 
+  /* Add a memory (FEATURE-009 section 22.2, D25): the last thing in the
+     reading column. A quiet underlined link, not a button: Choose this trail
+     stays the only `conifer` element and the date the only rail control. */
+  .trail-memory {
+    margin-top: 32px;
+    padding-top: 16px;
+    border-top: 1px solid var(--trip-ink-12);
+    color: var(--color-stone);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .trail-memory-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 32px;
+    margin-inline: -4px;
+    padding: 0 4px;
+    border-radius: 6px;
+    color: var(--color-ink);
+    font-weight: 600;
+    text-decoration-line: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  @media (pointer: coarse) {
+    .trail-memory-link {
+      min-height: 44px;
+    }
+  }
+
+  @media (hover: hover) {
+    .trail-memory-link:hover {
+      text-decoration-thickness: 2px;
+    }
+  }
+
+  .trail-memory-link:active {
+    background-color: var(--trip-ink-06);
+  }
+
   /* ------------------------------------------------------------------ *
    * S1: static shapes and one line that carries the state (§21.15)
    * ------------------------------------------------------------------ */

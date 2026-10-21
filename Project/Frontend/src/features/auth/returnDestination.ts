@@ -17,19 +17,32 @@ const TRAIL_DETAIL_PATH = /^\/trails\/[A-Za-z0-9._~%!$&'()*+,;=:@-]+$/
 
 /**
  * `/trails/:trailId/prepare` and `/trails/:trailId/prepare/:tripDate`, the
- * date written `YYYY-MM-DD` (FEATURE-004 section 25). The pathname is the
- * whole destination: a query string is never part of it.
+ * date written `YYYY-MM-DD` (FEATURE-004 section 25), and the Gear
+ * Customization Studio, `/trails/:trailId/prepare/:tripDate/pack`
+ * (FEATURE-005 section 10). The pathname is the whole destination: a query
+ * string is never part of it.
  */
 const TRIP_PREPARATION_PATH =
-  /^\/trails\/[A-Za-z0-9._~%!$&'()*+,;=:@-]+\/prepare(?:\/\d{4}-\d{2}-\d{2})?$/
+  /^\/trails\/[A-Za-z0-9._~%!$&'()*+,;=:@-]+\/prepare(?:\/\d{4}-\d{2}-\d{2}(?:\/pack)?)?$/
+
+/**
+ * My Memories (FEATURE-009 D5): `/memories`, `/memories/new`,
+ * `/memories/<uuid>`, and `/memories/<uuid>/edit`. Pathname only: `?trail=`
+ * is never carried.
+ */
+const MEMORIES_PATH =
+  /^\/memories(?:\/new|\/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}(?:\/edit)?)?$/
 
 /** True only for the application's protected routes, as in-application paths. */
 export function isProtectedPath(path: string): boolean {
   return (
     path === "/home" ||
     path === "/gear" ||
+    // My Plans (FEATURE-013 D2). Pathname only: `?plan=` is never carried.
+    path === "/plans" ||
     TRAIL_DETAIL_PATH.test(path) ||
-    TRIP_PREPARATION_PATH.test(path)
+    TRIP_PREPARATION_PATH.test(path) ||
+    MEMORIES_PATH.test(path)
   )
 }
 

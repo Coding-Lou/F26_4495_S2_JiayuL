@@ -1,47 +1,22 @@
-import { PLANNING_PROMPT_MAX_LENGTH } from "@/features/planning/planningPrompt"
-
 /**
- * Every user-facing string on the Public Landing (FEATURE-001 §11.1, §11.4,
- * §11.5, §11.10, §11.11). Two exceptions: scene captions belong to the scene
+ * Every user-facing string of the Hero, the first section of the public
+ * homepage (FEATURE-006 sections 12, 16.5, 16.17; FEATURE-001 §11.10 for the
+ * scene control). Two exceptions: scene captions belong to the scene
  * definitions in hero-media/scenes, and the authentication gate and notices
- * (FEATURE-002) belong to features/auth and reach the landing through the
- * auth boundary.
+ * (FEATURE-002) belong to features/auth and reach the Hero through the auth
+ * boundary.
+ *
+ * The Hero has no planner: FEATURE-001's planner, suggestion, and
+ * validation strings are not part of it (FEATURE-006 D2).
  */
-
-const characterCount = new Intl.NumberFormat("en-US")
-const promptLimit = characterCount.format(PLANNING_PROMPT_MAX_LENGTH)
-
 export const landingContent = {
-  brand: "Outdoor Trip Companion",
-  navigationLabel: "Primary",
-  signIn: "Sign in",
-
-  heading: "Plan your next outdoor adventure",
+  /** HR1: one sentence per line from 768px. */
+  heading: ["Discover the trail.", "Prepare for the journey."],
+  /** HR2 (user decision, 2026-10-15) */
   supporting:
-    "Describe your trip. We plan it around the trail, the weather, and your gear.",
-
-  planner: {
-    label: "Where do you want to go?",
-    placeholder: "A moderate lake hike this Saturday",
-    submitLabel: "Start planning",
-  },
-
-  suggestionsLabel: "Suggested requests",
-  /** In scene order: lake, rain, mountain (§11.5). */
-  suggestions: [
-    "Lake view trail",
-    "Rain-friendly short hike",
-    "Moderate mountain hike this weekend",
-  ],
-
-  validation: {
-    /** E1 */
-    empty: "Enter a trip request first, or pick a suggestion below.",
-    /** E2 */
-    overLimit: `Your request is over the ${promptLimit}-character limit. Shorten it to continue.`,
-    counter: (length: number) =>
-      `${characterCount.format(length)} of ${promptLimit} characters`,
-  },
+    "Explore trails around Vancouver, plan with AI, prepare your gear, and keep the memories.",
+  /** HR3, followed by a down arrow. */
+  explore: "Explore trails",
 
   sceneControl: {
     pause: "Pause background animation",

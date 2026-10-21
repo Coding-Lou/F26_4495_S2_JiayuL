@@ -167,6 +167,8 @@ function readStoredSession(value: unknown, owner: string): PlannerSession | null
   return {
     messages: settleMessages(readMessages),
     // Opaque to the frontend: stored as it arrived, returned as it was stored.
+    // A context from before `openPreferences` and `lastAsked` existed is
+    // restored without them and sent as it is; the backend fills them in.
     context: context as PlanningContext | null,
     tripDate,
     startingPoint: readPoint,

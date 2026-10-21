@@ -1,50 +1,59 @@
-import { useEffect, useRef } from "react"
-import { takeAuthBoundaryArrivalFocus } from "@/features/auth/authBoundary"
+import type { MouseEvent, Ref } from "react"
+import { ArrowDown } from "lucide-react"
+import { landingContent } from "./content"
 import { HeroIntro } from "./HeroIntro"
+import { HeroNotice } from "./HeroNotice"
 import { HeroMedia } from "./hero-media/HeroMedia"
 import { SceneControl } from "./hero-media/SceneControl"
 import { SceneRotationProvider } from "./hero-media/SceneRotationProvider"
-import { LandingNav } from "./LandingNav"
-import { PlannerPrompt } from "./PlannerPrompt"
-import { usePlannerPrompt } from "./usePlannerPrompt"
+
+type LandingHeroProps = {
+  /** Lets the page move focus to the `h1` (arrival, the header's brand). */
+  headingRef?: Ref<HTMLHeadingElement>
+  /** The in-page address of the section Explore trails leads to. */
+  exploreHref: string
+  /** Explore trails was activated (FEATURE-006 section 16.6). */
+  onExplore: (event: MouseEvent<HTMLAnchorElement>) => void
+}
 
 /**
- * The Public Landing: page wrapper, hero grid, and foreground container
- * (FEATURE-001 §11.2). The wrapper paints the `ink` base colour itself and the
- * layout lives in landing.css.
+ * The Hero, the first section of the public homepage (FEATURE-006 sections
+ * 12, 16.5): FEATURE-001's media layer, scrim, and scene control, reused as
+ * they are, with the slogan, the supporting line, the FEATURE-002 notice
+ * slot, and Explore trails. There is no planner (D2).
  *
  * It composes the media layer and the foreground but knows nothing about
- * scenes: no element here moves or resizes when the scene changes.
+ * scenes: no element here moves or resizes when the scene changes. The
+ * header is the page's, not the Hero's; it covers the Hero's top H px.
  */
-export function LandingHero() {
-  const planner = usePlannerPrompt()
-  const headingRef = useRef<HTMLHeadingElement>(null)
-
-  // When the landing replaces another route of the running application (a
-  // closed protected route, a waiting screen), the element that had focus is
-  // gone: focus moves once to the heading, without scrolling. On a fresh page
-  // load it is left at the document start (FEATURE-002 §21.2.5).
-  useEffect(() => {
-    if (takeAuthBoundaryArrivalFocus()) {
-      headingRef.current?.focus({ preventScroll: true })
-    }
-  }, [])
-
+export function LandingHero({
+  headingRef,
+  exploreHref,
+  onExplore,
+}: LandingHeroProps) {
   return (
     <SceneRotationProvider>
-      <div className="landing">
+      <div className="landing-hero">
         <HeroMedia />
 
-        <LandingNav onSignIn={planner.signIn} />
+        <div className="landing-hero-block">
+          <HeroIntro headingRef={headingRef} />
+          <HeroNotice />
+        </div>
 
-        <main className="landing-main">
-          <div className="landing-content">
-            <HeroIntro headingRef={headingRef} />
-            <PlannerPrompt planner={planner} />
-          </div>
+        <div className="landing-hero-bottom">
+          {/* In-page navigation to Discover, never a route (16.5.6). */}
+          <a
+            href={exploreHref}
+            className="landing-control landing-explore"
+            onClick={onExplore}
+          >
+            {landingContent.explore}
+            <ArrowDown aria-hidden="true" strokeWidth={2} />
+          </a>
 
           <SceneControl />
-        </main>
+        </div>
       </div>
     </SceneRotationProvider>
   )
