@@ -1,0 +1,20 @@
+{
+  "recorded": "2026-10-19T23:02",
+  "recordedBy": "lead (FEATURE-012 baseline, spec 012 §14.4)",
+  "rule": "FEATURE-005 assets are immutable during FEATURE-012; read-only rollback baseline",
+  "baseline": {
+    "avatarGlb": { "path": "Project/Frontend/public/models/avatar/avatar-base.glb", "bytes": 630128, "sha256": "50b58cd3e285307c2433a6e78da27aa93f11c0058ea77e32e781e632ff235efb", "matches005AssetGate": true },
+    "blendSource": { "path": "assets/blender/feature005/avatar-gear-studio.blend", "bytes": 407104, "sha256": "521e74ad3f46b8ef80655f0a1aedd25c164793010cdd9f4f87abf33086217dc6" },
+    "blendBackup": { "path": "assets/blender/feature005/avatar-gear-studio.blend1", "sha256": "8f6736b308111228449c5f33651fb7bba21d64b73fe6cef5708e4db49eff055a" },
+    "gearGlbs": {
+      "Project/Frontend/public/models/gear/gear-backpack.glb": { "bytes": 79208, "sha256": "2bcd49ab28146e9f3086b3bc49c9ce157e009d2b23b71823f245e7a7de1d7938" },
+      "Project/Frontend/public/models/gear/gear-headlamp.glb": { "bytes": 31536, "sha256": "735d3a2d617b786a709105475ade696fceac314575ff4f48575af7c59140e165" },
+      "Project/Frontend/public/models/gear/gear-trekking-poles.glb": { "bytes": 31824, "sha256": "89f2da06305445d2f1a0eda1e298eea05d3f572790a53338c9f956c8249e3b21" }
+    }
+  },
+  "feature012": {
+    "workingBlend": { "path": "assets/blender/feature012/avatar-gear-studio-ready-to-go.blend", "copiedFrom": "assets/blender/feature005/avatar-gear-studio.blend", "sha256AtCopy": "521e74ad3f46b8ef80655f0a1aedd25c164793010cdd9f4f87abf33086217dc6" },
+    "versionedGlb": { "path": "Project/Frontend/public/models/avatar/avatar-base-ready-to-go.glb", "status": "not yet exported" },
+    "manifestReference": { "from": "models/avatar/avatar-base.glb", "to": "models/avatar/avatar-base-ready-to-go.glb", "status": "not switched" }
+  }
+}

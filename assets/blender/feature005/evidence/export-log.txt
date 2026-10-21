@@ -1,0 +1,30 @@
+FEATURE-005 S9 export log
+source: /Users/jay/Desktop/F26_4495_S2_JiayuL/assets/blender/feature005/avatar-gear-studio.blend
+blender: 5.2.2 LTS
+started: 2026-10-14 18:44:15
+avatar-base.glb: selected 17 objects ['Avatar_Armature', 'Avatar_Hair_Base', 'Avatar_Hair_Top', 'Avatar_Hands', 'Avatar_Head', 'Avatar_Legs', 'Avatar_Root', 'Avatar_Shoes_Default', 'Avatar_Top_Base', 'Slot_Back', 'Slot_Hand_L', 'Slot_Hand_R', 'Slot_Head', 'Wear_Boots', 'Wear_Shell', 'Wear_WarmLayer_Body', 'Wear_WarmLayer_Collar']; export returned ['FINISHED']
+gear-backpack.glb: selected ['Gear_Backpack']; export returned ['FINISHED']; restored to slot, world-matrix max error {'Gear_Backpack': '0.00e+00'}
+gear-trekking-poles.glb: selected ['Gear_TrekkingPole_L', 'Gear_TrekkingPole_R']; export returned ['FINISHED']; restored to slot, world-matrix max error {'Gear_TrekkingPole_L': '0.00e+00', 'Gear_TrekkingPole_R': '0.00e+00'}
+gear-headlamp.glb: selected ['Gear_Headlamp']; export returned ['FINISHED']; restored to slot, world-matrix max error {'Gear_Headlamp': '0.00e+00'}
+avatar-base.glb: 630128 bytes, first 4 bytes b'glTF'
+gear-backpack.glb: 79208 bytes, first 4 bytes b'glTF'
+gear-trekking-poles.glb: 31824 bytes, first 4 bytes b'glTF'
+gear-headlamp.glb: 31536 bytes, first 4 bytes b'glTF'
+F005_Scratch after export: []
+objects after export: 24
+
+Exporter console (Blender 5.2.2, glTF addon): primitives created per mesh -- avatar: Hair_Base 1, Hair_Top 1, Hands 1, Head 3, Legs 1, Shoes_Default 2, Top_Base 1, Boots 2, Shell 2, WarmLayer_Body 1, WarmLayer_Collar 1 (16); Gear_Backpack 3; Gear_TrekkingPole_L 3, _R 3; Gear_Headlamp 3. No warnings or errors were printed.
+
+Read-back (Blender -b --factory-startup --python f005_s9_readback.py; details in glb-readback.json):
+avatar-base.glb: 630128 bytes; header magic glTF version 2 declared 630128 chunks ['JSON', 'BIN']; tris 17616; primitives 16; extensionsUsed None; checks failed: none; re-import ['FINISHED']
+gear-backpack.glb: 79208 bytes; header magic glTF version 2 declared 79208 chunks ['JSON', 'BIN']; tris 3368; primitives 3; extensionsUsed None; checks failed: none; re-import ['FINISHED']
+gear-trekking-poles.glb: 31824 bytes; header magic glTF version 2 declared 31824 chunks ['JSON', 'BIN']; tris 1376; primitives 6; extensionsUsed None; checks failed: none; re-import ['FINISHED']
+gear-headlamp.glb: 31536 bytes; header magic glTF version 2 declared 31536 chunks ['JSON', 'BIN']; tris 1296; primitives 3; extensionsUsed None; checks failed: none; re-import ['FINISHED']
+full loadout: {'height': 1.75241, 'max_radius_reimported': 0.50176, 'height_reimported': 1.75241, 'ok': True}
+all checks pass: True
+
+sha256 (as written):
+50b58cd3e285307c2433a6e78da27aa93f11c0058ea77e32e781e632ff235efb  Project/Frontend/public/models/avatar/avatar-base.glb
+2bcd49ab28146e9f3086b3bc49c9ce157e009d2b23b71823f245e7a7de1d7938  Project/Frontend/public/models/gear/gear-backpack.glb
+89f2da06305445d2f1a0eda1e298eea05d3f572790a53338c9f956c8249e3b21  Project/Frontend/public/models/gear/gear-trekking-poles.glb
+735d3a2d617b786a709105475ade696fceac314575ff4f48575af7c59140e165  Project/Frontend/public/models/gear/gear-headlamp.glb

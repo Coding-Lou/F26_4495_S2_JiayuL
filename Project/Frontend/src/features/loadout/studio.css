@@ -1,0 +1,1184 @@
+/*
+ * FEATURE-005 — the Gear Customization Studio: the panel of gear choices at
+ * the left, the avatar's Stage at the right, on a backdrop of tokens only.
+ *
+ * Imported by src/index.css. Every rule is scoped to a .studio class. The
+ * shell, the header, the links, the panel Retry, and the quiet controls are
+ * in components/layout/trip-shell.css.
+ *
+ * Text in the panel is `snow` on the panel's own `ink` at 0.88; `conifer`
+ * appears only in the backdrop, and `ember` and `stone` not at all. No image
+ * or video is requested, and there is no backdrop filter, text shadow, or
+ * full-frame tint.
+ *
+ * Tokens come from docs/DESIGN_SYSTEM.md Version 2. Feature-level values come
+ * from docs/features/005-pack-customization-avatar.md; section numbers in
+ * comments refer to that specification.
+ */
+
+@layer components {
+  /* ------------------------------------------------------------------ *
+   * Per-tier values (§16.3, §17). The panel's top is written as its offset
+   * under the header (panel top − header height).
+   * ------------------------------------------------------------------ */
+  .studio {
+    --studio-snow-08: color-mix(in srgb, var(--color-snow) 8%, transparent);
+    --studio-snow-40: color-mix(in srgb, var(--color-snow) 40%, transparent);
+    --studio-paper-hover: color-mix(in srgb, var(--color-ink) 8%, var(--color-paper));
+    --studio-paper-active: color-mix(in srgb, var(--color-ink) 16%, var(--color-paper));
+
+    /* Below 768px: one column, best effort (§17). */
+    --studio-gutter: 16px;
+    --studio-pad: 20px;
+    --studio-control-h: 44px;
+    --studio-change-h: 44px;
+    --studio-primary-h: 44px;
+    --studio-circle: 44px;
+    --studio-name-size: 1.5rem;
+    --studio-name-line: 1.875rem;
+    /* The space under the Stage: 12, view bar 44, 8, caption 20. */
+    --studio-under: 84px;
+
+    @media (width < 360px) {
+      --studio-gutter: 12px;
+    }
+
+    /* Tier T, 768–1023px */
+    @media (width >= 768px) {
+      --studio-gutter: 24px;
+      --studio-pad: 24px;
+      --studio-panel-width: 400px;
+      --studio-offset: 16px;
+      --studio-bottom: 24px;
+      --studio-gap: 16px;
+      --studio-control-h: 36px;
+      --studio-change-h: 32px;
+      --studio-primary-h: 40px;
+      --studio-circle: 44px;
+    }
+
+    /* Tier S */
+    @media (width >= 1024px) {
+      --studio-gutter: 32px;
+      --studio-panel-width: 460px;
+      --studio-gap: 24px;
+      --studio-circle: 40px;
+    }
+
+    /* Tier M */
+    @media (width >= 1280px) {
+      --studio-gutter: 40px;
+      --studio-panel-width: 520px;
+    }
+
+    /* Tier L */
+    @media (width >= 1440px) {
+      --studio-gutter: 56px;
+      --studio-panel-width: 560px;
+      --studio-offset: 32px;
+      --studio-bottom: 40px;
+      --studio-gap: 32px;
+    }
+
+    /* Tier XL. Wider than 1920 the panel and the Stage keep these sizes. */
+    @media (width >= 1680px) {
+      --studio-gutter: 64px;
+      --studio-panel-width: 600px;
+      --studio-name-size: 1.75rem;
+      --studio-name-line: 2.125rem;
+    }
+
+    /* Every control is 44px on a coarse pointer, at any width (§18.8). */
+    @media (pointer: coarse) {
+      --studio-control-h: 44px;
+      --studio-change-h: 44px;
+      --studio-primary-h: 44px;
+      --studio-circle: 44px;
+    }
+
+    /* The Stage box, for the backdrop that is centred on it (§16.3, §16.4).
+       Its width is capped at 1160px; its height is what the viewport leaves
+       under the header, less the view bar's space and the bottom margin, and
+       never under 360px (§17, short viewports). */
+    --studio-stage-x: calc(
+      var(--studio-gutter) + var(--studio-panel-width, 0px) +
+        var(--studio-gap, 0px)
+    );
+    --studio-stage-w: min(
+      1160px,
+      100vw - var(--studio-stage-x) - var(--studio-gutter)
+    );
+    --studio-stage-h: max(
+      360px,
+      var(--trip-vh) - var(--trip-header-height) - var(--studio-under) -
+        var(--studio-bottom, 0px)
+    );
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Layer 1: the backdrop (§16.4). A quiet studio wall and floor: one wash
+   * centred on the Stage and one floor pool at its ground line. Static,
+   * decorative, and the same in every state. Below 768px: `ink` only.
+   * ------------------------------------------------------------------ */
+  .studio-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: -3;
+    pointer-events: none;
+  }
+
+  @media (width >= 768px) {
+    .studio-backdrop {
+      --cx: calc(var(--studio-stage-x) + var(--studio-stage-w) / 2);
+      --cy: calc(var(--trip-header-height) + var(--studio-stage-h) * 0.46);
+      --rx: min(var(--studio-stage-w) * 0.62, 620px);
+      --ry: calc(var(--studio-stage-h) * 0.62);
+      --pool-w: min(var(--studio-stage-w) * 0.56, 520px);
+      --pool-h: calc(var(--pool-w) * 0.16);
+      --pool-y: calc(var(--trip-header-height) + var(--studio-stage-h) * 0.86);
+
+      display: block;
+      background-image:
+        radial-gradient(
+          closest-side,
+          color-mix(in srgb, var(--color-snow) 14%, transparent) 0%,
+          color-mix(in srgb, var(--color-snow) 6%, transparent) 55%,
+          transparent 100%
+        ),
+        radial-gradient(
+          var(--rx) var(--ry) at var(--cx) var(--cy),
+          var(--color-conifer) 0%,
+          var(--color-conifer-deep) 35%,
+          var(--color-conifer-press) 62%,
+          var(--color-ink) 100%
+        );
+      background-size:
+        var(--pool-w) var(--pool-h),
+        100% 100%;
+      background-position:
+        calc(var(--cx) - var(--pool-w) / 2) calc(var(--pool-y) - var(--pool-h) / 2),
+        0 0;
+      background-repeat: no-repeat;
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Composition (§16.3). Below 768px one column in normal flow; from there
+   * the panel at the left and the Stage beside it, and the page does not
+   * scroll: the gear zone does.
+   * ------------------------------------------------------------------ */
+  .studio-page {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px var(--studio-gutter) 24px;
+    padding-inline: calc(var(--studio-gutter) + env(safe-area-inset-left, 0px))
+      calc(var(--studio-gutter) + env(safe-area-inset-right, 0px));
+  }
+
+  .studio-panel {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    /* An edge in forced-colors mode. It never clips, so focus rings stay. */
+    border: 1px solid transparent;
+    border-radius: 24px;
+    background-color: var(--trip-scrim-strong);
+    color: var(--color-snow);
+    animation: trip-enter var(--duration-base) var(--ease-ui);
+  }
+
+  @media (width >= 768px) {
+    .studio-page {
+      flex-direction: row;
+      align-items: flex-start;
+      gap: var(--studio-gap);
+      padding-block: 0;
+    }
+
+    .studio-panel {
+      flex: none;
+      width: var(--studio-panel-width);
+      margin-top: var(--studio-offset);
+      /* Short viewports: the limit stops at 560px and the page scrolls. */
+      max-height: max(
+        560px,
+        var(--trip-vh) - var(--trip-header-height) - var(--studio-offset) -
+          var(--studio-bottom)
+      );
+    }
+
+    .studio-zone {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Panel zones (§16.5): strip, trip block, summary, gear zone.
+   * ------------------------------------------------------------------ */
+  .studio-strip {
+    flex: none;
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 12px;
+    border-bottom: 1px solid var(--trip-snow-16);
+  }
+
+  .studio-trip {
+    flex: none;
+    padding: 16px var(--studio-pad);
+  }
+
+  .studio-panel:not([data-view="not-found"]) > .studio-trip {
+    border-bottom: 1px solid var(--trip-snow-16);
+  }
+
+  /* Two lines in one heading (§16.6). */
+  .studio-title-lead {
+    display: block;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+  }
+
+  .studio-title-name {
+    display: block;
+    margin-top: 2px;
+    font-size: var(--studio-name-size);
+    line-height: var(--studio-name-line);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    overflow-wrap: anywhere;
+  }
+
+  .studio-title-skeleton {
+    display: block;
+    width: 60%;
+    height: 28px;
+    margin-top: 2px;
+    border-radius: 8px;
+    background-color: var(--trip-snow-16);
+  }
+
+  .studio-trip-line {
+    margin-top: 4px;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    overflow-wrap: anywhere;
+  }
+
+  .studio-trip-date {
+    font-weight: 600;
+  }
+
+  /* S2: one block, and nothing else in the panel. */
+  .studio-panel[data-view="not-found"] > .studio-trip {
+    padding: 24px;
+  }
+
+  .studio-panel[data-view="not-found"] .studio-title {
+    font-size: 1.5rem;
+    line-height: 1.875rem;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+
+  .studio-state-text {
+    margin-top: 8px;
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+
+  .studio-state-action {
+    margin-top: 20px;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Pack summary (§16.7): two measures, label and value on one row, the
+   * caption under them. No graphic.
+   * ------------------------------------------------------------------ */
+  .studio-summary {
+    flex: none;
+    padding: 12px var(--studio-pad);
+    border-bottom: 1px solid var(--trip-snow-16);
+  }
+
+  .studio-measures {
+    display: grid;
+    gap: 8px;
+  }
+
+  .studio-measure {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: baseline;
+    column-gap: 16px;
+  }
+
+  .studio-measure > dt {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+  }
+
+  .studio-measure-value {
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .studio-measure-caption {
+    grid-column: 1 / -1;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 400;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Gear zone (§16.5): the only zone that scrolls, a named region.
+   * ------------------------------------------------------------------ */
+  .studio-zone {
+    /* Visually hidden text inside is laid out against this box, so it can
+       never escape the scroll clip and make the page scroll. */
+    position: relative;
+    padding: 16px var(--studio-pad) 24px;
+    border-radius: 0 0 23px 23px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--studio-snow-40) transparent;
+  }
+
+  .studio-zone[data-waiting] {
+    min-height: 136px;
+  }
+
+  .studio-groups {
+    animation: trip-fade-in var(--duration-base) var(--ease-ui);
+  }
+
+  .studio-group + .studio-group {
+    margin-top: 24px;
+  }
+
+  .studio-group-heading {
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: 600;
+  }
+
+  .studio-group-description {
+    margin-top: 2px;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 400;
+  }
+
+  .studio-caveat,
+  .studio-uncategorised {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .studio-caveat {
+    margin-top: 6px;
+  }
+
+  .studio-uncategorised {
+    margin-top: 24px;
+  }
+
+  .studio-caveat > svg,
+  .studio-uncategorised > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+  }
+
+  .studio-statement {
+    margin-top: 8px;
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+
+  /* The shortcut slot keeps its height, so nothing below it moves (§16.8). */
+  .studio-slot {
+    display: flex;
+    align-items: center;
+    min-height: 36px;
+    margin-top: 8px;
+  }
+
+  .studio-slot-sentence {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .studio-slot-sentence > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+  }
+
+  .studio-rows {
+    margin-top: 8px;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * A row (§16.8). Static text with controls: no hover, selection, or
+   * pressed state of its own, and the default cursor.
+   * ------------------------------------------------------------------ */
+  .studio-row {
+    padding-block: 12px;
+    border-top: 1px solid var(--trip-snow-16);
+    cursor: default;
+  }
+
+  .studio-row-line {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 36px;
+  }
+
+  .studio-row-detail {
+    align-items: flex-start;
+    min-height: 0;
+    margin-top: 4px;
+  }
+
+  /* When line 1 cannot hold the label, the tag, and the action, the tag
+     wraps under the label and the action stays at the end. */
+  .studio-row-title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 8px;
+    min-width: 0;
+  }
+
+  .studio-row-label {
+    min-width: 0;
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+
+  /* The only filled shape in a row. Its border is transparent: an edge in
+     forced-colors mode. */
+  .studio-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background-color: var(--color-snow);
+    color: var(--color-ink);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+    white-space: nowrap;
+    animation: trip-fade-in var(--duration-fast) var(--ease-ui);
+  }
+
+  .studio-tag > svg {
+    flex: none;
+    width: 14px;
+    height: 14px;
+  }
+
+  .studio-row-state {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    min-width: 0;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 400;
+  }
+
+  .studio-row-state > svg {
+    flex: none;
+    width: 18px;
+    height: 18px;
+    margin-top: 1px;
+  }
+
+  .studio-row-state-text {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .studio-row-state-word {
+    font-weight: 600;
+  }
+
+  .studio-row-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-top: 4px;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 400;
+  }
+
+  .studio-row-note > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+  }
+
+  .studio-row-form {
+    margin-top: 12px;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Controls on the panel (§16.15)
+   * ------------------------------------------------------------------ */
+
+  /* Secondary: no fill, a 1px `snow` border. Equip and Unequip share one
+     box, so the two labels look alike; the tag and the word carry the
+     state. */
+  .studio-button {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: var(--studio-control-h);
+    padding: 0 14px;
+    border: 1px solid var(--color-snow);
+    border-radius: 10px;
+    background-color: transparent;
+    color: var(--color-snow);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+    cursor: pointer;
+    scroll-margin-block: 24px;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  .studio-button > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+  }
+
+  @media (hover: hover) {
+    .studio-button:not([aria-disabled="true"]):hover {
+      background-color: var(--trip-snow-12);
+    }
+  }
+
+  .studio-button:not([aria-disabled="true"]):active {
+    background-color: var(--trip-snow-20);
+  }
+
+  .studio-row-action {
+    min-width: 96px;
+  }
+
+  /* Primary on the panel: `paper` fill, `ink` label (§16.12 recipe). */
+  .studio-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: var(--studio-primary-h);
+    padding: 0 16px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  .studio-primary > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+  }
+
+  @media (hover: hover) {
+    .studio-primary:hover {
+      background-color: var(--studio-paper-hover);
+    }
+  }
+
+  .studio-primary:active {
+    background-color: var(--studio-paper-active);
+  }
+
+  .studio-primary[aria-disabled="true"] {
+    cursor: progress;
+  }
+
+  /* Change: a text disclosure (§16.9). */
+  .studio-change {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: 4px;
+    min-height: var(--studio-change-h);
+    padding: 0 8px;
+    border: none;
+    border-radius: 8px;
+    background-color: transparent;
+    color: var(--color-snow);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  .studio-change > svg {
+    flex: none;
+    width: 14px;
+    height: 14px;
+  }
+
+  @media (hover: hover) {
+    .studio-change:hover {
+      text-decoration-line: underline;
+    }
+  }
+
+  .studio-change:active {
+    background-color: var(--trip-snow-12);
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Item picker (§16.9): native radios, each option a whole label.
+   * ------------------------------------------------------------------ */
+  .studio-picker {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+    margin: 8px 0 0;
+    padding: 0;
+    border: none;
+    animation: trip-fade-in var(--duration-fast) var(--ease-ui);
+  }
+
+  .studio-option {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    min-height: var(--studio-control-h);
+    padding: 8px;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 400;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  @media (hover: hover) {
+    .studio-option:hover {
+      background-color: var(--trip-snow-12);
+    }
+  }
+
+  .studio-option:active {
+    background-color: var(--trip-snow-20);
+  }
+
+  .studio-option:has(.studio-option-input:focus-visible) {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    box-shadow: var(--focus-ring);
+  }
+
+  /* The native radio, kept for keyboard and assistive technology, over the
+     drawn ring. */
+  .studio-option-input {
+    position: absolute;
+    inset-block-start: 9px;
+    inset-inline-start: 8px;
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .studio-option-ring {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 18px;
+    height: 18px;
+    margin-top: 1px;
+    border: 1.5px solid var(--color-snow);
+    border-radius: 50%;
+  }
+
+  /* A real inner element drawn as a border, so it stays visible in
+     forced-colors mode. */
+  .studio-option-dot {
+    display: none;
+    width: 0;
+    height: 0;
+    border: 4px solid var(--color-snow);
+    border-radius: 50%;
+  }
+
+  .studio-option-input:checked + .studio-option-ring > .studio-option-dot {
+    display: block;
+  }
+
+  .studio-option-name {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .studio-option-input:checked ~ .studio-option-name {
+    font-weight: 600;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Add gear (§16.10). The form has no box of its own.
+   * ------------------------------------------------------------------ */
+  .studio-general {
+    margin-top: 24px;
+  }
+
+  .studio-general-form {
+    margin-top: 12px;
+  }
+
+  .studio-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    animation: trip-fade-in var(--duration-fast) var(--ease-ui);
+  }
+
+  .studio-field-label {
+    display: block;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+  }
+
+  .studio-input {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 44px;
+    margin-top: 6px;
+    padding: 0 12px;
+    border: 1px solid var(--color-snow);
+    border-radius: 10px;
+    background-color: transparent;
+    color: var(--color-snow);
+    caret-color: var(--color-snow);
+    font-size: 1rem;
+    line-height: 1.5rem;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  @media (hover: hover) {
+    .studio-input:hover {
+      background-color: var(--studio-snow-08);
+    }
+  }
+
+  /* An invalid field: a 2px border. The padding gives up the extra pixel,
+     so the text does not move. */
+  .studio-input[data-invalid] {
+    padding-inline: 11px;
+    border-width: 2px;
+  }
+
+  .studio-select {
+    position: relative;
+    display: block;
+  }
+
+  .studio-select > select {
+    appearance: none;
+    padding-inline-end: 40px;
+    cursor: pointer;
+  }
+
+  .studio-select > select[data-invalid] {
+    padding-inline-end: 39px;
+  }
+
+  .studio-select > select > option {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+  }
+
+  .studio-select > svg {
+    position: absolute;
+    inset-block-start: calc(50% + 3px);
+    inset-inline-end: 12px;
+    width: 16px;
+    height: 16px;
+    transform: translateY(-50%);
+    pointer-events: none;
+  }
+
+  .studio-field-help,
+  .studio-field-error {
+    margin-top: 6px;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 400;
+  }
+
+  .studio-field-error,
+  .studio-form-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-weight: 600;
+  }
+
+  .studio-form-alert {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .studio-form-alert:empty {
+    display: none;
+  }
+
+  .studio-field-error > svg,
+  .studio-form-alert > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+  }
+
+  .studio-form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Finish preparation (FEATURE-011 §13.4): the last part of the gear
+   * zone, inside its scroll. Every other rule is an existing class.
+   * ------------------------------------------------------------------ */
+  .studio-finish {
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid var(--trip-snow-16);
+  }
+
+  .studio-finish > .studio-form-actions {
+    margin-top: 12px;
+  }
+
+  .studio-finish > .studio-form-alert {
+    margin-top: 8px;
+  }
+
+  /* Below 768px the panel is one stacked column (§17.2). */
+  @media (width < 768px) {
+    .studio-finish .studio-primary {
+      width: 100%;
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Waiting and failure in the gear zone (S1, S4, S5, S7)
+   * ------------------------------------------------------------------ */
+  .studio-waiting,
+  .studio-stage-waiting {
+    display: flex;
+    align-items: center;
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+
+  .studio-dots {
+    flex: none;
+    display: flex;
+    gap: 6px;
+    margin-inline-end: 10px;
+  }
+
+  .studio-dots > span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--color-snow);
+    animation: prep-dot 1200ms ease-in-out infinite both;
+  }
+
+  .studio-dots > span:nth-child(2) {
+    animation-delay: 200ms;
+  }
+
+  .studio-dots > span:nth-child(3) {
+    animation-delay: 400ms;
+  }
+
+  .studio-failure {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+
+  .studio-failure > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin-top: 4px;
+  }
+
+  .studio-failure-action {
+    margin-top: 16px;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * The Stage (§16.3, §16.4, §16.11). A layout box, not a card: no edge,
+   * fill, border, or radius. Text sits on the backdrop, never on the floor
+   * pool or over the canvas.
+   * ------------------------------------------------------------------ */
+  @media (width >= 768px) {
+    .studio-stage {
+      display: flex;
+      flex: 0 1 1160px;
+      flex-direction: column;
+      min-width: 0;
+      max-width: 1160px;
+      height: calc(var(--studio-stage-h) + var(--studio-under));
+    }
+  }
+
+  .studio-stage-box {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 360px;
+  }
+
+  /* The viewer's root fills the Stage box; it is invisible until the avatar
+     is drawn, then fades in without moving (§16.16). */
+  .studio-viewer {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+  }
+
+  .studio-stage:is([data-viewer-state="ready"], [data-viewer-state="partial"])
+    .studio-viewer {
+    opacity: 1;
+    transition: opacity var(--duration-base) var(--ease-ui);
+  }
+
+  /* Centred at Stage x 50%, y 46%. */
+  .studio-stage-waiting,
+  .studio-stage-unavailable {
+    position: absolute;
+    inset-inline-start: 50%;
+    inset-block-start: 46%;
+    transform: translate(-50%, -50%);
+  }
+
+  .studio-stage-waiting {
+    max-width: calc(100% - 48px);
+  }
+
+  .studio-stage-unavailable {
+    width: min(420px, 100% - 48px);
+    font-size: 1rem;
+    line-height: 1.5rem;
+    text-align: start;
+  }
+
+  .studio-stage-unavailable > svg {
+    display: block;
+    width: 20px;
+    height: 20px;
+    margin-bottom: 12px;
+  }
+
+  .studio-stage-unavailable > p + p {
+    margin-top: 16px;
+  }
+
+  /* Retry on the Stage: the quiet pill (§16.11), not the panel button. */
+  .studio-stage-retry > .trip-button {
+    min-height: var(--studio-circle);
+    border-color: var(--color-snow);
+    border-radius: 9999px;
+    background-color: var(--trip-scrim);
+    color: var(--color-snow);
+  }
+
+  @media (hover: hover) {
+    .studio-stage-retry > .trip-button:hover {
+      background-color: var(--trip-scrim-strong);
+    }
+  }
+
+  .studio-stage-retry > .trip-button:active {
+    background-color: var(--color-ink);
+  }
+
+  /* Under the Stage: its space is reserved in every state. */
+  .studio-under {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: var(--studio-under);
+    padding-top: 12px;
+  }
+
+  .studio-viewbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+  }
+
+  .studio-circle {
+    flex: none;
+    width: var(--studio-circle);
+    height: var(--studio-circle);
+    border-radius: 50%;
+  }
+
+  .studio-circle > svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .studio-pill {
+    flex: none;
+    gap: 6px;
+    min-height: var(--studio-circle);
+    padding: 0 14px;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+  }
+
+  .studio-pill > svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  /* 12px between the turn buttons and Reset view. */
+  .studio-reset {
+    margin-inline-start: 4px;
+  }
+
+  .studio-caption {
+    min-height: 20px;
+    margin-top: 8px;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 400;
+    text-align: center;
+  }
+
+  .studio-caption-partial {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .studio-caption-partial + .studio-caption {
+    margin-top: 0;
+  }
+
+  .studio-caption-partial > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+  }
+
+  /* Below 768px: a text block after the panel, on the panel's surface. */
+  .studio-stage[data-narrow] {
+    padding: 20px;
+    border: 1px solid transparent;
+    border-radius: 24px;
+    background-color: var(--trip-scrim-strong);
+    color: var(--color-snow);
+  }
+
+  .studio-stage-text {
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+
+  .studio-stage-text + .studio-stage-text {
+    margin-top: 8px;
+  }
+}
+
+/*
+ * Forced colors (§18.8): the backdrop gives way to the system canvas. Every
+ * edge the design relies on is a real border, transparent by default.
+ */
+@media (forced-colors: active) {
+  .studio-backdrop {
+    display: none;
+  }
+}
+
+/*
+ * Reduced motion (§16.16): the panel, the tag, the picker, the form, and the
+ * canvas appear at once; the waiting dots are static, their text remains.
+ * Hover and fill changes are kept.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .studio-panel,
+  .studio-groups,
+  .studio-tag,
+  .studio-picker,
+  .studio-form,
+  .studio-dots > span {
+    animation: none;
+  }
+
+  .studio-dots > span {
+    opacity: 1;
+  }
+
+  .studio-stage .studio-viewer {
+    transition: none;
+  }
+}

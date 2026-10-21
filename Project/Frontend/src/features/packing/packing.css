@@ -1,0 +1,607 @@
+/*
+ * FEATURE-004 — Trip Preparation (State B): the preparation scene, and one
+ * briefing panel in the left third of the frame.
+ *
+ * Imported by src/index.css. Every rule is scoped to a .prep class. The
+ * shell, the header and its scrims, the links, and the secondary button are
+ * in components/layout/trip-shell.css; the trip-date control is the planner's.
+ *
+ * The panel knows nothing about what is behind it: text set on it is `snow`
+ * on the panel's own `ink` at 0.88. `conifer`, `ember`, and `stone` do not
+ * appear on this screen. There is no text shadow, no backdrop filter, no
+ * full-frame tint, and no filter on the image anywhere here (§14.3.1).
+ *
+ * Tokens come from docs/DESIGN_SYSTEM.md Version 2. Feature-level values come
+ * from docs/features/004-trail-selection-preparation.md; section numbers in
+ * comments refer to that specification.
+ */
+
+@layer components {
+  /* ------------------------------------------------------------------ *
+   * Per-tier values (§21.10, §22.2, §22.3). The crop is chosen from what
+   * must stay visible in the picture (§14.3.2).
+   * ------------------------------------------------------------------ */
+  .prep {
+    --prep-snow-40: color-mix(in srgb, var(--color-snow) 40%, transparent);
+
+    /* Below 1024px: in normal flow, centred, and the page scrolls. */
+    --prep-panel-width: min(640px, 100%);
+    --prep-top: max(120px, var(--trip-vh) * 0.24);
+    --prep-bottom: 24px;
+    --prep-scene-position: 84% 50%;
+    --prep-name-size: 1.5rem;
+    --prep-name-line: 1.875rem;
+
+    /* Tier S, 1024–1279px: the panel at the left, under the header. */
+    @media (width >= 1024px) {
+      --prep-panel-width: 420px;
+      --prep-top: 16px;
+      --prep-scene-position: 55% 30%;
+    }
+
+    /* Tier M */
+    @media (width >= 1280px) {
+      --prep-panel-width: 460px;
+      --prep-scene-position: 50% 30%;
+    }
+
+    /* Tier L */
+    @media (width >= 1440px) {
+      --prep-panel-width: 480px;
+      --prep-top: 32px;
+      --prep-bottom: 40px;
+    }
+
+    /* Tier XL. Above 1920px the panel stays here and the room grows. */
+    @media (width >= 1680px) {
+      --prep-panel-width: 520px;
+      --prep-name-size: 1.75rem;
+      --prep-name-line: 2.125rem;
+    }
+
+    /* Where the header's left scrim block ends: the panel's right edge line
+       (§14.3.3). Used from 1024px, where the panel's width is a length. */
+    --trip-scrim-start: calc(
+      var(--trip-gutter) + env(safe-area-inset-left, 0px) +
+        var(--prep-panel-width)
+    );
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Layers 0 and 1 (§14.3.1, §14.4). The fallback is not a state that gets
+   * swapped in: it is painted from the first frame, under the image, so "not
+   * loaded yet" and "failed" look the same and neither can flash.
+   * ------------------------------------------------------------------ */
+
+  /* Layer 0: over the shell's `ink`, one wash with a faint lift where the
+     scene's subject would be. Tokens and CSS only. */
+  .prep::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -3;
+    background-image: radial-gradient(
+      ellipse 60% 45% at 70% 35%,
+      var(--color-conifer-press) 0,
+      var(--color-ink) 70%
+    );
+    pointer-events: none;
+  }
+
+  /* Layer 1: the scene. Fixed to the viewport, cover-cropped, never
+     stretched. It fades in once and then does not move. Decorative: no
+     pointer events, hidden from assistive technology in markup. */
+  .prep-scene {
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: var(--prep-scene-position);
+    opacity: 0;
+    pointer-events: none;
+    user-select: none;
+    transition: opacity var(--duration-scene-fade) var(--ease-scene);
+  }
+
+  .prep-scene[data-ready] {
+    opacity: 1;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * The panel's box (§21.10). Its position and width depend on the viewport
+   * only. Its height follows its content, up to what the viewport leaves.
+   * ------------------------------------------------------------------ */
+  .prep-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-block: var(--prep-top) var(--prep-bottom);
+    padding-inline: calc(var(--trip-gutter) + env(safe-area-inset-left, 0px))
+      calc(var(--trip-gutter) + env(safe-area-inset-right, 0px));
+  }
+
+  /* `ink` at 0.88, radius 24px, no shadow, no blur. The border is
+     transparent: an edge that exists in forced-colors mode. It never clips,
+     so focus rings and the date popover stay whole. */
+  .prep-panel {
+    /* The widest the date popover may be: the panel's content. */
+    --trip-date-popover-max: calc(
+      min(640px, 100vw - 2 * var(--trip-gutter)) - 50px
+    );
+
+    display: flex;
+    flex-direction: column;
+    width: var(--prep-panel-width);
+    min-width: 0;
+    border: 1px solid transparent;
+    border-radius: 24px;
+    background-color: var(--trip-scrim-strong);
+    color: var(--color-snow);
+    /* No fill mode: once it has played, the panel is not left as a stacking
+       context or a containing block. */
+    animation: trip-enter var(--duration-base) var(--ease-ui);
+  }
+
+  /* From 1024px the panel stands at the left of the room, on the gutter, and
+     the page does not scroll: the briefing does. On a very short viewport the
+     limit stops at 480px and the page scrolls instead (§22.2). */
+  @media (width >= 1024px) {
+    .prep-page {
+      align-items: flex-start;
+    }
+
+    .prep-panel {
+      max-height: max(
+        480px,
+        var(--trip-vh) - var(--trip-header-height) - var(--prep-top) -
+          var(--prep-bottom)
+      );
+    }
+
+    .prep-briefing {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Strip (§21.11): the way back to the trail, and the way to planning
+   * ------------------------------------------------------------------ */
+  .prep-strip {
+    flex: none;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0 8px;
+    min-height: 44px;
+    padding: 0 12px;
+    border-bottom: 1px solid var(--trip-snow-16);
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Trip block (§21.11): the trail, its facts, and the date. It never
+   * scrolls.
+   * ------------------------------------------------------------------ */
+  .prep-trip {
+    flex: none;
+    padding: 16px 24px;
+  }
+
+  /* Two lines in one heading. */
+  .prep-title-lead {
+    display: block;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+  }
+
+  .prep-title-name {
+    display: block;
+    margin-top: 2px;
+    font-size: var(--prep-name-size);
+    line-height: var(--prep-name-line);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    overflow-wrap: anywhere;
+  }
+
+  /* Stands in for a name that is still on its way. */
+  .prep-title-skeleton {
+    display: block;
+    width: 60%;
+    height: 28px;
+    margin-top: 2px;
+    border-radius: 8px;
+    background-color: var(--trip-snow-16);
+  }
+
+  .prep-facts {
+    margin-top: 4px;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    overflow-wrap: anywhere;
+  }
+
+  .prep-facts-strong {
+    font-weight: 600;
+  }
+
+  /* 44px tall. The control is at the start; the end is FEATURE-005's call to
+     action (its §16.12), at least 12px away. The row's height is unchanged. */
+  .prep-date-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+    min-height: 44px;
+    margin-top: 12px;
+  }
+
+  /* "Gear up" (FEATURE-005 §16.12): the on-panel primary, `paper` fill with
+     an `ink` label. Geometry as Choose this trail: 44 tall, radius 12, not a
+     pill. Never disabled. It appears with the briefing, by opacity only. */
+  .prep-gear-up {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;
+    margin-inline-start: auto;
+    padding: 0 20px;
+    /* An edge in forced-colors mode. */
+    border: 1px solid transparent;
+    border-radius: 12px;
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+    animation: trip-fade-in var(--duration-base) var(--ease-ui);
+  }
+
+  .prep-gear-up > svg {
+    flex: none;
+    width: 18px;
+    height: 18px;
+  }
+
+  @media (hover: hover) {
+    .prep-gear-up:hover {
+      background-color: color-mix(
+        in srgb,
+        var(--color-ink) 8%,
+        var(--color-paper)
+      );
+    }
+  }
+
+  .prep-gear-up:active {
+    background-color: color-mix(
+      in srgb,
+      var(--color-ink) 16%,
+      var(--color-paper)
+    );
+  }
+
+  /* Below 480px, when the row cannot hold both, the action takes the second
+     line at full width under the date control. */
+  @media (width < 480px) {
+    .prep-gear-up {
+      flex: 1 1 100%;
+      margin-inline-start: 0;
+    }
+  }
+
+  /* The message slot takes no height while it is empty. */
+  .prep-slot:not(:empty) {
+    margin-top: 8px;
+  }
+
+  /* S2: one block, and nothing else in the panel. */
+  .prep-panel[data-view="not-found"] > .prep-trip {
+    padding: 24px;
+  }
+
+  .prep-panel[data-view="not-found"] .prep-title {
+    font-size: 1.5rem;
+    line-height: 1.875rem;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+
+  .prep-state-text {
+    margin-top: 8px;
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+
+  .prep-state-action {
+    margin-top: 20px;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Briefing (§21.11): readiness, gear, forecast, 24px apart; or the
+   * waiting or failure block. Text and rules on one surface, not cards.
+   * ------------------------------------------------------------------ */
+  .prep-briefing {
+    /* The containing block of everything inside it. Visually hidden text is
+       absolutely positioned; without this it would be laid out against the
+       shell, escape the scroll clip, and make the page itself scroll. */
+    position: relative;
+    padding: 16px 24px 24px;
+    border-top: 1px solid var(--trip-snow-16);
+    /* Follows the panel's lower corners, so its focus ring does too. */
+    border-radius: 0 0 23px 23px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--prep-snow-40) transparent;
+  }
+
+  /* S9–S11: the panel does not collapse to a strip. */
+  .prep-briefing[data-waiting] {
+    min-height: 136px;
+  }
+
+  /* The briefing replacing the waiting block: opacity only. */
+  .prep-briefing-content {
+    animation: trip-fade-in var(--duration-base) var(--ease-ui);
+  }
+
+  .prep-block + .prep-block {
+    margin-top: 24px;
+  }
+
+  .prep-heading {
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: 600;
+  }
+
+  /* A line under a heading: the count, the forecast's caption. */
+  .prep-line {
+    margin-top: 2px;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 400;
+  }
+
+  /* A statement in place of content: no gear recommended, no forecast. */
+  .prep-statement {
+    margin-top: 2px;
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+
+  .prep-caveat {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-top: 6px;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .prep-caveat > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Gear Readiness (§21.12). One appearance at every value.
+   * ------------------------------------------------------------------ */
+  .prep-readiness-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .prep-readiness-value {
+    flex: none;
+    font-size: 2rem;
+    line-height: 2.25rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* An outlined track and a filled length. Both are borders, so they remain
+     when background colors are removed; in forced-colors mode they take the
+     system's text color. */
+  .prep-meter {
+    box-sizing: border-box;
+    height: 10px;
+    margin-top: 8px;
+    overflow: hidden;
+    border: 1px solid var(--color-snow);
+    border-radius: 5px;
+  }
+
+  .prep-meter > span {
+    display: block;
+    height: 0;
+    border-block-start: 8px solid var(--color-snow);
+  }
+
+  .prep-note {
+    margin-top: 8px;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 400;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Recommended gear (§21.13). A row is static text: no hover, no pressed
+   * state, the default cursor. The state is a word and an icon at the end
+   * of the row, where it cannot be taken for a checkbox.
+   * ------------------------------------------------------------------ */
+  .prep-gear {
+    margin-top: 6px;
+  }
+
+  .prep-gear-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    min-height: 40px;
+    padding-block: 8px;
+    border-top: 1px solid var(--trip-snow-16);
+    cursor: default;
+  }
+
+  /* Missing rows are the heavier ones. */
+  .prep-gear-label {
+    min-width: 0;
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+
+  .prep-gear-row[data-owned] > .prep-gear-label {
+    font-weight: 400;
+  }
+
+  .prep-gear-state {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+  }
+
+  .prep-gear-state > svg {
+    flex: none;
+    width: 18px;
+    height: 18px;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Forecast (§21.14): text only
+   * ------------------------------------------------------------------ */
+  .prep-forecast {
+    margin-top: 6px;
+  }
+
+  .prep-forecast-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    min-height: 28px;
+  }
+
+  .prep-forecast-row > dt {
+    min-width: 0;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 400;
+  }
+
+  .prep-forecast-row > dd {
+    flex: none;
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * S9: three dots and a sentence. S10, S11: a sentence and Retry.
+   * ------------------------------------------------------------------ */
+  .prep-waiting {
+    display: flex;
+    align-items: center;
+    min-height: 24px;
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+
+  .prep-dots {
+    flex: none;
+    display: flex;
+    gap: 6px;
+    margin-inline-end: 10px;
+  }
+
+  .prep-dots > span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--color-snow);
+    animation: prep-dot 1200ms ease-in-out infinite both;
+  }
+
+  .prep-dots > span:nth-child(2) {
+    animation-delay: 200ms;
+  }
+
+  .prep-dots > span:nth-child(3) {
+    animation-delay: 400ms;
+  }
+
+  .prep-failure {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+
+  .prep-failure > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin-top: 4px;
+  }
+
+  .prep-failure-action {
+    margin-top: 16px;
+  }
+}
+
+/* Each dot runs 0.3 → 1 → 0.3 over 1200ms, as the planner's waiting dots. */
+@keyframes prep-dot {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+/*
+ * Reduced motion (§21.19): the scene, the panel, and the briefing appear at
+ * once, and the waiting dots are static at full opacity with their sentence
+ * still shown.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .prep-scene {
+    transition: none;
+  }
+
+  .prep-panel,
+  .prep-briefing-content,
+  .prep-gear-up,
+  .prep-dots > span {
+    animation: none;
+  }
+
+  .prep-dots > span {
+    opacity: 1;
+  }
+}

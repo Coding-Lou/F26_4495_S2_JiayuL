@@ -1,0 +1,902 @@
+{
+ "bad_names": {
+  "objects": [],
+  "meshes": [],
+  "materials": [],
+  "actions": [],
+  "bones": []
+ },
+ "orphan_meshes": [],
+ "mesh_name_rule": true,
+ "collections": {
+  "F005_Avatar": [
+   "Avatar_Armature",
+   "Avatar_Hair_Base",
+   "Avatar_Hair_Top",
+   "Avatar_Hands",
+   "Avatar_Head",
+   "Avatar_Legs",
+   "Avatar_Root",
+   "Avatar_Shoes_Default",
+   "Avatar_Top_Base",
+   "Slot_Back",
+   "Slot_Hand_L",
+   "Slot_Hand_R",
+   "Slot_Head",
+   "Wear_Boots",
+   "Wear_Shell",
+   "Wear_WarmLayer_Body",
+   "Wear_WarmLayer_Collar"
+  ],
+  "F005_Gear_Backpack": [
+   "Gear_Backpack"
+  ],
+  "F005_Gear_Headlamp": [
+   "Gear_Headlamp"
+  ],
+  "F005_Gear_TrekkingPoles": [
+   "Gear_TrekkingPole_L",
+   "Gear_TrekkingPole_R"
+  ],
+  "F005_Preview": [
+   "Preview_Camera",
+   "Preview_Fill",
+   "Preview_Key"
+  ],
+  "F005_Scratch": []
+ },
+ "per_mesh": {
+  "Avatar_Hair_Base": {
+   "tris": 546,
+   "ngons": 0,
+   "open_edges": 0,
+   "loose": 0,
+   "mats": [
+    "Avatar_Mat_Hair"
+   ],
+   "empty_slots": [],
+   "modifiers": [
+    [
+     "ARMATURE",
+     "Avatar_Armature"
+    ]
+   ],
+   "parent": [
+    "Avatar_Armature",
+    "OBJECT"
+   ],
+   "identity_basis": true,
+   "identity_parent_inv": true,
+   "uv": 0,
+   "colors": 0,
+   "shape_keys": false,
+   "max_influences": 1,
+   "unweighted": 0
+  },
+  "Avatar_Hair_Top": {
+   "tris": 1538,
+   "ngons": 0,
+   "open_edges": 0,
+   "loose": 0,
+   "mats": [
+    "Avatar_Mat_Hair"
+   ],
+   "empty_slots": [],
+   "modifiers": [
+    [
+     "ARMATURE",
+     "Avatar_Armature"
+    ]
+   ],
+   "parent": [
+    "Avatar_Armature",
+    "OBJECT"
+   ],
+   "identity_basis": true,
+   "identity_parent_inv": true,
+   "uv": 0,
+   "colors": 0,
+   "shape_keys": false,
+   "max_influences": 1,
+   "unweighted": 0
+  },
+  "Avatar_Hands": {
+   "tris": 608,
+   "ngons": 0,
+   "open_edges": 0,
+   "loose": 0,
+   "mats": [
+    "Avatar_Mat_Skin"
+   ],
+   "empty_slots": [],
+   "modifiers": [
+    [
+     "ARMATURE",
+     "Avatar_Armature"
+    ]
+   ],
+   "parent": [
+    "Avatar_Armature",
+    "OBJECT"
+   ],
+   "identity_basis": true,
+   "identity_parent_inv": true,
+   "uv": 0,
+   "colors": 0,
+   "shape_keys": false,
+   "max_influences": 1,
+   "unweighted": 0
+  },
+  "Avatar_Head": {
+   "tris": 3196,
+   "ngons": 0,
+   "open_edges": 0,
+   "loose": 0,
+   "mats": [
+    "Avatar_Mat_Skin",
+    "Avatar_Mat_Eye",
+    "Avatar_Mat_EyeLight"
+   ],
+   "empty_slots": [],
+   "modifiers": [
+    [
+     "ARMATURE",
+     "Avatar_Armature"
+    ]
+   ],
+   "parent": [
+    "Avatar_Armature",
+    "OBJECT"
+   ],
+   "identity_basis": true,
+   "identity_parent_inv": true,
+   "uv": 0,
+   "colors": 0,
+   "shape_keys": false,
+   "max_influences": 2,
+   "unweighted": 0
+  },
+  "Avatar_Legs": {
+   "tris": 1352,
+   "ngons": 0,
+   "open_edges": 0,
+   "loose": 0,
+   "mats": [
+    "Avatar_Mat_Trousers"
+   ],
+   "empty_slots": [],
+   "modifiers": [
+    [
+     "ARMATURE",
+     "Avatar_Armature"
+    ]
+   ],
+   "parent": [
+    "Avatar_Armature",
+    "OBJECT"
+   ],
+   "identity_basis": true,
+   "identity_parent_inv": true,
+   "uv": 0,
+   "colors": 0,
+   "shape_keys": false,
+   "max_influences": 2,
+   "unweighted": 0
+  },
+  "Avatar_Shoes_Default": {
+   "tris": 1104,
+   "ngons": 0,
+   "open_edges": 0,
+   "loose": 0,
+   "mats": [
+    "Avatar_Mat_Shoe",
+    "Avatar_Mat_Sole"
+   ],
+   "empty_slots": [],
+   "modifiers": [
+    [
+     "ARMATURE",
+     "Avatar_Armature"
+    ]
+   ],
+   "parent": [
+    "Avatar_Armature",
+    "OBJECT"
+   ],
+   "identity_basis": true,
+   "identity_parent_inv": true,
+   "uv": 0,
+   "colors": 0,
+   "shape_keys": false,
+   "max_influences": 2,
+   "unweighted": 0
+  },
+  "Avatar_Top_Base": {
+   "tris": 2048,
+   "ngons": 0,
+   "open_edges": 0,
+   "loose": 0,
+   "mats": [
+    "Avatar_Mat_Top"
+   ],
+   "empty_slots": [],
+   "modifiers": [
+    [
+     "ARMATURE",
+     "Avatar_Armature"
+    ]
+   ],
+   "parent": [
+    "Avatar_Armature",
+    "OBJECT"
+   ],
+   "identity_basis": true,
+   "identity_parent_inv": true,
+   "uv": 0,
+   "colors": 0,
+   "shape_keys": false,
+   "max_influences": 3,
+   "unweighted": 0
+  },
+  "Gear_Backpack": {
+   "tris": 3368,
+   "ngons": 0,
+   "open_edges": 0,
+   "loose": 0,
+   "mats": [
+    "Gear_Mat_Pack_Body",
+    "Gear_Mat_Pack_Trim",
+    "Gear_Mat_Pack_Accent"
+   ],
+   "empty_slots": [],
+   "modifiers": [],
+   "parent": [
+    "Slot_Back",
+    "OBJECT"
+   ],
+   "identity_basis": true,
+   "identity_parent_inv": true,
+   "uv": 0,
+   "colors": 0,
+   "shape_keys": false
+  },
+  "Gear_Headlamp": {
+   "tris": 1296,
+   "ngons": 0,
+   "open_edges": 0,
+   "loose": 0,
+   "mats": [
+    "Gear_Mat_Lamp_Body",
+    "Gear_Mat_Lamp_Lens",
+    "Gear_Mat_Lamp_Band"
+   ],
+   "empty_slots": [],
+   "modifiers": [],
+   "parent": [
+    "Slot_Head",
+    "OBJECT"
+   ],
+   "identity_basis": true,
+   "identity_parent_inv": true,
+   "uv": 0,
+   "colors": 0,
+   "shape_keys": false
+  },
+  "Gear_TrekkingPole_L": {
+   "tris": 688,
+   "ngons": 0,
+   "open_edges": 0,
+   "loose": 0,
+   "mats": [
+    "Gear_Mat_Pole_Shaft",
+    "Gear_Mat_Pole_Grip",
+    "Gear_Mat_Pole_Accent"
+   ],
+   "empty_slots": [],
+   "modifiers": [],
+   "parent": [
+    "Slot_Hand_L",
+    "OBJECT"
+   ],
+   "identity_basis": true,
+   "identity_parent_inv": true,
+   "uv": 0,
+   "colors": 0,
+   "shape_keys": false
+  },
+  "Gear_TrekkingPole_R": {
+   "tris": 688,
+   "ngons": 0,
+   "open_edges": 0,
+   "loose": 0,
+   "mats": [
+    "Gear_Mat_Pole_Shaft",
+    "Gear_Mat_Pole_Grip",
+    "Gear_Mat_Pole_Accent"
+   ],
+   "empty_slots": [],
+   "modifiers": [],
+   "parent": [
+    "Slot_Hand_R",
+    "OBJECT"
+   ],
+   "identity_basis": true,
+   "identity_parent_inv": true,
+   "uv": 0,
+   "colors": 0,
+   "shape_keys": false
+  },
+  "Wear_Boots": {
+   "tris": 1536,
+   "ngons": 0,
+   "open_edges": 0,
+   "loose": 0,
+   "mats": [
+    "Wear_Mat_Boot",
+    "Avatar_Mat_Sole"
+   ],
+   "empty_slots": [],
+   "modifiers": [
+    [
+     "ARMATURE",
+     "Avatar_Armature"
+    ]
+   ],
+   "parent": [
+    "Avatar_Armature",
+    "OBJECT"
+   ],
+   "identity_basis": true,
+   "identity_parent_inv": true,
+   "uv": 0,
+   "colors": 0,
+   "shape_keys": false,
+   "max_influences": 3,
+   "unweighted": 0
+  },
+  "Wear_Shell": {
+   "tris": 3064,
+   "ngons": 0,
+   "open_edges": 0,
+   "loose": 0,
+   "mats": [
+    "Wear_Mat_Shell",
+    "Wear_Mat_ShellTrim"
+   ],
+   "empty_slots": [],
+   "modifiers": [
+    [
+     "ARMATURE",
+     "Avatar_Armature"
+    ]
+   ],
+   "parent": [
+    "Avatar_Armature",
+    "OBJECT"
+   ],
+   "identity_basis": true,
+   "identity_parent_inv": true,
+   "uv": 0,
+   "colors": 0,
+   "shape_keys": false,
+   "max_influences": 3,
+   "unweighted": 0
+  },
+  "Wear_WarmLayer_Body": {
+   "tris": 2048,
+   "ngons": 0,
+   "open_edges": 0,
+   "loose": 0,
+   "mats": [
+    "Wear_Mat_Fleece"
+   ],
+   "empty_slots": [],
+   "modifiers": [
+    [
+     "ARMATURE",
+     "Avatar_Armature"
+    ]
+   ],
+   "parent": [
+    "Avatar_Armature",
+    "OBJECT"
+   ],
+   "identity_basis": true,
+   "identity_parent_inv": true,
+   "uv": 0,
+   "colors": 0,
+   "shape_keys": false,
+   "max_influences": 3,
+   "unweighted": 0
+  },
+  "Wear_WarmLayer_Collar": {
+   "tris": 576,
+   "ngons": 0,
+   "open_edges": 0,
+   "loose": 0,
+   "mats": [
+    "Wear_Mat_Fleece"
+   ],
+   "empty_slots": [],
+   "modifiers": [
+    [
+     "ARMATURE",
+     "Avatar_Armature"
+    ]
+   ],
+   "parent": [
+    "Avatar_Armature",
+    "OBJECT"
+   ],
+   "identity_basis": true,
+   "identity_parent_inv": true,
+   "uv": 0,
+   "colors": 0,
+   "shape_keys": false,
+   "max_influences": 1,
+   "unweighted": 0
+  }
+ },
+ "tris": {
+  "default_visible": 10392,
+  "embedded_variants": 7224,
+  "avatar_all": 17616,
+  "worst_loadout": 18456,
+  "backpack": 3368,
+  "poles": 1376,
+  "headlamp": 1296
+ },
+ "materials": {
+  "Avatar_Mat_Eye": {
+   "color_ok": true,
+   "metallic": 0.0,
+   "roughness": 1.0,
+   "backface_culling": true,
+   "tex": false
+  },
+  "Avatar_Mat_EyeLight": {
+   "color_ok": true,
+   "metallic": 0.0,
+   "roughness": 1.0,
+   "backface_culling": true,
+   "tex": false
+  },
+  "Avatar_Mat_Hair": {
+   "color_ok": true,
+   "metallic": 0.0,
+   "roughness": 1.0,
+   "backface_culling": true,
+   "tex": false
+  },
+  "Avatar_Mat_Shoe": {
+   "color_ok": true,
+   "metallic": 0.0,
+   "roughness": 1.0,
+   "backface_culling": true,
+   "tex": false
+  },
+  "Avatar_Mat_Skin": {
+   "color_ok": true,
+   "metallic": 0.0,
+   "roughness": 1.0,
+   "backface_culling": true,
+   "tex": false
+  },
+  "Avatar_Mat_Sole": {
+   "color_ok": true,
+   "metallic": 0.0,
+   "roughness": 1.0,
+   "backface_culling": true,
+   "tex": false
+  },
+  "Avatar_Mat_Top": {
+   "color_ok": true,
+   "metallic": 0.0,
+   "roughness": 1.0,
+   "backface_culling": true,
+   "tex": false
+  },
+  "Avatar_Mat_Trousers": {
+   "color_ok": true,
+   "metallic": 0.0,
+   "roughness": 1.0,
+   "backface_culling": true,
+   "tex": false
+  },
+  "Gear_Mat_Lamp_Band": {
+   "color_ok": true,
+   "metallic": 0.0,
+   "roughness": 1.0,
+   "backface_culling": true,
+   "tex": false
+  },
+  "Gear_Mat_Lamp_Body": {
+   "color_ok": true,
+   "metallic": 0.0,
+   "roughness": 1.0,
+   "backface_culling": true,
+   "tex": false
+  },
+  "Gear_Mat_Lamp_Lens": {
+   "color_ok": true,
+   "metallic": 0.0,
+   "roughness": 1.0,
+   "backface_culling": true,
+   "tex": false
+  },
+  "Gear_Mat_Pack_Accent": {
+   "color_ok": true,
+   "metallic": 0.0,
+   "roughness": 1.0,
+   "backface_culling": true,
+   "tex": false
+  },
+  "Gear_Mat_Pack_Body": {
+   "color_ok": true,
+   "metallic": 0.0,
+   "roughness": 1.0,
+   "backface_culling": true,
+   "tex": false
+  },
+  "Gear_Mat_Pack_Trim": {
+   "color_ok": true,
+   "metallic": 0.0,
+   "roughness": 1.0,
+   "backface_culling": true,
+   "tex": false
+  },
+  "Gear_Mat_Pole_Accent": {
+   "color_ok": true,
+   "metallic": 0.0,
+   "roughness": 1.0,
+   "backface_culling": true,
+   "tex": false
+  },
+  "Gear_Mat_Pole_Grip": {
+   "color_ok": true,
+   "metallic": 0.0,
+   "roughness": 1.0,
+   "backface_culling": true,
+   "tex": false
+  },
+  "Gear_Mat_Pole_Shaft": {
+   "color_ok": true,
+   "metallic": 0.0,
+   "roughness": 1.0,
+   "backface_culling": true,
+   "tex": false
+  },
+  "Wear_Mat_Boot": {
+   "color_ok": true,
+   "metallic": 0.0,
+   "roughness": 1.0,
+   "backface_culling": true,
+   "tex": false
+  },
+  "Wear_Mat_Fleece": {
+   "color_ok": true,
+   "metallic": 0.0,
+   "roughness": 1.0,
+   "backface_culling": true,
+   "tex": false
+  },
+  "Wear_Mat_Shell": {
+   "color_ok": true,
+   "metallic": 0.0,
+   "roughness": 1.0,
+   "backface_culling": true,
+   "tex": false
+  },
+  "Wear_Mat_ShellTrim": {
+   "color_ok": true,
+   "metallic": 0.0,
+   "roughness": 1.0,
+   "backface_culling": true,
+   "tex": false
+  }
+ },
+ "materials_bad": [],
+ "avatar_extents": {
+  "x": [
+   -0.5012,
+   0.5012
+  ],
+  "y": [
+   -0.192,
+   0.141
+  ],
+  "z": [
+   0.0,
+   1.7524
+  ],
+  "highest_object": "Avatar_Hair_Top",
+  "x_extent": 1.0024,
+  "x_asym": 0.0,
+  "y_extent": 0.333,
+  "boots_low": 0.0,
+  "shoes_low": 0.0
+ },
+ "full_loadout": {
+  "height": 1.7524,
+  "max_radius": 0.5018
+ },
+ "facing": {
+  "eye_min_Gz": 0.0609,
+  "slot_back_Gz": -0.105,
+  "toesL_minus_footL_Gz": 0.13,
+  "slot_hand_Gx": [
+   0.4587,
+   -0.4587
+  ],
+  "head_joint_Gy": 1.5
+ },
+ "state": {
+  "frame": 1,
+  "pose_cleared": true,
+  "hidden": [],
+  "action": "Idle",
+  "scratch": []
+ },
+ "slots": {
+  "Slot_Head": {
+   "parent": "Avatar_Armature",
+   "parent_type": "BONE",
+   "parent_bone": "Head",
+   "world": [
+    -0.0,
+    0.015,
+    1.65
+   ],
+   "rot_deg": 0.0,
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "offset_from_nominal": [
+    -0.0,
+    -0.0,
+    -0.0
+   ]
+  },
+  "Slot_Back": {
+   "parent": "Avatar_Armature",
+   "parent_type": "BONE",
+   "parent_bone": "Chest",
+   "world": [
+    -0.0,
+    0.105,
+    1.3
+   ],
+   "rot_deg": 0.0,
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "offset_from_nominal": [
+    -0.0,
+    0.0,
+    -0.0
+   ]
+  },
+  "Slot_Hand_L": {
+   "parent": "Avatar_Armature",
+   "parent_type": "BONE",
+   "parent_bone": "Hand_L",
+   "world": [
+    0.45872,
+    -0.02142,
+    0.87404
+   ],
+   "rot_deg": 0.0,
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "offset_from_nominal": [
+    -0.0163,
+    -0.0114,
+    -0.021
+   ]
+  },
+  "Slot_Hand_R": {
+   "parent": "Avatar_Armature",
+   "parent_type": "BONE",
+   "parent_bone": "Hand_R",
+   "world": [
+    -0.45872,
+    -0.02142,
+    0.87404
+   ],
+   "rot_deg": 0.0,
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "offset_from_nominal": [
+    0.0163,
+    -0.0114,
+    -0.021
+   ]
+  }
+ },
+ "custom_props_constraints_drivers": {},
+ "idle": {
+  "action": "Idle",
+  "actions_in_file": [
+   "Idle"
+  ],
+  "slot": "Avatar_Armature",
+  "frame_range": [
+   1,
+   121
+  ],
+  "fps": 30,
+  "channels": [
+   "pose.bones[\"Breath\"].location",
+   "pose.bones[\"Head\"].rotation_quaternion",
+   "pose.bones[\"Neck\"].rotation_quaternion"
+  ],
+  "fcurves": 11,
+  "key_range": [
+   1.0,
+   121.0
+  ],
+  "scale_channels": [],
+  "max_breath_translation_mm": 5.148,
+  "max_neck_rotation_deg": 0.499,
+  "max_head_rotation_deg": 0.8,
+  "frames_1_and_121_max_dev_from_rest": 0.0
+ },
+ "backpack": {
+  "assembled": {
+   "x": [
+    -0.1902,
+    0.1902
+   ],
+   "y": [
+    -0.1349,
+    0.3184
+   ],
+   "z": [
+    0.9326,
+    1.4769
+   ]
+  },
+  "strap_belt_inner_face_max_mm": -6.0,
+  "strap_belt_outer_face_min_mm": 27.0,
+  "pack_body_and_lid_max_z": 1.398,
+  "pack_front_face_signed_mm": [
+   -16.98,
+   -5.85
+  ],
+  "tris": 3368,
+  "mats": [
+   "Gear_Mat_Pack_Body",
+   "Gear_Mat_Pack_Trim",
+   "Gear_Mat_Pack_Accent"
+  ],
+  "parent": [
+   "Slot_Back",
+   "OBJECT",
+   true,
+   true
+  ],
+  "world_origin": [
+   -0.0,
+   0.105,
+   1.3
+  ]
+ },
+ "poles": {
+  "L": {
+   "assembled": {
+    "x": [
+     0.4307,
+     0.4867
+    ],
+    "y": [
+     -0.0494,
+     0.0066
+    ],
+    "z": [
+     0.002,
+     0.9612
+    ]
+   },
+   "ca3_sum": 0.002
+  },
+  "R": {
+   "assembled": {
+    "x": [
+     -0.4867,
+     -0.4307
+    ],
+    "y": [
+     -0.0494,
+     0.0066
+    ],
+    "z": [
+     0.002,
+     0.9612
+    ]
+   },
+   "ca3_sum": 0.002
+  }
+ },
+ "headlamp": {
+  "assembled": {
+   "x": [
+    -0.1109,
+    0.1109
+   ],
+   "y": [
+    -0.1247,
+    0.1444
+   ],
+   "z": [
+    1.636,
+    1.6919
+   ]
+  },
+  "slot_world": [
+   -0.0,
+   0.015,
+   1.65
+  ],
+  "x_extent": 0.2218,
+  "x_asym": 0.0,
+  "y_extent": 0.2691,
+  "front_most_y": -0.1247,
+  "CA4_low_window": [
+   1.605,
+   1.638
+  ],
+  "CA4_high_window": [
+   1.662,
+   1.695
+  ],
+  "CA4_ok": true,
+  "lens_min_Gz_local": 0.1332
+ },
+ "checks": {
+  "names_regex": true,
+  "no_dup_suffix": true,
+  "mesh_data_names": true,
+  "collections": true,
+  "bones_23": true,
+  "root_identity": true,
+  "armature_identity": true,
+  "skinned_transforms": true,
+  "skinned_modifiers": true,
+  "gear_parent_identity": true,
+  "slots": true,
+  "topology": true,
+  "no_uv_color_shapekeys": true,
+  "no_empty_material_slots": true,
+  "weights": true,
+  "materials": true,
+  "no_images_in_materials": true,
+  "no_props_constraints_drivers": true,
+  "actions": true,
+  "idle_limits": true,
+  "tris_budgets": true,
+  "avatar_extents": true,
+  "backpack_extents": true,
+  "pole_extents": true,
+  "headlamp_extents": true,
+  "full_loadout": true,
+  "facing": true,
+  "state_ca12": true,
+  "scene": true
+ },
+ "all_pass": true,
+ "source": {
+  "path": "/Users/jay/Desktop/F26_4495_S2_JiayuL/assets/blender/feature005/avatar-gear-studio.blend",
+  "blender": "5.2.2 LTS",
+  "written": "2026-10-14 18:43:36"
+ }
+}

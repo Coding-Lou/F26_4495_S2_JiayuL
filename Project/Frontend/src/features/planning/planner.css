@@ -1,0 +1,1490 @@
+/*
+ * FEATURE-003 — the conversational planner: the panel, the conversation, the
+ * composer with its trip-context controls, and the recommendation cards.
+ *
+ * Imported by src/index.css. Every rule is scoped to a .planner- class. The
+ * planner knows nothing about what is behind it: text set directly on the
+ * panel is `snow` on the panel's own `ink` at 0.88, and what the user writes
+ * or reads as content sits on opaque `paper` (§8.3.3, §9.4). There is no text
+ * shadow and no backdrop filter anywhere here.
+ *
+ * Tokens come from docs/DESIGN_SYSTEM.md Version 2. Feature-level values come
+ * from docs/features/003-conversational-planner.md; section numbers in
+ * comments refer to that specification.
+ */
+
+@layer components {
+  /* ------------------------------------------------------------------ *
+   * Panel (§9.4, §10.2.1). Four zones, top to bottom; only the history
+   * scrolls. It never clips: focus rings must stay whole.
+   * ------------------------------------------------------------------ */
+  .planner {
+    --planner-snow-06: color-mix(in srgb, var(--color-snow) 6%, transparent);
+    --planner-snow-12: color-mix(in srgb, var(--color-snow) 12%, transparent);
+    --planner-snow-20: color-mix(in srgb, var(--color-snow) 20%, transparent);
+    --planner-ink-06: color-mix(in srgb, var(--color-ink) 6%, transparent);
+    --planner-ink-10: color-mix(in srgb, var(--color-ink) 10%, transparent);
+    --planner-ink-12: color-mix(in srgb, var(--color-ink) 12%, transparent);
+
+    /* Compact heights with a fine pointer; 44px on a coarse one (§19.6). */
+    --planner-button-height: 36px;
+    --planner-context-height: 32px;
+    --planner-send-size: 40px;
+    --planner-option-height: 48px;
+
+    --planner-pad: 16px;
+    --planner-composer-margin: 8px;
+
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    /* Transparent: an edge that exists in forced-colors mode. */
+    border: 1px solid transparent;
+    border-radius: 20px 20px 0 0;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background-color: color-mix(in srgb, var(--color-ink) 88%, transparent);
+    color: var(--color-snow);
+    font-family:
+      ui-sans-serif,
+      system-ui,
+      -apple-system,
+      "Segoe UI",
+      Roboto,
+      "Helvetica Neue",
+      Arial,
+      "Noto Sans",
+      sans-serif;
+
+    @media (width >= 768px) {
+      --planner-pad: 24px;
+      --planner-composer-margin: 16px;
+
+      border-radius: 24px;
+      padding-bottom: 0;
+    }
+
+    @media (pointer: coarse) {
+      --planner-button-height: 44px;
+      --planner-context-height: 44px;
+      --planner-send-size: 44px;
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Focus ring and control edges. One box-shadow made of two parts, so an
+   * invalid or hover edge and the focus ring add up.
+   * ------------------------------------------------------------------ */
+  .planner-control {
+    --planner-edge: 0 0 0 0 transparent;
+
+    box-shadow: var(--planner-edge);
+  }
+
+  .planner-control:focus-visible {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    box-shadow: var(--planner-edge), var(--focus-ring);
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Title strip (§10.2.1, §10.2.8, §14.1.2)
+   * ------------------------------------------------------------------ */
+  .planner-title-strip {
+    flex: none;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 16px;
+    min-height: 44px;
+    padding: 10px var(--planner-pad);
+    border-bottom: 1px solid
+      color-mix(in srgb, var(--color-snow) 16%, transparent);
+  }
+
+  @media (width >= 768px) {
+    .planner-title-strip {
+      min-height: 48px;
+      padding-block: 12px;
+    }
+  }
+
+  .planner-title {
+    flex: none;
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: 600;
+  }
+
+  /* It takes focus from script only (§18.2); it is not operable. */
+  .planner-title:focus {
+    outline: none;
+  }
+
+  /* What the planner holds so far. Wraps; never truncated. */
+  .planner-summary {
+    flex: 1 1 0;
+    min-width: 0;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 400;
+    overflow-wrap: anywhere;
+  }
+
+  /* New Plan's confirmation takes the strip's place until it is resolved. */
+  .planner-confirm {
+    flex: 1 1 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px 16px;
+    min-width: 0;
+    animation: planner-fade-in var(--duration-fast) var(--ease-ui) both;
+  }
+
+  .planner-confirm-text {
+    flex: 1 1 240px;
+    min-width: 0;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+  }
+
+  .planner-confirm-actions {
+    flex: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * History (§10.2.1, §10.2.4). A plain scrolling container.
+   * ------------------------------------------------------------------ */
+  .planner-history {
+    /* The offset parent of its messages: script reads their place from it. */
+    position: relative;
+    flex: 1 1 0;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 16px;
+    /* A control scrolled into view by focus stops short of the clip, so its
+       6px focus ring is whole on every side (§19.3). */
+    scroll-padding: 8px;
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--color-snow) 40%, transparent)
+      transparent;
+  }
+
+  @media (width >= 768px) {
+    .planner-history {
+      padding: 20px 24px 16px;
+    }
+  }
+
+  .planner-history:focus-visible {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    box-shadow: var(--focus-ring);
+  }
+
+  /*
+   * Below 768px the panel is an edge-to-edge sheet, so a ring outside the
+   * region would leave the viewport. There it is drawn inset: the same three
+   * 2px bands, `ink`, `sun`, `ink`, counted inward from the region's edge.
+   * The two `ink` bands are a double border and the `sun` band an outline
+   * between them. Neither is an inset shadow, which the scrolled messages
+   * would paint over: the border lies outside the scrolled area and the
+   * outline is drawn above it. The padding gives up the 6px the border takes,
+   * so nothing inside moves when the ring appears.
+   */
+  @media (width < 768px) {
+    .planner-history:focus-visible {
+      padding: 10px;
+      border: 6px double var(--color-ink);
+      outline: 2px solid var(--color-sun);
+      outline-offset: -4px;
+      box-shadow: none;
+    }
+  }
+
+  .planner-messages {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* 20px between messages of different roles, 8px between blocks of one. */
+  .planner-item {
+    min-width: 0;
+  }
+
+  .planner-item + .planner-item {
+    margin-top: 20px;
+  }
+
+  .planner-item[data-role="user"] + .planner-item[data-role="user"],
+  .planner-item[data-role="assistant"] + .planner-item[data-role="assistant"] {
+    margin-top: 8px;
+  }
+
+  .planner-item[data-enter] {
+    animation: planner-enter var(--duration-base) var(--ease-ui) both;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Assistant position (§10.2.2, §10.2.3, §13.3.1): text directly on the
+   * panel, under a label row that names the role in words.
+   * ------------------------------------------------------------------ */
+  .planner-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+  }
+
+  .planner-label > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+  }
+
+  .planner-assistant-text {
+    margin-top: 4px;
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: 400;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  .planner-greeting-heading {
+    margin-top: 4px;
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+    font-weight: 600;
+  }
+
+  .planner-greeting-body {
+    margin-top: 8px;
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+
+  .planner-starter-caption {
+    margin-top: 20px;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+  }
+
+  .planner-starters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .planner-starters > li {
+    display: flex;
+    max-width: 100%;
+  }
+
+  /* Starter idea: a pill with no fill. Text wraps inside it if it must. */
+  .planner-starter {
+    max-width: 100%;
+    min-height: var(--planner-button-height);
+    padding: 7px 14px;
+    border: 1px solid var(--color-snow);
+    border-radius: 9999px;
+    color: var(--color-snow);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  @media (hover: hover) {
+    .planner-starter:hover {
+      background-color: var(--planner-snow-12);
+    }
+  }
+
+  .planner-starter:active {
+    background-color: var(--planner-snow-20);
+  }
+
+  /* Waiting indicator: exactly as tall as a one-line reply. */
+  .planner-waiting {
+    display: flex;
+    align-items: center;
+    min-height: 24px;
+    margin-top: 4px;
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+
+  .planner-dots {
+    flex: none;
+    display: flex;
+    gap: 6px;
+    margin-inline-end: 10px;
+  }
+
+  .planner-dots > span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--color-snow);
+    animation: planner-dot 1200ms ease-in-out infinite both;
+  }
+
+  .planner-dots > span:nth-child(2) {
+    animation-delay: 200ms;
+  }
+
+  .planner-dots > span:nth-child(3) {
+    animation-delay: 400ms;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * User message (§10.2.2) and a message that was not sent (§13.3.2)
+   * ------------------------------------------------------------------ */
+  .planner-user {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+  }
+
+  .planner-bubble {
+    max-width: 85%;
+    padding: 10px 16px;
+    border: 1px solid transparent;
+    border-radius: 18px;
+    border-end-end-radius: 6px;
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: 400;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  /* Not sent: the fill goes and a dashed outline marks it. The shape
+     change is the cue, with the words and the icon below; not color. */
+  .planner-bubble[data-failed] {
+    border: 1px dashed color-mix(in srgb, var(--color-snow) 60%, transparent);
+    background-color: transparent;
+    color: var(--color-snow);
+  }
+
+  .planner-failure-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+  }
+
+  .planner-failure-status > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+  }
+
+  .planner-failure-reason {
+    max-width: 85%;
+    margin-top: 4px;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    text-align: end;
+  }
+
+  .planner-failure-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Buttons set on the panel
+   * ------------------------------------------------------------------ */
+
+  /* Outline action: Retry, Edit message, Keep this plan (§13.3.2). */
+  .planner-outline-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: var(--planner-button-height);
+    padding: 0 14px;
+    border: 1px solid var(--color-snow);
+    border-radius: 10px;
+    color: var(--color-snow);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  .planner-outline-button > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+  }
+
+  @media (hover: hover) {
+    .planner-outline-button:hover {
+      background-color: var(--planner-snow-12);
+    }
+  }
+
+  .planner-outline-button:active {
+    background-color: var(--planner-snow-20);
+  }
+
+  /* Filled action: Start new plan (§14.1.2). */
+  .planner-filled-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: var(--planner-button-height);
+    padding: 0 14px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  @media (hover: hover) {
+    .planner-filled-button:hover {
+      background-color: var(--color-snow);
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
+   * New Plan (§14.1.1). It is the planner's control, placed in the Home
+   * header: the quiet-control recipe, `ink` at 0.72 with a `snow` border.
+   * ------------------------------------------------------------------ */
+  .planner-new-plan {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 44px;
+    padding: 0 14px;
+    border: 1px solid var(--color-snow);
+    border-radius: 9999px;
+    background-color: color-mix(in srgb, var(--color-ink) 72%, transparent);
+    color: var(--color-snow);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  /* 36px with a fine pointer from 1024px; 44px below that and on any
+     coarse pointer (§17.2). */
+  @media (width >= 1024px) and (pointer: fine) {
+    .planner-new-plan {
+      min-height: 36px;
+    }
+  }
+
+  .planner-new-plan > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+  }
+
+  @media (hover: hover) {
+    .planner-new-plan:not([aria-disabled="true"]):hover {
+      --planner-edge: inset 0 0 0 1px var(--color-snow);
+
+      background-color: color-mix(in srgb, var(--color-ink) 88%, transparent);
+    }
+  }
+
+  .planner-new-plan:not([aria-disabled="true"]):active {
+    --planner-edge: inset 0 0 0 1px var(--color-snow);
+
+    background-color: var(--color-ink);
+  }
+
+  /* Unavailable: it stays in place and in the tab order. */
+  .planner-new-plan[aria-disabled="true"] {
+    border-color: color-mix(in srgb, var(--color-snow) 40%, transparent);
+    color: color-mix(in srgb, var(--color-snow) 56%, transparent);
+    cursor: default;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Recommendation group (§12.3.1, §12.3.3, §12.3.4)
+   * ------------------------------------------------------------------ */
+  .planner-group {
+    margin-top: 12px;
+  }
+
+  .planner-group-caption {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+  }
+
+  .planner-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .planner-cards > li {
+    min-width: 0;
+  }
+
+  /* Earlier results: one row in the group's place. */
+  .planner-earlier {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+    min-height: var(--planner-button-height);
+    padding: 7px 12px;
+    border: 1px solid var(--color-snow);
+    border-radius: 10px;
+    color: var(--color-snow);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+    text-align: start;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  @media (hover: hover) {
+    .planner-earlier:hover {
+      background-color: var(--planner-snow-12);
+    }
+  }
+
+  .planner-earlier-label {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .planner-earlier-chevron,
+  .planner-score-chevron {
+    flex: none;
+    width: 16px;
+    height: 16px;
+  }
+
+  .planner-earlier[data-open] > .planner-earlier-chevron,
+  .planner-score[data-open] > .planner-score-chevron {
+    transform: rotate(180deg);
+  }
+
+  /* Zero results: interface guidance, visibly not the planner speaking. */
+  .planner-guidance {
+    margin-top: 8px;
+    padding-inline-start: 12px;
+    border-inline-start: 2px solid var(--color-snow);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 400;
+  }
+
+  .planner-guidance-title {
+    font-weight: 600;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Trail card (§12.3.2): `paper`, no border, no shadow, no image, no link,
+   * no hover state of its own.
+   * ------------------------------------------------------------------ */
+  .planner-card {
+    padding: 14px 16px;
+    border: 1px solid transparent;
+    border-radius: 16px;
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+  }
+
+  /* One column below 768px; content and score side by side from there. */
+  .planner-card-main {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  @media (width >= 768px) {
+    .planner-card-main {
+      flex-direction: row;
+      align-items: flex-start;
+      gap: 12px;
+    }
+  }
+
+  .planner-card-content {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .planner-card-name {
+    font-size: 1.125rem;
+    line-height: 1.5rem;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+
+  .planner-card-facts {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    overflow-wrap: anywhere;
+  }
+
+  /* 2px under whatever line comes before; nothing when it is the first. */
+  .planner-card-content > * + .planner-card-facts,
+  .planner-card-content > * + .planner-card-scenery {
+    margin-top: 2px;
+  }
+
+  .planner-card-difficulty {
+    font-weight: 600;
+  }
+
+  .planner-card-scenery {
+    color: var(--color-stone);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .planner-card-description {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .planner-card-content > * + .planner-card-description {
+    margin-top: 8px;
+  }
+
+  .planner-card-description-text {
+    overflow-wrap: anywhere;
+  }
+
+  .planner-card-description-text[data-clamped] {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+
+  /* "More" / "Less": a text button. */
+  .planner-card-more {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 4px;
+    color: var(--color-ink);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+    text-decoration-line: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+  }
+
+  @media (pointer: coarse) {
+    .planner-card-more {
+      min-width: 44px;
+      min-height: 44px;
+    }
+  }
+
+  /* Score: the last row of a one-column card, full width and one line. */
+  .planner-score {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: calc(100% + 16px);
+    min-height: 44px;
+    margin-inline: -8px;
+    padding: 0 8px;
+    border-radius: 12px;
+    color: var(--color-stone);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    text-align: start;
+  }
+
+  button.planner-score {
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  @media (hover: hover) {
+    button.planner-score:hover {
+      background-color: var(--planner-ink-06);
+    }
+  }
+
+  button.planner-score:active {
+    background-color: var(--planner-ink-10);
+  }
+
+  .planner-score-caption {
+    order: 0;
+  }
+
+  .planner-score-value {
+    order: 1;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 4px;
+  }
+
+  .planner-score-of {
+    display: inline-flex;
+    gap: 4px;
+  }
+
+  .planner-score-number {
+    color: var(--color-ink);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .planner-score-chevron {
+    order: 2;
+    margin-inline-start: auto;
+  }
+
+  /* From 768px: its own column. The number over "Match score". */
+  @media (width >= 768px) {
+    .planner-score {
+      flex: none;
+      display: grid;
+      grid-template-columns: auto auto;
+      align-items: center;
+      justify-content: end;
+      gap: 0 4px;
+      width: auto;
+      min-width: 88px;
+      min-height: 48px;
+      margin-inline: 0;
+      padding: 0 8px;
+      text-align: end;
+    }
+
+    .planner-score-value {
+      grid-area: 1 / 1 / 2 / 3;
+      justify-self: end;
+      gap: 2px;
+    }
+
+    .planner-score-of {
+      gap: 0;
+    }
+
+    .planner-score-number {
+      font-size: 1.375rem;
+      line-height: 1.75rem;
+    }
+
+    .planner-score-caption {
+      grid-area: 2 / 1;
+    }
+
+    .planner-score-chevron {
+      grid-area: 2 / 2;
+      margin-inline-start: 0;
+    }
+
+    .planner-score-static > .planner-score-caption {
+      grid-area: 2 / 1 / 3 / 3;
+      justify-self: end;
+    }
+  }
+
+  /* Breakdown: numbers with labels. No bars, no chart, no color scale. */
+  .planner-breakdown {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--planner-ink-12);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    animation: planner-fade-in var(--duration-fast) var(--ease-ui) both;
+  }
+
+  .planner-breakdown-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .planner-breakdown-row + .planner-breakdown-row {
+    margin-top: 4px;
+  }
+
+  .planner-breakdown-row > dd {
+    flex: none;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .planner-breakdown-note {
+    margin-top: 8px;
+    color: var(--color-stone);
+  }
+
+  /* ------------------------------------------------------------------ *
+   * "New reply" (§10.2.7): centred over the history, 8px above its bottom
+   * edge; in the DOM between the history and the note line.
+   * ------------------------------------------------------------------ */
+  .planner-new-reply-anchor {
+    position: relative;
+    flex: none;
+    height: 0;
+  }
+
+  .planner-new-reply {
+    position: absolute;
+    inset-block-end: 8px;
+    inset-inline-start: 50%;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: var(--planner-button-height);
+    padding: 0 14px;
+    border: 1px solid transparent;
+    border-radius: 9999px;
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+    white-space: nowrap;
+    transform: translateX(-50%);
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+    animation: planner-fade-in var(--duration-fast) var(--ease-ui) both;
+  }
+
+  .planner-new-reply > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+  }
+
+  @media (hover: hover) {
+    .planner-new-reply:hover {
+      background-color: var(--color-snow);
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Note line (§10.2.6): one slot above the composer. From 768px it keeps
+   * its 20px when empty, so a one-line note moves nothing; below that it
+   * takes no height while empty. A longer note grows upward into the history.
+   * ------------------------------------------------------------------ */
+  .planner-note {
+    flex: none;
+    margin: 0 var(--planner-pad);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+  }
+
+  .planner-note[data-active] {
+    margin-bottom: 8px;
+  }
+
+  @media (width >= 768px) {
+    .planner-note {
+      min-height: 20px;
+      margin-bottom: 8px;
+    }
+  }
+
+  .planner-note-line {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    animation: planner-enter var(--duration-base) var(--ease-ui) both;
+  }
+
+  .planner-note-line > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    /* Centres the 16px icon on the first 20px line. */
+    margin-top: 2px;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Composer (§10.2.5): one opaque `paper` surface holding the field and,
+   * under it, one control row. It is the containing block of the popovers.
+   * ------------------------------------------------------------------ */
+  .planner-composer {
+    --planner-edge: 0 0 0 0 transparent;
+
+    position: relative;
+    flex: none;
+    margin: 0 var(--planner-composer-margin) var(--planner-composer-margin);
+    border: 1px solid transparent;
+    border-radius: 20px;
+    background-color: var(--color-paper);
+    box-shadow: var(--planner-edge);
+    color: var(--color-ink);
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .planner-composer:hover {
+      background-color: var(--color-snow);
+    }
+  }
+
+  /* The ring goes around the whole surface while the field has focus, on
+     mouse focus as well as keyboard focus. */
+  .planner-composer:has(.planner-textarea:focus) {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    background-color: var(--color-snow);
+    box-shadow: var(--planner-edge), var(--focus-ring);
+  }
+
+  /* Over the limit: shown as soon as it is passed. */
+  .planner-composer[data-invalid] {
+    --planner-edge: inset 0 0 0 2px var(--color-ember);
+  }
+
+  /* One line to four below 768px; two to six from there. Then it scrolls. */
+  .planner-textarea {
+    display: block;
+    width: 100%;
+    min-height: calc(1.5rem + 20px);
+    max-height: calc(4 * 1.5rem + 20px);
+    padding: 14px 16px 6px;
+    overflow-y: auto;
+    border-radius: 20px 20px 0 0;
+    background-color: transparent;
+    color: var(--color-ink);
+    caret-color: var(--color-conifer);
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: 400;
+    resize: none;
+    outline: none;
+    scrollbar-width: thin;
+  }
+
+  @media (width >= 768px) {
+    .planner-textarea {
+      min-height: calc(2 * 1.5rem + 20px);
+      max-height: calc(6 * 1.5rem + 20px);
+    }
+  }
+
+  .planner-textarea::placeholder {
+    color: var(--color-stone);
+    opacity: 1;
+  }
+
+  /* Counter: its own end-aligned line above the control row below 768px;
+     in the row, before Send, from there. */
+  .planner-counter {
+    padding: 0 16px 4px;
+    color: var(--color-stone);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-variant-numeric: tabular-nums;
+    text-align: end;
+  }
+
+  .planner-counter[data-over] {
+    color: var(--color-ink);
+    font-weight: 600;
+  }
+
+  @media (width >= 768px) {
+    .planner-counter {
+      position: absolute;
+      /* The row's 8px pad, Send, and the 8px gap before it. */
+      inset-inline-end: calc(8px + var(--planner-send-size) + 8px);
+      /* Centred on the 44px row, above its 8px bottom pad. */
+      inset-block-end: 20px;
+      padding: 0;
+      pointer-events: none;
+    }
+  }
+
+  .planner-composer-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 52px;
+    padding: 0 8px 8px;
+  }
+
+  /* Holds a control and, in the DOM, its popover; the popover is positioned
+     against the composer, so this must not be a containing block. */
+  .planner-context-slot {
+    display: flex;
+    min-width: 0;
+  }
+
+  /* Send: a `conifer` circle, the one place the color appears in the panel. */
+  .planner-send {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: var(--planner-send-size);
+    height: var(--planner-send-size);
+    margin-inline-start: auto;
+    border-radius: 50%;
+    background-color: var(--color-conifer);
+    color: var(--color-snow);
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  .planner-send > svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  @media (hover: hover) {
+    .planner-send:not([aria-disabled="true"]):hover {
+      background-color: var(--color-conifer-deep);
+    }
+  }
+
+  .planner-send:not([aria-disabled="true"]):active {
+    background-color: var(--color-conifer-press);
+  }
+
+  /* Unavailable: it stays focusable and in the tab order. */
+  .planner-send[aria-disabled="true"] {
+    background-color: var(--planner-ink-12);
+    color: var(--color-stone);
+    cursor: default;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Trip-context controls (§11.5.1): compact, radius 10px, so they do not
+   * read as starter ideas.
+   * ------------------------------------------------------------------ */
+  .planner-context {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    min-height: var(--planner-context-height);
+    padding: 0 12px;
+    border: 1px dashed var(--color-stone);
+    border-radius: 10px;
+    color: var(--color-ink);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+    text-align: start;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  .planner-context > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    color: var(--color-stone);
+  }
+
+  .planner-context-label {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .planner-context[data-set] {
+    border-style: solid;
+    background-color: var(--planner-ink-06);
+    font-weight: 600;
+  }
+
+  @media (hover: hover) {
+    .planner-context:hover {
+      background-color: var(--planner-ink-10);
+    }
+  }
+
+  .planner-context[aria-expanded="true"] {
+    background-color: var(--planner-ink-10);
+  }
+
+  /* Missing on send: a 2px `ember` edge (the border and a 1px inset ring)
+     and an alert icon. The note line says what is missing in words. */
+  .planner-context[data-missing] {
+    --planner-edge: inset 0 0 0 1px var(--color-ember);
+
+    border: 1px solid var(--color-ember);
+  }
+
+  .planner-context[data-missing] > svg {
+    color: var(--color-ember);
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Popovers (§11.5.2): small, non-modal, above the composer, start-aligned
+   * with it, drawn over the history inside the panel.
+   * ------------------------------------------------------------------ */
+  .planner-popover {
+    position: absolute;
+    z-index: 20;
+    inset-block-end: calc(100% + 8px);
+    inset-inline-start: 0;
+    width: 100%;
+    padding: 16px;
+    border: 1px solid color-mix(in srgb, var(--color-ink) 16%, transparent);
+    border-radius: 16px;
+    background-color: var(--color-paper);
+    /* It has to separate from the `paper` cards behind it. */
+    box-shadow: 0 8px 24px color-mix(in srgb, var(--color-ink) 24%, transparent);
+    color: var(--color-ink);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    animation: planner-fade-in var(--duration-fast) var(--ease-ui) both;
+  }
+
+  @media (width >= 768px) {
+    .planner-popover {
+      width: 320px;
+      max-width: 100%;
+    }
+  }
+
+  .planner-popover-title {
+    font-weight: 600;
+  }
+
+  .planner-picks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .planner-pick {
+    min-height: var(--planner-button-height);
+    padding: 0 12px;
+    border: 1px solid var(--color-stone);
+    border-radius: 10px;
+    color: var(--color-ink);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  @media (hover: hover) {
+    .planner-pick:hover {
+      background-color: var(--planner-ink-06);
+    }
+  }
+
+  /* The pick that is the chosen date. */
+  .planner-pick[aria-pressed="true"] {
+    border-color: var(--color-ink);
+    background-color: var(--color-ink);
+    color: var(--color-snow);
+  }
+
+  .planner-date-label {
+    display: block;
+    margin-top: 16px;
+    color: var(--color-stone);
+  }
+
+  .planner-date-input {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    height: 44px;
+    margin-top: 6px;
+    padding: 0 12px;
+    border: 1px solid var(--color-stone);
+    border-radius: 10px;
+    background-color: transparent;
+    color: var(--color-ink);
+    color-scheme: light;
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+
+  .planner-date-input[aria-invalid="true"] {
+    --planner-edge: inset 0 0 0 1px var(--color-ember);
+
+    border-color: var(--color-ember);
+  }
+
+  .planner-popover-error {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .planner-popover-error > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+    color: var(--color-ember);
+  }
+
+  .planner-options {
+    display: flex;
+    flex-direction: column;
+    /* Adjacent targets are at least 8px apart (§19.6). */
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .planner-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: var(--planner-option-height);
+    padding: 4px 10px;
+    border-radius: 10px;
+    color: var(--color-ink);
+    text-align: start;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  .planner-option > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+  }
+
+  .planner-option-text {
+    flex: 1 1 0;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .planner-option-title {
+    font-weight: 600;
+  }
+
+  .planner-option-hint {
+    color: var(--color-stone);
+  }
+
+  @media (hover: hover) {
+    .planner-option:not([aria-disabled="true"]):hover {
+      background-color: var(--planner-ink-06);
+    }
+  }
+
+  .planner-option[aria-disabled="true"] {
+    cursor: default;
+  }
+
+  .planner-option[aria-disabled="true"] .planner-option-title {
+    color: var(--color-stone);
+  }
+}
+
+/*
+ * FEATURE-004 additions (docs/features/004-trail-selection-preparation.md).
+ * Nothing above this block is changed by them: the card gains one link, and
+ * the trip-date control gains what it needs to stand outside the planner.
+ */
+@layer components {
+  /* ------------------------------------------------------------------ *
+   * View trail (FEATURE-004 §4.2): the card's one link, set as the card's
+   * existing text control ("More" / "Less") is.
+   * ------------------------------------------------------------------ */
+  .planner-card-actions {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .planner-card-content > * + .planner-card-actions {
+    margin-top: 8px;
+  }
+
+  .planner-card-link {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 4px;
+    color: var(--color-ink);
+    font-weight: 600;
+    text-decoration-line: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+  }
+
+  @media (pointer: coarse) {
+    .planner-card-link {
+      min-width: 44px;
+      min-height: 44px;
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
+   * The trip-date control outside the planner (FEATURE-004 §21.7). There
+   * its slot is the popover's containing block, and it supplies the values
+   * the panel supplies inside the planner. The widest the popover may be is
+   * given by whoever places the control (`--trip-date-popover-max`).
+   * ------------------------------------------------------------------ */
+  .planner-context-slot[data-anchored] {
+    --planner-ink-06: color-mix(in srgb, var(--color-ink) 6%, transparent);
+    --planner-ink-10: color-mix(in srgb, var(--color-ink) 10%, transparent);
+    --planner-button-height: 36px;
+
+    position: relative;
+    flex: none;
+    max-width: 100%;
+
+    @media (pointer: coarse) {
+      --planner-button-height: 44px;
+    }
+  }
+
+  .planner-context-slot[data-anchored] > .planner-popover {
+    width: min(320px, var(--trip-date-popover-max, 320px));
+    max-width: none;
+  }
+
+  /* Above is the planner's own placement; below is the other one. */
+  .planner-context-slot[data-anchored="below"] > .planner-popover {
+    inset-block: calc(100% + 8px) auto;
+  }
+
+  /* 44px with any pointer, to match the action it stands beside. */
+  .planner-context[data-size="large"] {
+    min-height: 44px;
+  }
+
+  .planner-context-slot[data-anchored] > .planner-context:active {
+    background-color: var(--planner-ink-10);
+  }
+
+  /* On the panel: every part is `snow`, and there is no fill at rest. */
+  .planner-context-slot[data-tone="panel"] > .planner-context {
+    border-color: var(--color-snow);
+    background-color: transparent;
+    color: var(--color-snow);
+  }
+
+  .planner-context-slot[data-tone="panel"] > .planner-context > svg {
+    color: var(--color-snow);
+  }
+
+  @media (hover: hover) {
+    .planner-context-slot[data-tone="panel"] > .planner-context:hover {
+      background-color: color-mix(in srgb, var(--color-snow) 12%, transparent);
+    }
+  }
+
+  .planner-context-slot[data-tone="panel"]
+    > .planner-context[aria-expanded="true"] {
+    background-color: color-mix(in srgb, var(--color-snow) 12%, transparent);
+  }
+
+  .planner-context-slot[data-tone="panel"] > .planner-context:active {
+    background-color: color-mix(in srgb, var(--color-snow) 20%, transparent);
+  }
+
+  /* Needs attention: a 2px `snow` edge. `ember` is not used on the panel. */
+  .planner-context-slot[data-tone="panel"] > .planner-context[data-missing] {
+    --planner-edge: inset 0 0 0 1px var(--color-snow);
+
+    border: 1px solid var(--color-snow);
+  }
+}
+
+/* One turn per 900ms, linear, as FEATURE-002's spinner. */
+.planner-spin {
+  animation: planner-spin 900ms linear infinite;
+}
+
+/* Entrance: opacity and a 4px upward slide (§10.2.2). */
+@keyframes planner-enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+@keyframes planner-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Each dot runs 0.3 → 1 → 0.3 over 1200ms (§13.3.1). */
+@keyframes planner-dot {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes planner-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/*
+ * Reduced motion (§18.1): everything appears at once, the waiting dots are
+ * static at full opacity, and the spinner does not turn. Color-only hover and
+ * press changes are kept.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .planner-item[data-enter],
+  .planner-note-line,
+  .planner-confirm,
+  .planner-breakdown,
+  .planner-new-reply,
+  .planner-popover,
+  .planner-dots > span,
+  .planner-spin {
+    animation: none;
+  }
+
+  .planner-dots > span {
+    opacity: 1;
+  }
+}

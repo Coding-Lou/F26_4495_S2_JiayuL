@@ -4,7 +4,8 @@ import com.jay.outdoor.user.dto.CreateGearItemRequest;
 import com.jay.outdoor.user.dto.GearItemResponse;
 import com.jay.outdoor.user.dto.UpdateGearItemRequest;
 import com.jay.outdoor.user.dto.UserResponse;
-import com.jay.outdoor.user.entity.GearItem;
+import com.jay.outdoor.user.entity.Gear;
+import com.jay.outdoor.user.entity.GearCategory;
 import com.jay.outdoor.user.repository.GearItemRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -49,29 +50,29 @@ class GearServiceTest {
 
         CreateGearItemRequest request = new CreateGearItemRequest(
                 "Hiking Boots",
-                "FOOTWEAR",
+                GearCategory.FOOTWEAR,
                 "Waterproof hiking boots"
         );
 
         when(userService.getOrCreateUser(jwt))
                 .thenReturn(currentUser);
 
-        when(gearItemRepository.save(any(GearItem.class)))
+        when(gearItemRepository.save(any(Gear.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
         gearService.createGearItem(jwt, request);
 
-        ArgumentCaptor<GearItem> captor =
-                ArgumentCaptor.forClass(GearItem.class);
+        ArgumentCaptor<Gear> captor =
+                ArgumentCaptor.forClass(Gear.class);
 
         org.mockito.Mockito.verify(gearItemRepository)
                 .save(captor.capture());
 
-        GearItem savedGear = captor.getValue();
+        Gear savedGear = captor.getValue();
 
         assertEquals(userId, savedGear.getUserId());
         assertEquals("Hiking Boots", savedGear.getName());
-        assertEquals("FOOTWEAR", savedGear.getCategory());
+        assertEquals(GearCategory.FOOTWEAR, savedGear.getCategory());
         assertEquals(
                 "Waterproof hiking boots",
                 savedGear.getDescription()
@@ -92,15 +93,15 @@ class GearServiceTest {
                 OffsetDateTime.now()
         );
 
-        GearItem boots = new GearItem();
+        Gear boots = new Gear();
         boots.setUserId(userId);
         boots.setName("Hiking Boots");
-        boots.setCategory("FOOTWEAR");
+        boots.setCategory(GearCategory.FOOTWEAR);
 
-        GearItem jacket = new GearItem();
+        Gear jacket = new Gear();
         jacket.setUserId(userId);
         jacket.setName("Rain Jacket");
-        jacket.setCategory("CLOTHING");
+        jacket.setCategory(GearCategory.RAIN_GEAR);
 
         when(userService.getOrCreateUser(jwt))
                 .thenReturn(currentUser);
@@ -133,11 +134,11 @@ class GearServiceTest {
                 OffsetDateTime.now()
         );
 
-        GearItem gearItem = new GearItem();
-        gearItem.setUserId(userId);
-        gearItem.setName("Hiking Boots");
-        gearItem.setCategory("FOOTWEAR");
-        gearItem.setDeleted(false);
+        Gear gear = new Gear();
+        gear.setUserId(userId);
+        gear.setName("Hiking Boots");
+        gear.setCategory(GearCategory.FOOTWEAR);
+        gear.setDeleted(false);
 
         when(userService.getOrCreateUser(jwt))
                 .thenReturn(currentUser);
@@ -145,14 +146,14 @@ class GearServiceTest {
         when(gearItemRepository.findByIdAndUserIdAndDeletedFalse(
                 gearId,
                 userId
-        )).thenReturn(java.util.Optional.of(gearItem));
+        )).thenReturn(java.util.Optional.of(gear));
 
         gearService.deleteGearItem(jwt, gearId);
 
-        assertEquals(true, gearItem.isDeleted());
+        assertEquals(true, gear.isDeleted());
 
         org.mockito.Mockito.verify(gearItemRepository)
-                .save(gearItem);
+                .save(gear);
     }
 
     @Test
@@ -170,16 +171,16 @@ class GearServiceTest {
                 OffsetDateTime.now()
         );
 
-        GearItem gearItem = new GearItem();
-        gearItem.setUserId(userId);
-        gearItem.setName("Old Hiking Boots");
-        gearItem.setCategory("FOOTWEAR");
-        gearItem.setDescription("Old description");
-        gearItem.setDeleted(false);
+        Gear gear = new Gear();
+        gear.setUserId(userId);
+        gear.setName("Old Hiking Boots");
+        gear.setCategory(GearCategory.FOOTWEAR);
+        gear.setDescription("Old description");
+        gear.setDeleted(false);
 
         UpdateGearItemRequest request = new UpdateGearItemRequest(
                 "Updated Hiking Boots",
-                "FOOTWEAR",
+                GearCategory.FOOTWEAR,
                 "Updated description"
         );
 
@@ -189,17 +190,17 @@ class GearServiceTest {
         when(gearItemRepository.findByIdAndUserIdAndDeletedFalse(
                 gearId,
                 userId
-        )).thenReturn(java.util.Optional.of(gearItem));
+        )).thenReturn(java.util.Optional.of(gear));
 
-        when(gearItemRepository.save(any(GearItem.class)))
+        when(gearItemRepository.save(any(Gear.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
         GearItemResponse result =
                 gearService.updateGearItem(jwt, gearId, request);
 
-        assertEquals("Updated Hiking Boots", gearItem.getName());
-        assertEquals("FOOTWEAR", gearItem.getCategory());
-        assertEquals("Updated description", gearItem.getDescription());
+        assertEquals("Updated Hiking Boots", gear.getName());
+        assertEquals(GearCategory.FOOTWEAR, gear.getCategory());
+        assertEquals("Updated description", gear.getDescription());
 
         assertEquals("Updated Hiking Boots", result.name());
         assertEquals("Updated description", result.description());
@@ -208,6 +209,6 @@ class GearServiceTest {
                 .findByIdAndUserIdAndDeletedFalse(gearId, userId);
 
         org.mockito.Mockito.verify(gearItemRepository)
-                .save(gearItem);
+                .save(gear);
     }
 }

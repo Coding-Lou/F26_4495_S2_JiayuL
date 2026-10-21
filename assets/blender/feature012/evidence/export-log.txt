@@ -1,0 +1,26 @@
+FEATURE-012 stage C export log (three-d)
+working source: /Users/jay/Desktop/F26_4495_S2_JiayuL/assets/blender/feature012/avatar-gear-studio-ready-to-go.blend
+blender: 5.2.2 LTS (live session via Blender MCP; checks, previews, read-back and round trip in separate background processes, never saving)
+
+Saves of the working .blend (save_version set to 0 around each save and restored; no .blend1 created):
+  2026-10-19 23:46:15 | save 1: setup (Idle fake user, empty ready_to_go on slot OBAvatar_Armature) | ['FINISHED'] | 408737 B | sha256 2dab1266d2f2fecec9804d5968b498c699e720b82fea8585c82897585e8ff08b | blend1_removed=False
+  2026-10-19 23:47:32 | save 2: blocking (ready_to_go W1 v1 baked, 32 F-curves, frames 1-121) | ['FINISHED'] | 432964 B | sha256 5a1d30c236130cd8b1e93ff91e5d86f08e127adba271ff7a449afc8628a5cf46 | blend1_removed=False
+  2026-10-19 23:51:01 | save 3: clip complete (W1 final: raise 3.4, roll 0.8, chest 0.6, breath 4.0, spine 2.0 + elbow comp 0.9716, head pitch 10 / yaw 8) | ['FINISHED'] | 432295 B | sha256 aecb936290f5733543826f0ee9da79c7b55adad034744cee94c540cd4583ff1f | blend1_removed=False
+  2026-10-19 23:54:04 | save 4: after previews (144 A.5 renders written headless from save 3; CA12 state) | ['FINISHED'] | 432181 B | sha256 831dbb53eab4bc0d06a51277f9658b68a0e198fd4eda9d9e718d57b66e0e4635 | blend1_removed=False
+  2026-10-19 23:56:36 | save 5: pre-export (CA12: pose cleared, frame 1, Idle active, all visible, actions {Idle, ready_to_go}) | ['FINISHED'] | 432178 B | sha256 c0d49611cd91771acc324e1ea2ca37606b074521f840fea5462a21ac8d4d1651 | blend1_removed=False
+  2026-10-19 23:56:36 | save 6: after export of avatar-base-ready-to-go.glb | ['FINISHED'] | 432179 B | sha256 76cbb38e92e7bedd5e74e63e06ab8481fa5375b3fd1fe72a7ab25e0862977201 | blend1_removed=False
+
+Scratch export test (same options) -> scratchpad/three-d/test_export/avatar-test.glb: FINISHED, 653396 B, sha256 identical to the shipped file
+
+Export: /Users/jay/Desktop/F26_4495_S2_JiayuL/Project/Frontend/public/models/avatar/avatar-base-ready-to-go.glb
+  selected 17 objects: ['Avatar_Armature', 'Avatar_Hair_Base', 'Avatar_Hair_Top', 'Avatar_Hands', 'Avatar_Head', 'Avatar_Legs', 'Avatar_Root', 'Avatar_Shoes_Default', 'Avatar_Top_Base', 'Slot_Back', 'Slot_Hand_L', 'Slot_Hand_R', 'Slot_Head', 'Wear_Boots', 'Wear_Shell', 'Wear_WarmLayer_Body', 'Wear_WarmLayer_Collar']
+  export returned ['FINISHED']; 653396 B; sha256 50cb78a865011fae2d18f94dec5410f1a9c39545d661c5277aec21bcec31f016
+  state after export: {'active_action': 'Idle', 'slot': 'OBAvatar_Armature', 'frame': 1}
+  exporter console: 16 primitives (Hair_Base 1, Hair_Top 1, Hands 1, Head 3, Legs 1, Shoes_Default 2, Top_Base 1, Boots 2, Shell 2, WarmLayer_Body 1, WarmLayer_Collar 1); no warnings or errors
+
+Read-back (python3 -I, new vs original avatar-base.glb): all_pass=True; size 653396 vs 630128 (+23268 B)
+  header=True, generator_same=True, no_extensions_images_cameras=True, one_scene_same_roots=True, nodes_40_same_names=True, node_trs_equal_1e-6=True, hierarchy_same=True, slots_same=True, root_identity_scale1=True, skin_one_23_joints_same_order=True, materials_12_identical=True, meshes_11_same=True, non_animation_accessors_byte_identical=True, only_animation_accessors_added=True, two_animations_exact_names=True, idle_equal_1e-4=True, ready_bones_only=True, ready_no_scale=True, ready_121_samples_0_to_4s=True, ready_first_last_rest_1e-4=True, size_within_120kB=True
+Round trip (Blender -b --factory-startup, import avatar + 3 gear GLBs, 005 slot assembly): imports {'avatar': ['FINISHED'], 'gear-backpack.glb': ['FINISHED'], 'gear-trekking-poles.glb': ['FINISHED'], 'gear-headlamp.glb': ['FINISHED']}; actions ['Idle', 'ready_to_go']; max joint dev 0.000485 mm, slot matrix 3.58e-07, pole tip z 0.000298 mm; pass=True
+  renders: [['RT-L8_q3_t1.0.png', ['FINISHED']], ['RT-L8_q3_t2.0.png', ['FINISHED']], ['RT-L8_q3_t4.0.png', ['FINISHED']]]
+
+ready-to-go-checks.json all_pass=True

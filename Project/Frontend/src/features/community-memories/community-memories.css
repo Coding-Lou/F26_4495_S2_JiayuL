@@ -1,0 +1,1049 @@
+/*
+ * FEATURE-010 — Community Memories: the popup's Community block, the docked
+ * Community rail (from 1024px) or bottom sheet (below), the journal index
+ * entries, and the public Memory Detail. Read-only journal visuals on warm
+ * paper, subordinate to the trail.
+ *
+ * Imported by the Community components, so it arrives with Discover's chunk.
+ * Every rule is scoped to .community-memories. The reused FEATURE-009 pieces
+ * (MemoryImage, NoPhotoSurface) keep their class names; their styles live in
+ * memories.css under .memories, which never loads on `/`, so they are given
+ * the same values here under .community-memories (§18.4). memories.css is
+ * not imported.
+ *
+ * The rail's width per tier (`--community-panel-width`) is set on
+ * `section.discover` by discover.css, which also moves the map's overlays
+ * clear of it (§18.3). The focus ring, the Retry / secondary button
+ * (`trip-button`), and the spinner come from components/layout/trip-shell.css.
+ *
+ * Tokens come from docs/DESIGN_SYSTEM.md Version 2; values from
+ * docs/features/010-community-memories.md, whose section numbers are cited.
+ * Tiers: XL ≥1680, L 1440–1679, M 1280–1439, S 1024–1279, T 768–1023,
+ * N <768. "Short": (height < 840px) at 768px wide and up.
+ */
+
+@layer components {
+  .community-memories {
+    /* `paper-shade` (DS §37.1): the value of `map-land` and `gear-plate`. */
+    --cm-paper-shade: #ece8dd;
+
+    --cm-ink-04: color-mix(in srgb, var(--color-ink) 4%, transparent);
+    --cm-ink-06: color-mix(in srgb, var(--color-ink) 6%, transparent);
+    --cm-ink-07: color-mix(in srgb, var(--color-ink) 7%, transparent);
+    --cm-ink-08: color-mix(in srgb, var(--color-ink) 8%, transparent);
+    --cm-ink-12: color-mix(in srgb, var(--color-ink) 12%, transparent);
+    --cm-ink-32: color-mix(in srgb, var(--color-ink) 32%, transparent);
+
+    /* N, below 768px */
+    --cm-pad: 16px;
+    --cm-head-top: 16px;
+    --cm-cover-w: 112px;
+    --cm-detail-title-size: 1.375rem;
+    --cm-detail-title-line: 1.75rem;
+    --cm-quiet-height: 36px;
+    --cm-row-min: 0px;
+
+    @media (width < 360px) {
+      --cm-pad: 12px;
+    }
+
+    /* T */
+    @media (width >= 768px) {
+      --cm-pad: 24px;
+      --cm-head-top: 20px;
+    }
+
+    /* S, M */
+    @media (width >= 1024px) {
+      --cm-pad: 20px;
+    }
+
+    /* L, XL */
+    @media (width >= 1440px) {
+      --cm-pad: 24px;
+      --cm-head-top: 24px;
+      --cm-cover-w: 128px;
+      --cm-detail-title-size: 1.5rem;
+      --cm-detail-title-line: 1.875rem;
+    }
+
+    @media (pointer: coarse) {
+      --cm-quiet-height: 44px;
+      --cm-row-min: 44px;
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Shared bits: skeleton bars, the alert line, the count.
+   * ------------------------------------------------------------------ */
+  .community-memories .cm-bar {
+    display: block;
+    height: 12px;
+    border-radius: 6px;
+    background-color: var(--cm-ink-08);
+  }
+
+  .community-memories .cm-count {
+    color: var(--color-stone);
+    font-weight: 400;
+  }
+
+  .community-memories .cm-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-top: 8px;
+    color: var(--color-ink);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+  }
+
+  .community-memories .cm-alert > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+    color: var(--color-ember);
+  }
+
+  .community-memories .cm-state-retry,
+  .community-memories .cm-preview-retry {
+    margin-top: 12px;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Popup Community block (§18.1). After the sample line, behind a rule.
+   * ------------------------------------------------------------------ */
+  .community-memories.cm-preview {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--cm-ink-12);
+  }
+
+  .community-memories .cm-preview-heading {
+    color: var(--color-ink);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+  }
+
+  .community-memories .cm-preview-rows {
+    margin-top: 8px;
+    list-style: none;
+  }
+
+  /* One row: 56 tall (7 + 42 + 7), bleeding 8px so the thumbnail lines up
+     with the content edge. A skeleton row has the same box. */
+  .community-memories .cm-row {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: calc(100% + 16px);
+    min-height: max(56px, var(--cm-row-min));
+    margin-inline: -8px;
+    padding: 7px 8px;
+    border-radius: 10px;
+    color: var(--color-ink);
+    text-align: start;
+  }
+
+  .community-memories button.cm-row {
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  @media (hover: hover) {
+    .community-memories button.cm-row:hover {
+      background-color: var(--cm-ink-04);
+    }
+
+    .community-memories button.cm-row:hover .cm-row-title {
+      text-decoration-line: underline;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 3px;
+    }
+  }
+
+  .community-memories button.cm-row:active {
+    background-color: var(--cm-ink-08);
+  }
+
+  .community-memories .cm-row-thumb {
+    position: relative;
+    flex: none;
+    width: 56px;
+    height: 42px;
+    overflow: hidden;
+    border-radius: 8px;
+    background-color: var(--cm-paper-shade);
+  }
+
+  .community-memories .cm-row-thumb::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: inset 0 0 0 1px var(--cm-ink-08);
+    pointer-events: none;
+  }
+
+  .community-memories .cm-row-thumb[data-skeleton] {
+    background-color: var(--cm-ink-06);
+  }
+
+  .community-memories .cm-row-thumb[data-skeleton]::after {
+    content: none;
+  }
+
+  .community-memories .cm-row-text {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .community-memories .cm-row-title {
+    overflow: hidden;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .community-memories .cm-row-date {
+    color: var(--color-stone);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  /* Skeleton bars sit in the two 20px text lines. */
+  .community-memories .cm-row .cm-bar {
+    margin-block: 4px;
+  }
+
+  .community-memories .cm-bar[data-bar="title"] {
+    width: 70%;
+  }
+
+  .community-memories .cm-bar[data-bar="date"] {
+    width: 40%;
+  }
+
+  /* View all: a quiet text button, never filled (§18.1). */
+  .community-memories .cm-view-all {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-height: var(--cm-quiet-height);
+    margin-top: 4px;
+    margin-inline: -8px;
+    padding: 0 8px;
+    border-radius: 8px;
+    color: var(--color-ink);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  .community-memories .cm-view-all > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+  }
+
+  @media (hover: hover) {
+    .community-memories .cm-view-all:hover {
+      background-color: var(--cm-ink-04);
+      text-decoration-line: underline;
+      text-underline-offset: 3px;
+    }
+  }
+
+  .community-memories .cm-view-all:active {
+    background-color: var(--cm-ink-08);
+  }
+
+  /* Where View all goes while loading: the same 4 + 36. */
+  .community-memories .cm-view-all-slot {
+    display: flex;
+    align-items: center;
+    height: 36px;
+    margin-top: 4px;
+  }
+
+  .community-memories .cm-bar[data-bar="action"] {
+    width: 120px;
+  }
+
+  .community-memories .cm-preview-empty {
+    margin-top: 4px;
+    color: var(--color-stone);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  /* Compact rows on short viewports (§18.1, §18.2): 42 tall, one line. */
+  @media (width >= 768px) and (height < 840px) {
+    .community-memories.cm-preview {
+      margin-top: 12px;
+      padding-top: 12px;
+    }
+
+    .community-memories .cm-row {
+      gap: 10px;
+      min-height: max(42px, var(--cm-row-min));
+      padding: 6px 8px;
+    }
+
+    .community-memories .cm-row-thumb {
+      width: 40px;
+      height: 30px;
+    }
+
+    .community-memories .cm-row-text {
+      flex-direction: row;
+      align-items: baseline;
+    }
+
+    .community-memories .cm-row-title {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    .community-memories .cm-row-date {
+      flex: none;
+      margin-inline-start: 8px;
+    }
+
+    .community-memories .cm-row .cm-bar {
+      margin-block: 0;
+    }
+
+    .community-memories .cm-row .cm-bar[data-bar="title"] {
+      width: 55%;
+    }
+
+    .community-memories .cm-row .cm-bar[data-bar="date"] {
+      width: 25%;
+      margin-inline-start: 8px;
+    }
+
+    .community-memories .cm-nophoto-mark > svg {
+      width: 14px;
+      height: 14px;
+    }
+  }
+
+  /* The compact no-photo mark (§18.4). */
+  .community-memories .cm-nophoto-mark {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background-color: var(--cm-paper-shade);
+    background-image: repeating-radial-gradient(
+      ellipse at 72% 118%,
+      transparent 0 18px,
+      var(--cm-ink-07) 18px 19px
+    );
+    color: var(--color-stone);
+  }
+
+  .community-memories .cm-nophoto-mark > svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * The panel (§18.3): a fixed header over one scrolling body.
+   * ------------------------------------------------------------------ */
+  .community-memories.cm-panel {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+  }
+
+  /* From 1024px: a docked `paper` rail over the map's far edge. Non-modal;
+     no radius, shadow, or blur; a rule on the map-facing edge. */
+  .community-memories.cm-panel[data-mode="rail"] {
+    position: absolute;
+    z-index: 20;
+    inset-block: 0;
+    inset-inline-end: 0;
+    width: var(--community-panel-width, 360px);
+    border-inline-start: 1px solid var(--cm-ink-12);
+    animation: cm-rail-in var(--duration-base) var(--ease-ui) both;
+  }
+
+  /* Below 1024px: a modal bottom sheet (DS §36.7). */
+  .community-memories.cm-panel[data-mode="sheet"] {
+    position: fixed;
+    inset: auto 0 0;
+    width: min(560px, calc(100vw - 32px));
+    max-width: none;
+    height: min(88vh, 800px);
+    height: min(88dvh, 800px);
+    max-height: none;
+    margin: 0 auto;
+    padding: 0;
+    overflow: hidden;
+    border: 0;
+    border-radius: 20px 20px 0 0;
+    box-shadow: 0 8px 32px rgb(11 28 32 / 0.24);
+  }
+
+  .community-memories.cm-panel[data-mode="sheet"]:not([open]) {
+    display: none;
+  }
+
+  .community-memories.cm-panel[data-mode="sheet"][open] {
+    animation: cm-sheet-in var(--duration-base) var(--ease-ui) both;
+  }
+
+  .community-memories.cm-panel[data-mode="sheet"]::backdrop {
+    background-color: rgb(11 28 32 / 0.4);
+  }
+
+  @media (width < 768px) {
+    .community-memories.cm-panel[data-mode="sheet"] {
+      width: 100%;
+      height: 92vh;
+      height: 92dvh;
+    }
+  }
+
+  .community-memories .cm-panel-header {
+    position: relative;
+    flex: none;
+    padding: var(--cm-head-top) var(--cm-pad) 16px;
+    border-bottom: 1px solid var(--cm-ink-12);
+  }
+
+  .community-memories .cm-panel-title {
+    padding-inline-end: 44px;
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .community-memories .cm-panel-sub {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: 0;
+    margin-top: 4px;
+    padding-inline-end: 44px;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .community-memories .cm-panel-trail {
+    min-width: 0;
+    font-weight: 500;
+    overflow-wrap: anywhere;
+  }
+
+  .community-memories .cm-panel-sub > span[aria-hidden="true"]:not(.cm-bar) {
+    white-space: pre;
+  }
+
+  .community-memories .cm-bar[data-bar="count"] {
+    width: 80px;
+    margin-inline-start: 12px;
+  }
+
+  /* Close: a 36px circle (44 coarse), last in the DOM, top right. */
+  .community-memories .cm-panel-close {
+    position: absolute;
+    inset-block-start: 16px;
+    inset-inline-end: 12px;
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    color: var(--color-ink);
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  @media (pointer: coarse) {
+    .community-memories .cm-panel-close {
+      width: 44px;
+      height: 44px;
+      inset-block-start: 12px;
+      inset-inline-end: 8px;
+    }
+  }
+
+  .community-memories .cm-panel-close > svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  @media (hover: hover) {
+    .community-memories .cm-panel-close:hover {
+      background-color: var(--cm-ink-06);
+    }
+  }
+
+  .community-memories .cm-panel-close:active {
+    background-color: color-mix(in srgb, var(--color-ink) 10%, transparent);
+  }
+
+  /* The only scroller; it hands its overscroll to the page (DS §35.1). */
+  .community-memories .cm-panel-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 8px var(--cm-pad) 32px;
+    overflow-y: auto;
+    overscroll-behavior: auto;
+  }
+
+  @media (width < 768px) {
+    .community-memories .cm-panel-body {
+      padding-bottom: calc(32px + env(safe-area-inset-bottom, 0px));
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Journal index entries (§18.5): the cover beside the title and date,
+   * the excerpt across the full width. Not a full-width photo card.
+   * ------------------------------------------------------------------ */
+  .community-memories .cm-entries {
+    list-style: none;
+  }
+
+  .community-memories .cm-entry-item {
+    position: relative;
+  }
+
+  /* 1px rules between entries, inset to the button's padding, hidden next
+     to a hovered or focused entry. */
+  .community-memories .cm-entry-item + .cm-entry-item::before {
+    content: "";
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline: 0;
+    border-top: 1px solid var(--cm-ink-12);
+    pointer-events: none;
+  }
+
+  .community-memories .cm-entry-item:has(> .cm-entry:hover)::before,
+  .community-memories .cm-entry-item:has(> .cm-entry:focus-visible)::before,
+  .community-memories
+    .cm-entry-item:has(> .cm-entry:hover)
+    + .cm-entry-item::before,
+  .community-memories
+    .cm-entry-item:has(> .cm-entry:focus-visible)
+    + .cm-entry-item::before {
+    border-top-color: transparent;
+  }
+
+  .community-memories .cm-entry {
+    box-sizing: border-box;
+    display: grid;
+    grid-template-columns: var(--cm-cover-w) minmax(0, 1fr);
+    column-gap: 16px;
+    align-items: start;
+    width: calc(100% + 24px);
+    margin-inline: -12px;
+    padding: 12px;
+    border-radius: 12px;
+    color: var(--color-ink);
+    text-align: start;
+  }
+
+  .community-memories button.cm-entry {
+    cursor: pointer;
+  }
+
+  .community-memories .cm-entry-cover {
+    position: relative;
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    border-radius: 12px;
+    background-color: var(--cm-paper-shade);
+  }
+
+  .community-memories .cm-entry-cover::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: inset 0 0 0 1px var(--cm-ink-08);
+    pointer-events: none;
+    transition:
+      box-shadow var(--duration-fast) var(--ease-ui),
+      background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  .community-memories .cm-entry-cover[data-skeleton] {
+    background-color: var(--cm-ink-06);
+  }
+
+  .community-memories .cm-entry-cover[data-skeleton]::after {
+    content: none;
+  }
+
+  .community-memories .cm-entry-text {
+    display: block;
+    min-width: 0;
+  }
+
+  .community-memories .cm-entry-title {
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: 1rem;
+    line-height: 1.375rem;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+
+  .community-memories .cm-entry-date {
+    display: block;
+    margin-top: 4px;
+    color: var(--color-stone);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Line breaks become spaces in this preview; three lines at most. */
+  .community-memories .cm-entry-excerpt {
+    grid-column: 1 / -1;
+    display: -webkit-box;
+    margin-top: 12px;
+    overflow: hidden;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 400;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+  }
+
+  @media (hover: hover) {
+    .community-memories button.cm-entry:hover .cm-entry-title {
+      text-decoration-line: underline;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 3px;
+    }
+
+    .community-memories button.cm-entry:hover .cm-entry-cover::after {
+      box-shadow: inset 0 0 0 1px var(--cm-ink-32);
+    }
+  }
+
+  .community-memories button.cm-entry:active .cm-entry-cover::after {
+    background-color: var(--cm-ink-08);
+  }
+
+  /* Skeleton entries: the same geometry, static. */
+  .community-memories .cm-bar[data-bar="entry-title"] {
+    width: 70%;
+    height: 16px;
+    margin-top: 3px;
+  }
+
+  .community-memories .cm-bar[data-bar="entry-date"] {
+    width: 40%;
+    margin-top: 12px;
+  }
+
+  .community-memories .cm-entry-excerpt-skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-top: 4px;
+  }
+
+  .community-memories .cm-bar[data-bar="line"] {
+    width: 100%;
+  }
+
+  .community-memories .cm-bar[data-bar="line-short"] {
+    width: 60%;
+  }
+
+  .community-memories .cm-list-empty {
+    color: var(--color-stone);
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+
+  .community-memories .cm-list-state > .cm-alert {
+    margin-top: 0;
+  }
+
+  /* Show older memories (§18.5). */
+  .community-memories .cm-more {
+    margin-top: 24px;
+  }
+
+  .community-memories .cm-more-alert {
+    margin-top: 0;
+    margin-bottom: 12px;
+  }
+
+  .community-memories .cm-more-button {
+    width: 100%;
+  }
+
+  .community-memories .cm-more-button[aria-disabled="true"] {
+    cursor: progress;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Public Memory Detail (§18.6): a calm reading page in the panel.
+   * ------------------------------------------------------------------ */
+  .community-memories .cm-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: var(--cm-quiet-height);
+    margin-inline-start: -12px;
+    padding: 0 12px;
+    border-radius: 8px;
+    color: var(--color-ink);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  .community-memories .cm-back > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+  }
+
+  @media (hover: hover) {
+    .community-memories .cm-back:hover {
+      text-decoration-line: underline;
+      text-underline-offset: 3px;
+    }
+  }
+
+  .community-memories .cm-back:active {
+    background-color: var(--cm-ink-08);
+  }
+
+  .community-memories .cm-detail-title {
+    margin-top: 12px;
+    font-size: var(--cm-detail-title-size);
+    line-height: var(--cm-detail-title-line);
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+
+  .community-memories .cm-detail-title[data-kind="loading"] {
+    display: flex;
+    align-items: center;
+    height: 30px;
+  }
+
+  .community-memories .cm-bar[data-bar="detail-title"] {
+    width: 70%;
+    height: 20px;
+  }
+
+  .community-memories .cm-detail-title[data-kind="gone"] {
+    font-size: 1.125rem;
+    line-height: 1.5rem;
+  }
+
+  .community-memories .cm-detail-alert {
+    margin-top: 12px;
+  }
+
+  .community-memories .cm-detail-meta {
+    margin-top: 6px;
+    color: var(--color-stone);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .community-memories .cm-detail-trail {
+    color: var(--color-ink);
+    font-weight: 500;
+    overflow-wrap: anywhere;
+  }
+
+  .community-memories .cm-detail-date {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .community-memories .cm-figure {
+    min-width: 0;
+    margin-top: 20px;
+  }
+
+  /* The mat (DS §37.5): the whole photograph on `paper-shade`, 4:3 in this
+     narrow column (§18.6). */
+  .community-memories .cm-frame {
+    position: relative;
+    display: block;
+    aspect-ratio: 4 / 3;
+    border-radius: 16px;
+    background-color: var(--cm-paper-shade);
+  }
+
+  .community-memories .cm-frame[data-skeleton] {
+    margin-top: 20px;
+    background-color: var(--cm-ink-06);
+  }
+
+  .community-memories .cm-bar[data-bar="detail-meta"] {
+    width: 40%;
+    margin-top: 10px;
+  }
+
+  .community-memories .cm-detail-skeleton-story {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 20px;
+  }
+
+  .community-memories .cm-caption {
+    margin-top: 8px;
+    color: var(--color-stone);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .community-memories .cm-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+    list-style: none;
+  }
+
+  .community-memories .cm-thumb {
+    position: relative;
+    display: block;
+    width: 56px;
+    height: 56px;
+    overflow: hidden;
+    border-radius: 8px;
+    background-color: var(--cm-paper-shade);
+    cursor: pointer;
+    transition: box-shadow var(--duration-fast) var(--ease-ui);
+  }
+
+  .community-memories .cm-thumb::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  /* The shown photo: a 2px `paper` gap and a 2px `ink` ring. */
+  .community-memories .cm-thumb[aria-current="true"] {
+    --trip-edge: 0 0 0 2px var(--color-paper), 0 0 0 4px var(--color-ink);
+  }
+
+  @media (hover: hover) {
+    .community-memories .cm-thumb:not([aria-current="true"]):hover {
+      --trip-edge: 0 0 0 1px var(--cm-ink-32);
+    }
+  }
+
+  .community-memories .cm-thumb:active::after {
+    background-color: var(--cm-ink-12);
+  }
+
+  /* While focused, the focus ring replaces the selection ring. */
+  .community-memories .cm-thumb:focus-visible {
+    box-shadow: var(--focus-ring);
+  }
+
+  .community-memories .cm-story {
+    max-width: 66ch;
+    margin-top: 20px;
+    font-size: 1rem;
+    line-height: 1.625rem;
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * The reused FEATURE-009 photo pieces (§18.4), with memories.css's
+   * values: fade in once loaded; never a broken image.
+   * ------------------------------------------------------------------ */
+  .community-memories .memory-photo {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    object-fit: cover;
+    object-position: 50% 50%;
+    opacity: 0;
+    transition: opacity var(--duration-base) var(--ease-ui);
+  }
+
+  .community-memories .memory-photo[data-loaded] {
+    opacity: 1;
+  }
+
+  .community-memories .memory-photo[data-variant="large"] {
+    inset: 12px;
+    width: calc(100% - 24px);
+    height: calc(100% - 24px);
+    border-radius: 2px;
+    object-fit: contain;
+    transition-duration: var(--duration-fast);
+  }
+
+  .community-memories .memory-photo-fallback {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    background-color: var(--cm-paper-shade);
+    text-align: center;
+  }
+
+  .community-memories .memory-photo-fallback[data-variant="large"] {
+    border-radius: 16px;
+  }
+
+  .community-memories .memory-photo-fallback-text {
+    color: var(--color-stone);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+  }
+
+  /* No-photo surface (DS §37.4): `paper-shade`, a soft contour, a glyph. */
+  .community-memories .memory-nophoto {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding-bottom: 16px;
+    border-radius: inherit;
+    background-color: var(--cm-paper-shade);
+    background-image: repeating-radial-gradient(
+      ellipse at 72% 118%,
+      transparent 0 18px,
+      var(--cm-ink-07) 18px 19px
+    );
+    color: var(--color-stone);
+  }
+
+  .community-memories .memory-nophoto-glyph {
+    flex: none;
+  }
+
+  .community-memories .memory-nophoto-caption {
+    margin-top: 10px;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+  }
+
+  /* On a 112–128px list cover the caption would crowd the glyph. */
+  .community-memories .cm-entry-cover .memory-nophoto {
+    padding-bottom: 0;
+  }
+
+  .community-memories .cm-entry-cover .memory-nophoto-caption {
+    margin-top: 6px;
+  }
+}
+
+/* While the sheet is open the page behind it does not scroll. */
+:root:has(.community-memories.cm-panel[data-mode="sheet"][open]) {
+  overflow: hidden;
+}
+
+/* Rail: opacity and a 4px slide from the map's right edge. */
+@keyframes cm-rail-in {
+  from {
+    opacity: 0;
+    translate: 4px 0;
+  }
+}
+
+/* Sheet: opacity and a 4px rise. */
+@keyframes cm-sheet-in {
+  from {
+    opacity: 0;
+    translate: 0 4px;
+  }
+}
+
+/* Forced colors: edges drawn with shadows become real borders. */
+@media (forced-colors: active) {
+  .community-memories .cm-row-thumb,
+  .community-memories .cm-entry-cover,
+  .community-memories .cm-frame,
+  .community-memories .cm-thumb {
+    border: 1px solid CanvasText;
+  }
+
+  .community-memories .cm-thumb[aria-current="true"] {
+    border-width: 3px;
+  }
+
+  .community-memories .memory-nophoto,
+  .community-memories .cm-nophoto-mark {
+    background-image: none;
+  }
+}
+
+/* Reduced motion (§18.3): the panel and sheet appear and go at once, and
+   photos have no fade-in. */
+@media (prefers-reduced-motion: reduce) {
+  .community-memories.cm-panel[data-mode="rail"],
+  .community-memories.cm-panel[data-mode="sheet"][open] {
+    animation: none;
+  }
+
+  .community-memories .memory-photo,
+  .community-memories .memory-photo[data-loaded],
+  .community-memories .cm-entry-cover::after,
+  .community-memories .cm-thumb,
+  .community-memories .cm-row,
+  .community-memories .cm-view-all,
+  .community-memories .cm-back,
+  .community-memories .cm-panel-close {
+    transition: none;
+  }
+
+  .community-memories .memory-photo {
+    opacity: 1;
+  }
+
+  .community-memories .trip-spin {
+    animation: none;
+  }
+}

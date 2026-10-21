@@ -1,0 +1,707 @@
+/*
+ * FEATURE-002 §21.2.3: the states of a control that leads to authentication
+ * while the browser is leaving for the sign-in page. Each such control on
+ * the public homepage carries the `auth-entry` class (the header's Sign in,
+ * the popup's two actions) or the `landing-control` class (the Hero gate's
+ * two actions, FEATURE-001's), the attributes of `authControlAttributes`,
+ * and an `AuthActionLabel`.
+ *
+ * Working: the label is hidden but keeps its width and stays the accessible
+ * name; a 16px spinner turns in its place.
+ * Unavailable: another control was activated.
+ * Both stay focusable. The surface's own rules give each its colours.
+ *
+ * Imported by src/index.css.
+ */
+
+@layer components {
+  .auth-entry {
+    position: relative;
+  }
+
+  .landing-auth-spinner {
+    position: absolute;
+    inset: 0;
+    width: 16px;
+    height: 16px;
+    margin: auto;
+    animation: landing-auth-spin 900ms linear infinite;
+  }
+
+  .auth-entry[data-state="working"],
+  .landing-control[data-state="working"] {
+    cursor: progress;
+  }
+
+  .auth-entry[data-state="working"] > .landing-auth-label,
+  .landing-control[data-state="working"] > .landing-auth-label {
+    opacity: 0;
+  }
+
+  .auth-entry[data-state="unavailable"],
+  .landing-control[data-state="unavailable"] {
+    opacity: 0.56;
+    cursor: default;
+  }
+
+  /* Reduced motion: no spinner. The label stays; each surface gives the
+     working control its pressed fill. */
+  @media (prefers-reduced-motion: reduce) {
+    .landing-auth-spinner {
+      display: none;
+    }
+
+    .auth-entry[data-state="working"] > .landing-auth-label,
+    .landing-control[data-state="working"] > .landing-auth-label {
+      opacity: 1;
+    }
+  }
+}
+
+/* One turn per 900ms, linear. */
+@keyframes landing-auth-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/*
+ * FEATURE-006 — the Hero, the first section of the public homepage
+ * (docs/features/006-public-discover-trail-activity.md section 16.5, whose
+ * section numbers the comments use). FEATURE-001's media layer, scrim
+ * profile, scene control, and the FEATURE-002 gate, reused; FEATURE-001's
+ * grid without the planner rows.
+ *
+ * The Hero sits inside the page's `.trip` shell, whose tier variables give
+ * the header height H (`--trip-header-height`) and the gutters.
+ */
+@layer components {
+  /* ------------------------------------------------------------------ *
+   * Per-tier values (16.5.1). Below 768px is the unprefixed block.
+   * ------------------------------------------------------------------ */
+  .landing-hero {
+    --landing-scrim: color-mix(in srgb, var(--color-ink) 72%, transparent);
+    --landing-scrim-strong: color-mix(
+      in srgb,
+      var(--color-ink) 88%,
+      transparent
+    );
+
+    /* Below 768px: all spare height to the scene window; R = 0. */
+    --hero-window-min: 16px;
+    --hero-window-grow: 1;
+    --hero-spacer-min: 16px;
+    --hero-spacer-grow: 0;
+    --hero-bottom-pad: 16px;
+    --hero-h1-size: 2rem;
+    --hero-h1-line: 2.375rem;
+    --hero-h1-tracking: normal;
+    --hero-h1-max: 100%;
+    --hero-gap: 12px;
+    --hero-text-size: 1rem;
+    --hero-text-line: 1.5rem;
+    --hero-text-max: 100%;
+    --hero-notice-max: 100%;
+    --hero-reserve: 0px;
+    --hero-explore-height: 44px;
+    --hero-explore-pad: 20px;
+
+    @media (width < 360px) {
+      --hero-h1-size: 1.875rem;
+      --hero-h1-line: 2.25rem;
+    }
+
+    /* 768–1023px: 001's tablet values without the planner (16.16.2). */
+    @media (width >= 768px) {
+      --hero-window-min: 48px;
+      --hero-window-grow: 3;
+      --hero-spacer-min: 24px;
+      --hero-spacer-grow: 1;
+      --hero-bottom-pad: 32px;
+      --hero-h1-size: 2.625rem;
+      --hero-h1-line: 3rem;
+      --hero-h1-max: 600px;
+      --hero-gap: 16px;
+      --hero-text-size: 1.125rem;
+      --hero-text-line: 1.75rem;
+      --hero-text-max: 540px;
+      --hero-notice-max: 640px;
+      /* 24px gap plus the 60px three-line gate allowance (002 §21.2.4). */
+      --hero-reserve: 84px;
+      --hero-explore-height: 48px;
+      --hero-explore-pad: 24px;
+    }
+
+    /* 1024–1439px */
+    @media (width >= 1024px) {
+      --hero-h1-size: 3.375rem;
+      --hero-h1-line: 3.75rem;
+      --hero-h1-max: 720px;
+      --hero-text-max: 580px;
+      --hero-notice-max: 660px;
+      --hero-scrim-pad-x: 24px;
+      --hero-scrim-feather-x: 72px;
+    }
+
+    /* From 1440px */
+    @media (width >= 1440px) {
+      --hero-bottom-pad: 40px;
+      --hero-h1-size: 4rem;
+      --hero-h1-line: 4.25rem;
+      --hero-h1-tracking: -0.025em;
+      --hero-h1-max: 840px;
+      --hero-text-max: 620px;
+      --hero-notice-max: 720px;
+      --hero-scrim-pad-x: 32px;
+      --hero-scrim-feather-x: 120px;
+    }
+
+    /* Short desktop: at least 1024px wide, at most 839px tall. */
+    @media (width >= 1024px) and (height <= 839px) {
+      --hero-bottom-pad: 24px;
+      --hero-gap: 12px;
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Section and rows (16.5.1). Row 0 is the header overlap (padding),
+   * rows 1 and 4 are the two pseudo-elements sharing the spare height
+   * 3 : 1, row 2–3 the content block, row 5 the bottom row, row 6 the
+   * bottom padding.
+   *
+   * `.landing-hero` is the Hero's one stacking context:
+   *   -2  media layer (HeroMedia)
+   *   -1  the content scrim
+   *   auto  every foreground element
+   * ------------------------------------------------------------------ */
+  .landing-hero {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    min-height: 100dvh;
+    /* The band scrim below 1024px is as wide as the viewport. */
+    overflow: clip;
+    padding-top: var(--trip-header-height);
+    padding-inline: calc(var(--trip-gutter) + env(safe-area-inset-left, 0px))
+      calc(var(--trip-gutter) + env(safe-area-inset-right, 0px));
+    padding-bottom: calc(
+      var(--hero-bottom-pad) + env(safe-area-inset-bottom, 0px)
+    );
+    /* Layer 0: always painted, whatever the media does. */
+    background-color: var(--color-ink);
+    color: var(--color-snow);
+    cursor: default;
+  }
+
+  .landing-hero::before,
+  .landing-hero::after {
+    content: "";
+    pointer-events: none;
+  }
+
+  /* Row 1: the scene window. */
+  .landing-hero::before {
+    order: 0;
+    flex: var(--hero-window-grow) 1 0px;
+    min-height: var(--hero-window-min);
+  }
+
+  /* Row 4: the spacer. */
+  .landing-hero::after {
+    order: 2;
+    flex: var(--hero-spacer-grow) 1 0px;
+    min-height: var(--hero-spacer-min);
+  }
+
+  /*
+   * The content block: `h1`, HR2, the notice slot. As wide as its longest
+   * line, capped at the `h1` maximum, so the scrim follows the text.
+   * Rows: 1 `h1`, 2 HR2, 3 notice slot, 4 filler. The reserve R spans rows
+   * 3–4, so a notice takes height that already exists and nothing above it
+   * moves; the scrim spans rows 1–3, so without a notice it ends at HR2.
+   */
+  .landing-hero-block {
+    order: 1;
+    flex: none;
+    position: relative;
+    align-self: center;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto auto 1fr;
+    justify-items: center;
+    width: fit-content;
+    max-width: min(100%, var(--hero-h1-max));
+  }
+
+  .landing-hero-block::after {
+    content: "";
+    grid-area: 3 / 1 / 5 / 2;
+    min-height: var(--hero-reserve);
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .landing-heading {
+    grid-area: 1 / 1;
+    max-width: 100%;
+    font-size: var(--hero-h1-size);
+    line-height: var(--hero-h1-line);
+    font-weight: 600;
+    letter-spacing: var(--hero-h1-tracking);
+    text-align: center;
+    text-wrap: balance;
+    cursor: auto;
+  }
+
+  /* From 768px each sentence is its own line (16.5.1). */
+  @media (width >= 768px) {
+    .landing-heading-line {
+      display: block;
+    }
+  }
+
+  /* An arrival target, not a control: no ring (FEATURE-002 §21.2.5). */
+  .landing-heading:focus {
+    outline: none;
+  }
+
+  .landing-supporting {
+    grid-area: 2 / 1;
+    max-width: min(100%, var(--hero-text-max));
+    margin-top: var(--hero-gap);
+    font-size: var(--hero-text-size);
+    line-height: var(--hero-text-line);
+    font-weight: 400;
+    text-align: center;
+    text-wrap: balance;
+    cursor: auto;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * The content scrim (16.5.3; 001 §11.8): `ink` at 0.72 on the plateau,
+   * feathered with 001's five-stop profile (mask alpha = value / 0.72).
+   * Solid from the `h1` top − 16 to the content bottom + 16.
+   * Below 1024px: a band across the whole viewport, feathered up and down.
+   * ------------------------------------------------------------------ */
+  .landing-hero-block::before {
+    --fy: 48px;
+
+    content: "";
+    position: absolute;
+    z-index: -1;
+    grid-area: 1 / 1 / 4 / 2;
+    inset-block: calc(-1 * (16px + var(--fy)));
+    left: 50%;
+    width: 100vw;
+    margin-left: -50vw;
+    background-color: var(--landing-scrim);
+    pointer-events: none;
+    mask-image: linear-gradient(
+      to bottom,
+      transparent 0,
+      rgb(0 0 0 / 0.1597) calc(var(--fy) * 0.25),
+      rgb(0 0 0 / 0.5) calc(var(--fy) * 0.5),
+      rgb(0 0 0 / 0.8403) calc(var(--fy) * 0.75),
+      #000 var(--fy),
+      #000 calc(100% - var(--fy)),
+      rgb(0 0 0 / 0.8403) calc(100% - var(--fy) * 0.75),
+      rgb(0 0 0 / 0.5) calc(100% - var(--fy) * 0.5),
+      rgb(0 0 0 / 0.1597) calc(100% - var(--fy) * 0.25),
+      transparent 100%
+    );
+  }
+
+  /* From 1024px: the block's box ± the pad, feathered on all four sides. */
+  @media (width >= 1024px) {
+    .landing-hero-block::before {
+      --fx: var(--hero-scrim-feather-x);
+
+      left: calc(-1 * (var(--hero-scrim-pad-x) + var(--fx)));
+      right: calc(-1 * (var(--hero-scrim-pad-x) + var(--fx)));
+      width: auto;
+      margin-left: 0;
+      mask-image:
+        linear-gradient(
+          to right,
+          transparent 0,
+          rgb(0 0 0 / 0.1597) calc(var(--fx) * 0.25),
+          rgb(0 0 0 / 0.5) calc(var(--fx) * 0.5),
+          rgb(0 0 0 / 0.8403) calc(var(--fx) * 0.75),
+          #000 var(--fx),
+          #000 calc(100% - var(--fx)),
+          rgb(0 0 0 / 0.8403) calc(100% - var(--fx) * 0.75),
+          rgb(0 0 0 / 0.5) calc(100% - var(--fx) * 0.5),
+          rgb(0 0 0 / 0.1597) calc(100% - var(--fx) * 0.25),
+          transparent 100%
+        ),
+        linear-gradient(
+          to bottom,
+          transparent 0,
+          rgb(0 0 0 / 0.1597) calc(var(--fy) * 0.25),
+          rgb(0 0 0 / 0.5) calc(var(--fy) * 0.5),
+          rgb(0 0 0 / 0.8403) calc(var(--fy) * 0.75),
+          #000 var(--fy),
+          #000 calc(100% - var(--fy)),
+          rgb(0 0 0 / 0.8403) calc(100% - var(--fy) * 0.75),
+          rgb(0 0 0 / 0.5) calc(100% - var(--fy) * 0.5),
+          rgb(0 0 0 / 0.1597) calc(100% - var(--fy) * 0.25),
+          transparent 100%
+        );
+      mask-composite: intersect;
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Focus ring (DS §18) and control edges, as in FEATURE-001: one
+   * box-shadow made of two parts, so an edge and the ring add up.
+   * ------------------------------------------------------------------ */
+  .landing-control {
+    --landing-edge: 0 0 0 0 transparent;
+
+    box-shadow: var(--landing-edge);
+  }
+
+  .landing-control:focus-visible {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    box-shadow: var(--landing-edge), var(--focus-ring);
+  }
+
+  /* FEATURE-001's quiet control: the gate's Create account. */
+  .landing-quiet {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--color-snow);
+    background-color: var(--landing-scrim);
+    color: var(--color-snow);
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  @media (hover: hover) {
+    .landing-quiet:not([aria-disabled="true"]):hover {
+      --landing-edge: inset 0 0 0 1px var(--color-snow);
+
+      background-color: var(--landing-scrim-strong);
+    }
+  }
+
+  .landing-quiet:not([aria-disabled="true"]):active {
+    --landing-edge: inset 0 0 0 1px var(--color-snow);
+
+    background-color: var(--color-ink);
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Notice slot (16.5.5): 24px below HR2 when a notice is shown, inside
+   * the reserve. Empty, it takes no space. Content, anatomy, and styles
+   * are FEATURE-002 §21.2.1–21.2.5, as on the old landing.
+   * ------------------------------------------------------------------ */
+  .landing-message-slot {
+    grid-area: 3 / 1;
+    display: grid;
+    justify-items: center;
+    width: min(100%, var(--hero-notice-max));
+  }
+
+  .landing-message-slot[data-active] {
+    margin-top: 24px;
+  }
+
+  .landing-gate {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    max-width: 100%;
+  }
+
+  .landing-gate[data-actions] {
+    width: 100%;
+  }
+
+  @media (width >= 768px) {
+    .landing-gate[data-actions] {
+      flex-direction: row;
+      gap: 16px;
+      width: fit-content;
+    }
+  }
+
+  .landing-message-block {
+    min-width: 0;
+    max-width: 100%;
+    color: var(--color-snow);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+    text-align: start;
+    cursor: auto;
+  }
+
+  .landing-message-line {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    animation: landing-message-in var(--duration-base) var(--ease-ui) both;
+  }
+
+  .landing-message-line > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    /* Centres the 16px icon on the first 20px line. */
+    margin-top: 2px;
+  }
+
+  .landing-gate-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+    animation: landing-message-in var(--duration-base) var(--ease-ui) both;
+  }
+
+  .landing-gate-action {
+    position: relative;
+    flex: 1 1 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: max-content;
+    min-height: 44px;
+    padding-inline: 16px;
+    border-radius: 12px;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  @media (width >= 768px) {
+    .landing-gate-actions {
+      flex: none;
+      flex-wrap: nowrap;
+      width: auto;
+    }
+
+    .landing-gate-action {
+      flex: none;
+    }
+  }
+
+  /* 36px with a fine pointer from 1024px; 44px on any coarse pointer. */
+  @media (width >= 1024px) and (pointer: fine) {
+    .landing-gate-action {
+      min-height: 36px;
+    }
+  }
+
+  /* Sign in: `paper` with `ink` text. An edge in forced colors. */
+  .landing-gate-filled {
+    border: 1px solid transparent;
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  @media (hover: hover) {
+    .landing-gate-filled:not([aria-disabled="true"]):hover {
+      background-color: var(--color-snow);
+    }
+  }
+
+  .landing-gate-filled:not([aria-disabled="true"]):active {
+    background-color: #dbdbd6;
+  }
+
+  .landing-gate-filled .landing-auth-spinner {
+    color: var(--color-ink);
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Bottom row (16.5.6): Explore trails centred on the viewport axis, the
+   * scene control with its right edge on the gutter, bottom edges aligned.
+   * Below 1024px they stack: Explore trails, 16px, the scene control.
+   * ------------------------------------------------------------------ */
+  .landing-hero-bottom {
+    order: 3;
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+
+  @media (width >= 1024px) {
+    .landing-hero-bottom {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      align-items: end;
+      gap: 0;
+      min-height: 48px;
+    }
+
+    .landing-explore {
+      grid-column: 2;
+    }
+  }
+
+  .landing-explore {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: var(--hero-explore-height);
+    padding-inline: var(--hero-explore-pad);
+    border: 1px solid var(--color-snow);
+    border-radius: 9999px;
+    background-color: var(--landing-scrim);
+    color: var(--color-snow);
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: 600;
+    white-space: nowrap;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  .landing-explore > svg {
+    flex: none;
+    width: 20px;
+    height: 20px;
+  }
+
+  @media (hover: hover) {
+    .landing-explore:hover {
+      --landing-edge: inset 0 0 0 1px var(--color-snow);
+
+      background-color: var(--landing-scrim-strong);
+    }
+  }
+
+  .landing-explore:active {
+    --landing-edge: inset 0 0 0 1px var(--color-snow);
+
+    background-color: var(--color-ink);
+  }
+
+  /* Scene control (001 §11.10). */
+  .landing-scene-control {
+    flex: none;
+    align-self: flex-end;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    max-width: 100%;
+    min-height: 44px;
+    padding-inline-start: 16px;
+    border-radius: 9999px;
+    background-color: var(--landing-scrim);
+  }
+
+  @media (width >= 1024px) {
+    .landing-scene-control {
+      grid-column: 3;
+      justify-self: end;
+    }
+  }
+
+  /* All captions share one cell, so the pill never changes width. */
+  .landing-captions {
+    display: grid;
+    min-width: 0;
+    color: var(--color-snow);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+    text-align: end;
+    cursor: auto;
+  }
+
+  /* Outgoing caption: fades out over the first 400ms of the cross-fade. */
+  .landing-caption {
+    grid-area: 1 / 1;
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity 400ms var(--ease-ui),
+      visibility 0s linear 400ms;
+  }
+
+  /* Incoming caption: fades in from 600ms to 1000ms. */
+  .landing-caption[data-active] {
+    opacity: 1;
+    visibility: visible;
+    transition:
+      opacity 400ms var(--ease-ui) 600ms,
+      visibility 0s linear 600ms;
+  }
+
+  .landing-icon-button {
+    position: relative;
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    color: var(--color-snow);
+    cursor: pointer;
+  }
+
+  /* The 36px circle behind the icon on hover and press. */
+  .landing-icon-button::before {
+    content: "";
+    position: absolute;
+    inset: 4px;
+    border-radius: 50%;
+    background-color: transparent;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  @media (hover: hover) {
+    .landing-icon-button:hover::before {
+      background-color: color-mix(in srgb, var(--color-snow) 12%, transparent);
+    }
+  }
+
+  .landing-icon-button:active::before {
+    background-color: var(--color-ink);
+  }
+
+  .landing-icon-button > svg {
+    position: relative;
+    width: 20px;
+    height: 20px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .landing-message-line,
+    .landing-gate-actions {
+      animation: none;
+    }
+
+    .landing-gate-filled[data-state="working"] {
+      background-color: #dbdbd6;
+    }
+
+    .landing-quiet[data-state="working"] {
+      --landing-edge: inset 0 0 0 1px var(--color-snow);
+
+      background-color: var(--color-ink);
+    }
+  }
+}
+
+/* Message entrance: opacity and a 4px upward slide (002 §21.2.5). */
+@keyframes landing-message-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}

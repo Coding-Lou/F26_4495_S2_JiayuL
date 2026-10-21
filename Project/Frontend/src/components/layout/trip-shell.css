@@ -1,0 +1,760 @@
+/*
+ * FEATURE-004 — the shell shared by Trail Detail and Trip Preparation: the
+ * `ink` base, the header, and the few controls both screens use.
+ *
+ * Imported by src/index.css. Every rule is scoped to a .trip class; no other
+ * page is affected. Each screen's own surfaces are in features/trails/trails.css
+ * and features/packing/packing.css.
+ *
+ * Tokens come from docs/DESIGN_SYSTEM.md Version 2. Feature-level values come
+ * from docs/features/004-trail-selection-preparation.md; section numbers in
+ * comments refer to that specification. The tiers, gutters, header heights,
+ * and header items are the Authenticated Home's (FEATURE-003 sections 9.2,
+ * 9.5), written again here because that feature's rules are scoped to its own
+ * shell. Breakpoints are written in px because the same widths are tested.
+ */
+
+@layer components {
+  /* ------------------------------------------------------------------ *
+   * Per-tier values (§21.1). Mobile is the unprefixed block only because
+   * min-width queries cascade upward; desktop is the primary design (D12).
+   * ------------------------------------------------------------------ */
+  .trip {
+    /* `ink` at 0.72 and 0.88: the scrim plateau and the quiet-control fills. */
+    --trip-scrim: color-mix(in srgb, var(--color-ink) 72%, transparent);
+    --trip-scrim-strong: color-mix(in srgb, var(--color-ink) 88%, transparent);
+
+    --trip-snow-12: color-mix(in srgb, var(--color-snow) 12%, transparent);
+    --trip-snow-16: color-mix(in srgb, var(--color-snow) 16%, transparent);
+    --trip-snow-20: color-mix(in srgb, var(--color-snow) 20%, transparent);
+    --trip-ink-06: color-mix(in srgb, var(--color-ink) 6%, transparent);
+    --trip-ink-08: color-mix(in srgb, var(--color-ink) 8%, transparent);
+    --trip-ink-10: color-mix(in srgb, var(--color-ink) 10%, transparent);
+    --trip-ink-12: color-mix(in srgb, var(--color-ink) 12%, transparent);
+
+    --trip-vh: 100vh;
+
+    /* Below 768px */
+    --trip-gutter: 16px;
+    --trip-header-height: 56px;
+    --trip-feather: 24px;
+    --trip-control-height: 44px;
+    --trip-button-height: 40px;
+    --trip-identity-max: 160px;
+
+    @supports (height: 100dvh) {
+      --trip-vh: 100dvh;
+    }
+
+    @media (width < 360px) {
+      --trip-gutter: 12px;
+    }
+
+    /* 768–1023px */
+    @media (width >= 768px) {
+      --trip-gutter: 32px;
+      --trip-header-height: 64px;
+      --trip-feather: 40px;
+    }
+
+    /* Tier S, 1024–1279px */
+    @media (width >= 1024px) {
+      --trip-control-height: 36px;
+    }
+
+    /* Tier M, 1280–1439px */
+    @media (width >= 1280px) {
+      --trip-gutter: 40px;
+      --trip-identity-max: 200px;
+    }
+
+    /* Tier L, 1440–1679px */
+    @media (width >= 1440px) {
+      --trip-gutter: 56px;
+      --trip-header-height: 72px;
+      --trip-identity-max: 240px;
+    }
+
+    /* Tier XL, from 1680px */
+    @media (width >= 1680px) {
+      --trip-gutter: 64px;
+    }
+
+    /* Every control is 44px tall on a coarse pointer, at any width (§23.9). */
+    @media (pointer: coarse) {
+      --trip-control-height: 44px;
+      --trip-button-height: 44px;
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Shell (§21.1). `.trip` is the one stacking context of the page:
+   *   -3    a screen's fallback wash
+   *   -2    a screen's scene
+   *   -1    header scrims
+   *   auto  header, main
+   * Nothing between `.trip` and a scrim may form a stacking context, or the
+   * scrim would be lifted over the header it sits under.
+   * ------------------------------------------------------------------ */
+  .trip {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    flex-direction: column;
+    min-height: var(--trip-vh);
+    /* Layer 0: always painted. */
+    background-color: var(--color-ink);
+    color: var(--color-snow);
+    font-family:
+      ui-sans-serif,
+      system-ui,
+      -apple-system,
+      "Segoe UI",
+      Roboto,
+      "Helvetica Neue",
+      Arial,
+      "Noto Sans",
+      sans-serif;
+  }
+
+  .trip-main {
+    flex: 1 0 auto;
+    min-width: 0;
+    transition: opacity var(--duration-fast) var(--ease-ui);
+  }
+
+  /* W3 of FEATURE-002: the page while sign-out is in flight. */
+  .trip-main[aria-busy="true"] {
+    opacity: 0.4;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Focus ring and control edges. One box-shadow made of two parts, so a
+   * hover edge and the focus ring add up instead of replacing each other.
+   * ------------------------------------------------------------------ */
+  .trip-control {
+    --trip-edge: 0 0 0 0 transparent;
+
+    box-shadow: var(--trip-edge);
+  }
+
+  .trip-control:focus-visible {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    box-shadow: var(--trip-edge), var(--focus-ring);
+  }
+
+  /* A heading that takes focus from script is a reading position, not a
+     control: it draws no ring (§23.2). */
+  .trip-focus-target:focus {
+    outline: none;
+  }
+
+  /* Quiet control (§14.3.3): `ink` at 0.72, a 1px `snow` border, `snow`
+     content. Hover: more solid and a 2px edge. Pressed: solid `ink`. */
+  .trip-quiet {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--color-snow);
+    background-color: var(--trip-scrim);
+    color: var(--color-snow);
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  @media (hover: hover) {
+    .trip-quiet:hover {
+      --trip-edge: inset 0 0 0 1px var(--color-snow);
+
+      background-color: var(--trip-scrim-strong);
+    }
+  }
+
+  .trip-quiet:active {
+    --trip-edge: inset 0 0 0 1px var(--color-snow);
+
+    background-color: var(--color-ink);
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Header (§21.2): one row, in normal flow. No fill, border, or shadow of
+   * its own. Not a stacking context.
+   * ------------------------------------------------------------------ */
+  .trip-header {
+    position: relative;
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: var(--trip-header-height);
+    padding-inline: calc(var(--trip-gutter) + env(safe-area-inset-left, 0px))
+      calc(var(--trip-gutter) + env(safe-area-inset-right, 0px));
+  }
+
+  /* Over a scene, below 1024px: the full-width band of FEATURE-003 section
+     8.3.3. `ink` at 0.72 over the header's height, then a feather to nothing.
+     No text sits in the feather. */
+  .trip-header[data-surface="scene"]::before {
+    --f: var(--trip-feather);
+
+    content: "";
+    position: absolute;
+    z-index: -1;
+    inset: 0 0 calc(-1 * var(--f)) 0;
+    background-image: linear-gradient(
+      to bottom,
+      var(--trip-scrim) 0,
+      var(--trip-scrim) calc(100% - var(--f)),
+      color-mix(in srgb, var(--color-ink) 60.5%, transparent)
+        calc(100% - var(--f) * 0.75),
+      color-mix(in srgb, var(--color-ink) 36%, transparent)
+        calc(100% - var(--f) * 0.5),
+      color-mix(in srgb, var(--color-ink) 11.5%, transparent)
+        calc(100% - var(--f) * 0.25),
+      transparent 100%
+    );
+    pointer-events: none;
+  }
+
+  /* Over a scene, from 1024px: two local blocks, not a band (§14.3.3, D17).
+     The header has content only at its two ends, so only the ends are
+     scrimmed and the picture between them is left exactly as delivered.
+
+     Each block is `ink` at 0.72 under a mask of two feathers, one per axis.
+     Intersecting the masks multiplies their opacities where they meet. */
+  @media (width >= 1024px) {
+    .trip-header[data-surface="scene"]::before,
+    .trip-header[data-surface="scene"] > .trip-header-end::before {
+      --f: 40px;
+      --feather-down: linear-gradient(
+        to bottom,
+        #000 0,
+        #000 calc(100% - var(--f)),
+        rgb(0 0 0 / 0.84) calc(100% - var(--f) * 0.75),
+        rgb(0 0 0 / 0.5) calc(100% - var(--f) * 0.5),
+        rgb(0 0 0 / 0.16) calc(100% - var(--f) * 0.25),
+        transparent 100%
+      );
+
+      content: "";
+      position: absolute;
+      z-index: -1;
+      inset-block: 0 calc(-1 * var(--f));
+      background-color: var(--trip-scrim);
+      background-image: none;
+      mask-repeat: no-repeat;
+      mask-size: 100% 100%;
+      mask-composite: intersect;
+      pointer-events: none;
+    }
+
+    /* Left: from the viewport's edge to the panel's right edge line, which
+       the screen gives as `--trip-scrim-start`. Its last 48px fade out. */
+    .trip-header[data-surface="scene"]::before {
+      inset-inline: 0 auto;
+      width: var(--trip-scrim-start, 0px);
+      mask-image:
+        var(--feather-down),
+        linear-gradient(
+          to right,
+          #000 0,
+          #000 calc(100% - 48px),
+          rgb(0 0 0 / 0.84) calc(100% - 36px),
+          rgb(0 0 0 / 0.5) calc(100% - 24px),
+          rgb(0 0 0 / 0.16) calc(100% - 12px),
+          transparent 100%
+        );
+    }
+
+    /* Right: attached to the right group, so it is as wide as that group
+       needs and no wider. It begins 72px before the group: 48px of fade,
+       then 24px of plateau before the first item. */
+    .trip-header[data-surface="scene"] > .trip-header-end::before {
+      inset-inline: -72px
+        calc(-1 * (var(--trip-gutter) + env(safe-area-inset-right, 0px)));
+      mask-image:
+        var(--feather-down),
+        linear-gradient(
+          to right,
+          transparent 0,
+          rgb(0 0 0 / 0.16) 12px,
+          rgb(0 0 0 / 0.5) 24px,
+          rgb(0 0 0 / 0.84) 36px,
+          #000 48px
+        );
+    }
+  }
+
+  /* The right group fills the header's height, so its scrim block starts at
+     the top edge. It is not a stacking context. */
+  .trip-header-end {
+    position: relative;
+    flex: 0 1 auto;
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+    min-width: 0;
+  }
+
+  /* Brand: a link to /home with a 44px-tall hit box. It takes the row's free
+     space after it, so everything else stands at the end. */
+  .trip-brand {
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 44px;
+    margin-inline: -8px auto;
+    padding-inline: 8px;
+    border-radius: 8px;
+    color: var(--color-snow);
+    font-size: 1rem;
+    line-height: 1.25rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
+    cursor: pointer;
+  }
+
+  /* Below 480px it is set on two lines; from there on one. */
+  @media (width >= 480px) {
+    .trip-brand {
+      flex-direction: row;
+      align-items: center;
+      gap: 0.3em;
+      line-height: 1.5rem;
+      white-space: nowrap;
+    }
+  }
+
+  @media (hover: hover) {
+    .trip-brand:hover {
+      text-decoration-line: underline;
+    }
+  }
+
+  /* Gear: a link with a 44px-tall hit box. */
+  .trip-nav-link {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding-inline: 12px;
+    border-radius: 8px;
+    color: var(--color-snow);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
+    cursor: pointer;
+  }
+
+  @media (hover: hover) {
+    .trip-nav-link:hover {
+      text-decoration-line: underline;
+    }
+  }
+
+  .trip-nav-link:active {
+    background-color: var(--trip-snow-12);
+  }
+
+  /* The current page, on /gear (FEATURE-007 section 21.2) and on /memories
+     exactly (FEATURE-009 D4): the hover underline kept at rest. Shape, not
+     hue; hover adds nothing. */
+  .trip-nav-link[aria-current="page"] {
+    text-decoration-line: underline;
+  }
+
+  /* Identity, 24px after Gear; Sign out, 12px after the identity. */
+  .trip-account {
+    display: flex;
+    min-width: 0;
+  }
+
+  .trip-header-end > .trip-account {
+    margin-inline-start: 24px;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Menu, below 768px (§22.3)
+   * ------------------------------------------------------------------ */
+  .trip-menu-button {
+    flex: none;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+  }
+
+  .trip-menu-button > svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .trip-menu {
+    position: absolute;
+    z-index: 30;
+    inset-block-start: 100%;
+    inset-inline-end: calc(
+      var(--trip-gutter) + env(safe-area-inset-right, 0px)
+    );
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: min(280px, 100vw - 24px);
+    padding: 16px;
+    border: 1px solid color-mix(in srgb, var(--color-ink) 16%, transparent);
+    border-radius: 16px;
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    box-shadow: 0 8px 24px color-mix(in srgb, var(--color-ink) 24%, transparent);
+    animation: trip-fade-in var(--duration-fast) var(--ease-ui) both;
+  }
+
+  .trip-menu-link {
+    display: flex;
+    align-items: center;
+    min-height: 48px;
+    margin-inline: -8px;
+    padding-inline: 8px;
+    border-radius: 10px;
+    color: var(--color-ink);
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  @media (hover: hover) {
+    .trip-menu-link:hover {
+      background-color: var(--trip-ink-06);
+    }
+  }
+
+  .trip-menu-link:active {
+    background-color: var(--trip-ink-10);
+  }
+
+  /* The current page in the Menu (FEATURE-007 section 21.2): a 3px `ink`
+     bar on the row's inline-start edge, inset, and weight 600. */
+  .trip-menu-link[aria-current="page"] {
+    position: relative;
+    font-weight: 600;
+  }
+
+  .trip-menu-link[aria-current="page"]::before {
+    content: "";
+    position: absolute;
+    inset-block: 12px;
+    inset-inline-start: 0;
+    width: 3px;
+    border-radius: 2px;
+    background-color: var(--color-ink);
+  }
+
+  @media (forced-colors: active) {
+    .trip-menu-link[aria-current="page"]::before {
+      forced-color-adjust: none;
+      background-color: CanvasText;
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Text link on a dark surface (§21.17): Back to planning on the base, and
+   * the two links of the Preparation strip. A 44px-tall hit box.
+   * ------------------------------------------------------------------ */
+  .trip-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding-inline: 12px;
+    border-radius: 8px;
+    color: var(--color-snow);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  .trip-link > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+  }
+
+  @media (hover: hover) {
+    .trip-link:hover {
+      text-decoration-line: underline;
+    }
+  }
+
+  .trip-link:active {
+    background-color: var(--trip-snow-12);
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Secondary button (§21.17): Retry, and Back to planning where the trail
+   * was not found. Styled as a control at rest; never disabled.
+   * ------------------------------------------------------------------ */
+  .trip-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: var(--trip-button-height);
+    padding: 0 14px;
+    border: 1px solid var(--color-stone);
+    border-radius: 10px;
+    color: var(--color-ink);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  .trip-button > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+  }
+
+  @media (hover: hover) {
+    .trip-button:hover {
+      background-color: var(--trip-ink-06);
+    }
+  }
+
+  .trip-button:active {
+    background-color: var(--trip-ink-10);
+  }
+
+  .trip-button[data-tone="panel"] {
+    border-color: var(--color-snow);
+    color: var(--color-snow);
+  }
+
+  @media (hover: hover) {
+    .trip-button[data-tone="panel"]:hover {
+      background-color: var(--trip-snow-12);
+    }
+  }
+
+  .trip-button[data-tone="panel"]:active {
+    background-color: var(--trip-snow-20);
+  }
+
+  /* Working: it keeps focus and ignores activation. */
+  .trip-button[aria-disabled="true"] {
+    cursor: progress;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * The message that goes with the trip-date control (§21.7): a 16px icon,
+   * 8px, text. On paper the icon is `ember` and the text `ink`; on the panel
+   * both are `snow`.
+   * ------------------------------------------------------------------ */
+  .trip-slot {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+    overflow-wrap: anywhere;
+  }
+
+  .trip-slot-message {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    animation: trip-fade-in var(--duration-fast) var(--ease-ui) both;
+  }
+
+  .trip-slot-message > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+  }
+
+  .trip-slot[data-tone="paper"] {
+    color: var(--color-ink);
+  }
+
+  .trip-slot[data-tone="paper"] svg {
+    color: var(--color-ember);
+  }
+
+  .trip-slot[data-tone="panel"] {
+    color: var(--color-snow);
+  }
+}
+
+@keyframes trip-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Entrance: opacity and a 4px rise (§13.3). */
+@keyframes trip-enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+@keyframes trip-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* One turn per 900ms, linear, as FEATURE-002's spinner. */
+.trip-spin {
+  animation: trip-spin 900ms linear infinite;
+}
+
+/*
+ * The account controls are FEATURE-002's own component (identity, Sign out,
+ * and the working state). Only their presentation on a dark surface is set
+ * here, as the Authenticated Home sets it (FEATURE-003 section 9.5). These
+ * rules are unlayered because they replace what the button primitive sets
+ * with utilities, as FEATURE-002's own rules for it do.
+ */
+.trip .auth-account {
+  flex: 0 1 auto;
+  gap: 12px;
+  min-width: 0;
+}
+
+.trip .auth-identity {
+  max-width: var(--trip-identity-max);
+  color: var(--color-snow);
+}
+
+/* Sign out: quiet-control recipe, pill. */
+.trip .auth-sign-out {
+  --trip-edge: 0 0 0 0 transparent;
+
+  height: auto;
+  min-height: var(--trip-control-height);
+  padding: 0 16px;
+  border: 1px solid var(--color-snow);
+  border-radius: 9999px;
+  background-color: var(--trip-scrim);
+  box-shadow: var(--trip-edge);
+  color: var(--color-snow);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 600;
+  transition: background-color var(--duration-fast) var(--ease-ui);
+}
+
+@media (hover: hover) {
+  .trip .auth-sign-out:not([aria-disabled="true"]):hover {
+    --trip-edge: inset 0 0 0 1px var(--color-snow);
+
+    background-color: var(--trip-scrim-strong);
+  }
+}
+
+.trip .auth-sign-out:not([aria-disabled="true"]):active {
+  --trip-edge: inset 0 0 0 1px var(--color-snow);
+
+  background-color: var(--color-ink);
+}
+
+.trip .auth-sign-out:focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  box-shadow: var(--trip-edge), var(--focus-ring);
+}
+
+/*
+ * In the Menu the identity and Sign out are separated by Gear, so each is its
+ * own instance of the component showing one part. The hidden part is out of
+ * the accessibility tree and the tab order.
+ */
+.trip-account[data-part="identity"] .auth-sign-out,
+.trip-account[data-part="identity"] [role="status"],
+.trip-account[data-part="sign-out"] .auth-identity {
+  display: none;
+}
+
+.trip-menu .trip-account,
+.trip-menu .auth-account {
+  display: block;
+}
+
+/* "Signed in as" above the name, which wraps and is never truncated. */
+.trip-menu .auth-identity {
+  display: block;
+  max-width: none;
+  overflow: visible;
+  color: var(--color-ink);
+  font-size: 1rem;
+  line-height: 1.5rem;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+/* The label FEATURE-002 keeps for assistive technology is shown here. */
+.trip-menu .auth-identity > .sr-only {
+  position: static;
+  display: block;
+  width: auto;
+  height: auto;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  clip-path: none;
+  color: var(--color-stone);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  white-space: normal;
+}
+
+/* Sign out as a row of the Menu. */
+.trip-menu .auth-sign-out {
+  width: 100%;
+  min-height: 48px;
+  border-color: var(--color-stone);
+  border-radius: 10px;
+  background-color: transparent;
+  color: var(--color-ink);
+}
+
+@media (hover: hover) {
+  .trip-menu .auth-sign-out:not([aria-disabled="true"]):hover {
+    --trip-edge: 0 0 0 0 transparent;
+
+    background-color: color-mix(in srgb, var(--color-ink) 6%, transparent);
+  }
+}
+
+.trip-menu .auth-sign-out:not([aria-disabled="true"]):active {
+  --trip-edge: 0 0 0 0 transparent;
+
+  background-color: color-mix(in srgb, var(--color-ink) 10%, transparent);
+}
+
+/* Reduced motion (§21.19): no fade and no spin. Color-only hover and press
+   changes are kept. */
+@media (prefers-reduced-motion: reduce) {
+  .trip-main {
+    transition: none;
+  }
+
+  .trip-menu,
+  .trip-slot-message,
+  .trip-spin {
+    animation: none;
+  }
+}

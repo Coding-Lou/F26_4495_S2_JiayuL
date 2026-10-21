@@ -18,8 +18,10 @@
         <module>api-gateway</module>
         <module>user-service</module>
         <module>trail-service</module>
-        <module>ai-service</module>
         <module>activity-service</module>
+        <module>recommendation-service</module>
+        <module>memory-service</module>
+        <module>plan-service</module>
     </modules>
 
 </project>

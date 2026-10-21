@@ -1,0 +1,1446 @@
+/*
+ * FEATURE-006 — the public homepage's header and its Discover section: the
+ * fixed `ink` header, a docked `paper` rail with the heading and the trail
+ * list, the map filling the rest, and the map-anchored Trail Detail popup.
+ * The Hero is in features/landing/landing.css.
+ *
+ * Imported by the homepage screen, so it arrives with its chunk. Rules are
+ * scoped to .public-home and .discover classes. The shell's tier variables
+ * (gutters, header height H), the Retry button, and the spinner come from
+ * components/layout/trip-shell.css.
+ *
+ * Tokens come from docs/DESIGN_SYSTEM.md Version 2; feature-level values,
+ * including the map palette, from docs/features/006-public-discover-trail-
+ * activity.md, whose section numbers the comments use.
+ *
+ * The popup's containing block is `section.discover` (16.11.2). Between the
+ * popup and that section, the rail, the list section, the `ul`, and the `li`
+ * stay `position: static` and carry no transform, filter, perspective,
+ * contain, container-type, or will-change, so none of them becomes the
+ * popup's containing block or clips it.
+ */
+
+/* The root keeps a focused element or a hash target clear of the fixed
+   header (16.3.1, WCAG 2.4.11). No smooth scrolling on the root. */
+html:has(.public-home) {
+  scroll-padding-top: 56px;
+
+  @media (width >= 768px) {
+    scroll-padding-top: 64px;
+  }
+
+  @media (width >= 1440px) {
+    scroll-padding-top: 72px;
+  }
+}
+
+@layer components {
+  /* ------------------------------------------------------------------ *
+   * Per-tier values (16.3.2, 16.16). Below 768px is the unprefixed block.
+   * ------------------------------------------------------------------ */
+  .public-home {
+    --map-land: #ece8dd;
+
+    --discover-ink-04: color-mix(in srgb, var(--color-ink) 4%, transparent);
+    --discover-ink-16: color-mix(in srgb, var(--color-ink) 16%, transparent);
+    --discover-ink-24: color-mix(in srgb, var(--color-ink) 24%, transparent);
+
+    /* Below 768px */
+    --discover-rail-width: 100%;
+    --discover-rail-end: var(--trip-gutter);
+    --discover-rail-block: 24px;
+    --discover-h2-size: 1.75rem;
+    --discover-h2-line: 2.125rem;
+    --discover-list-gap: 20px;
+    --discover-inset: 16px;
+    --discover-popup-width: 100%;
+    --discover-zoom-size: 44px;
+    --public-header-gap: 16px;
+
+    /* 768–1023px: the S layout with a 320px rail (16.16.2). */
+    @media (width >= 768px) {
+      --discover-rail-width: 320px;
+      --discover-rail-end: 20px;
+      --discover-rail-block: 32px;
+      --discover-popup-width: 300px;
+      --public-header-gap: 24px;
+    }
+
+    /* Tier S */
+    @media (width >= 1024px) {
+      --discover-rail-width: 360px;
+      --discover-rail-end: 24px;
+      --discover-h2-size: 2rem;
+      --discover-h2-line: 2.375rem;
+      --discover-zoom-size: 40px;
+    }
+
+    /* Tier M */
+    @media (width >= 1280px) {
+      --discover-rail-width: 400px;
+      --discover-h2-size: 2.25rem;
+      --discover-h2-line: 2.625rem;
+      --discover-popup-width: 320px;
+    }
+
+    /* Tier L */
+    @media (width >= 1440px) {
+      --discover-rail-width: 440px;
+      --discover-rail-end: 32px;
+      --discover-rail-block: 40px;
+      --discover-h2-size: 2.5rem;
+      --discover-h2-line: 2.875rem;
+      --discover-list-gap: 24px;
+      --discover-inset: 24px;
+      --discover-popup-width: 340px;
+    }
+
+    /* Tier XL; above 1920 the rail stays and the map takes the width. */
+    @media (width >= 1680px) {
+      --discover-rail-width: 480px;
+      --discover-popup-width: 360px;
+    }
+
+    @media (pointer: coarse) {
+      --discover-zoom-size: 44px;
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Page (16.3): one scrolling document, the Hero then Discover, under the
+   * fixed header. No footer.
+   * ------------------------------------------------------------------ */
+  .public-home-main {
+    display: block;
+    min-width: 0;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Public header (16.4): solid `ink`, fixed, full width, height H,
+   * identical at every scroll position.
+   * ------------------------------------------------------------------ */
+  .public-header {
+    position: fixed;
+    z-index: 50;
+    inset-block-start: 0;
+    inset-inline: 0;
+    display: flex;
+    align-items: center;
+    height: var(--trip-header-height);
+    padding-inline: calc(var(--trip-gutter) + env(safe-area-inset-left, 0px))
+      calc(var(--trip-gutter) + env(safe-area-inset-right, 0px));
+    background-color: var(--color-ink);
+    color: var(--color-snow);
+  }
+
+  .public-header-nav {
+    display: flex;
+    flex: 1 1 auto;
+    align-items: center;
+    min-width: 0;
+  }
+
+  .public-header-brand {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    margin-inline: -8px auto;
+    padding-inline: 8px;
+    border-radius: 8px;
+    color: var(--color-snow);
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+    text-decoration: none;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
+  }
+
+  @media (width < 360px) {
+    .public-header-brand {
+      font-size: 0.875rem;
+      line-height: 1.25rem;
+    }
+  }
+
+  .public-header-link {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    margin-inline-end: var(--public-header-gap);
+    padding-inline: 12px;
+    border-radius: 8px;
+    color: var(--color-snow);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+    text-decoration: none;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
+  }
+
+  @media (hover: hover) {
+    .public-header-brand:hover,
+    .public-header-link:hover {
+      text-decoration-line: underline;
+    }
+  }
+
+  .public-header-link:active {
+    background-color: var(--trip-snow-12);
+  }
+
+  /* The Discover item is not rendered below 400px (16.4). */
+  @media (width < 400px) {
+    .public-header-link {
+      display: none;
+    }
+
+    .public-header-brand {
+      margin-inline-end: auto;
+    }
+
+    .public-header-sign-in {
+      margin-inline-start: 16px;
+    }
+  }
+
+  /* On-ink quiet control (16.18): no fill, a 1px `snow` border. */
+  .public-header-sign-in {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding-inline: 20px;
+    border: 1px solid var(--color-snow);
+    border-radius: 9999px;
+    background-color: transparent;
+    color: var(--color-snow);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  @media (hover: hover) {
+    .public-header-sign-in:not([aria-disabled="true"]):hover {
+      background-color: var(--trip-snow-12);
+    }
+  }
+
+  .public-header-sign-in:not([aria-disabled="true"]):active {
+    background-color: var(--trip-snow-20);
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Discover section (16.3.1, 16.7.1). From 768px it is exactly the
+   * viewport below the header, at least 560px: a rail and the map.
+   * `position: relative`: the popup's containing block (16.11.2).
+   * ------------------------------------------------------------------ */
+  .discover {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    scroll-margin-top: var(--trip-header-height);
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+  }
+
+  @media (width >= 768px) {
+    .discover {
+      display: grid;
+      grid-template-columns: var(--discover-rail-width) minmax(0, 1fr);
+      grid-template-rows: minmax(0, 1fr);
+      height: max(560px, calc(100vh - var(--trip-header-height)));
+      height: max(560px, calc(100dvh - var(--trip-header-height)));
+    }
+  }
+
+  /* Rail: `paper`, a 1px rule on its right edge. A flex column whose only
+     scroller is the `ul`. No radius, no shadow, no overflow of its own. */
+  .discover-rail {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    padding-block: var(--discover-rail-block);
+    padding-inline: calc(var(--trip-gutter) + env(safe-area-inset-left, 0px))
+      calc(var(--discover-rail-end) - 1px);
+    border-inline-end: 1px solid var(--trip-ink-12);
+    background-color: var(--color-paper);
+  }
+
+  .discover-heading {
+    flex: none;
+    font-size: var(--discover-h2-size);
+    line-height: var(--discover-h2-line);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+
+  .discover-list {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+    margin-top: var(--discover-list-gap);
+  }
+
+  .discover-list-heading {
+    flex: none;
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: 600;
+  }
+
+  .discover-list-caption {
+    flex: none;
+    margin-top: 4px;
+    color: var(--color-stone);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  /* The list: 20px beyond the content box on each side with 8px padding,
+     so a row's text lines up with the heading and its 6px focus ring is
+     never clipped. It scrolls by itself and hands its overscroll to the
+     page (never `contain`). */
+  .discover-rows {
+    flex: 0 1 auto;
+    min-height: 0;
+    margin-top: 12px;
+    margin-inline: -20px;
+    padding: 8px;
+    overflow-y: auto;
+    overscroll-behavior: auto;
+  }
+
+  /* D1: four static rows and the line that carries the state. */
+  .discover-list-pending {
+    flex: none;
+  }
+
+  .discover-skeleton {
+    display: block;
+    border-radius: 6px;
+    background-color: var(--trip-ink-08);
+  }
+
+  .discover-skeleton-rows {
+    display: grid;
+    gap: 24px;
+    margin-top: 12px;
+  }
+
+  .discover-skeleton-rows > li {
+    display: grid;
+    gap: 8px;
+    padding-block: 12px;
+  }
+
+  .discover-skeleton-name {
+    width: 60%;
+    height: 16px;
+  }
+
+  .discover-skeleton-meta {
+    width: 40%;
+    height: 12px;
+  }
+
+  .discover-list-state {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-top: 12px;
+    color: var(--color-stone);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .discover-list-state > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+  }
+
+  .discover-list-state[data-tone="alert"] {
+    color: var(--color-ink);
+  }
+
+  .discover-list-state[data-tone="alert"] > svg {
+    color: var(--color-ember);
+  }
+
+  .discover-list-retry {
+    margin-top: 16px;
+  }
+
+  /* A new map area loading while the current rows stay (never announced). */
+  .discover-list-updating {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+    color: var(--color-stone);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .discover-list-updating > svg {
+    flex: none;
+    width: 14px;
+    height: 14px;
+  }
+
+  .discover-list-empty {
+    margin-top: 12px;
+    color: var(--color-stone);
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Trail name search (post-freeze polish): a compact field above the
+   * list's count line, and, while a query is typed, a results list that
+   * takes the rows' place and look. Focus stays in the field; the active
+   * result is drawn like the selected row plus a 2px `ink` outline.
+   * ------------------------------------------------------------------ */
+  .discover-search {
+    position: relative;
+    flex: none;
+    margin-bottom: 12px;
+  }
+
+  .discover-search-icon {
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: 12px;
+    width: 16px;
+    height: 16px;
+    translate: 0 -50%;
+    color: var(--color-stone);
+    pointer-events: none;
+  }
+
+  /* `snow` with a 1px `stone` edge, radius 10. 16px text: no zoom on
+     focus in mobile browsers. The ring comes from .trip-control. */
+  .discover-search-input {
+    display: block;
+    width: 100%;
+    min-height: 40px;
+    padding: 7px 12px 7px 36px;
+    border: 1px solid var(--color-stone);
+    border-radius: 10px;
+    background-color: var(--color-snow);
+    color: var(--color-ink);
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+
+  @media (pointer: coarse) {
+    .discover-search-input {
+      min-height: 44px;
+    }
+  }
+
+  .discover-search-input::placeholder {
+    color: var(--color-stone);
+    opacity: 1;
+  }
+
+  @media (hover: hover) {
+    .discover-search-input:hover {
+      border-color: var(--color-ink);
+    }
+  }
+
+  /* The same bleed and scrolling as the rows (.discover-rows). */
+  .discover-search-results {
+    flex: 0 1 auto;
+    min-height: 0;
+    margin-top: 12px;
+    margin-inline: -20px;
+    padding: 8px;
+    overflow-y: auto;
+    overscroll-behavior: auto;
+  }
+
+  .discover-search-option {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 10px 12px 10px 9px;
+    border-inline-start: 3px solid transparent;
+    border-radius: 12px;
+    color: var(--color-ink);
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  @media (pointer: coarse) {
+    .discover-search-option {
+      padding-block: 14px;
+    }
+  }
+
+  .discover-search-option + .discover-search-option::before {
+    content: "";
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline: 9px 12px;
+    border-top: 1px solid var(--trip-ink-12);
+    pointer-events: none;
+  }
+
+  .discover-search-option[aria-selected="true"]::before,
+  .discover-search-option[aria-selected="true"]
+    + .discover-search-option::before {
+    border-top-color: transparent;
+  }
+
+  @media (hover: hover) {
+    .discover-search-option:hover {
+      background-color: var(--discover-ink-04);
+    }
+  }
+
+  .discover-search-option:active {
+    background-color: var(--trip-ink-08);
+  }
+
+  .discover-search-option[aria-selected="true"] {
+    border-inline-start-color: var(--color-ink);
+    outline: 2px solid var(--color-ink);
+    outline-offset: -2px;
+    background-color: var(--trip-ink-06);
+  }
+
+  .discover-search-option[aria-selected="true"] .discover-row-meta {
+    color: var(--color-ink);
+  }
+
+  /* No match: `ink` text and an action, unlike the area's quiet `stone`
+     empty line (.discover-list-empty). */
+  .discover-search-none {
+    flex: none;
+    margin-top: 12px;
+  }
+
+  .discover-search-none-text {
+    color: var(--color-ink);
+    font-size: 1rem;
+    line-height: 1.5rem;
+    overflow-wrap: anywhere;
+  }
+
+  .discover-search-clear {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    margin-top: 12px;
+    padding: 8px 16px;
+    border: 1px solid var(--color-stone);
+    border-radius: 12px;
+    background-color: transparent;
+    color: var(--color-ink);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  @media (pointer: coarse) {
+    .discover-search-clear {
+      min-height: 44px;
+    }
+  }
+
+  @media (hover: hover) {
+    .discover-search-clear:hover {
+      background-color: var(--trip-ink-06);
+    }
+  }
+
+  .discover-search-clear:active {
+    background-color: var(--trip-ink-10);
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Rows (16.7.3). The `li` is static: it holds the button and, while its
+   * trail is selected, the popup. The row box is the button: a transparent
+   * 3px start border that the selected row fills, so nothing moves.
+   * Rows never expand.
+   * ------------------------------------------------------------------ */
+  .discover-row-button {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+    padding: 10px 12px 10px 9px;
+    border-inline-start: 3px solid transparent;
+    border-radius: 12px;
+    color: var(--color-ink);
+    text-align: start;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  @media (pointer: coarse) {
+    .discover-row-button {
+      padding-block: 14px;
+    }
+  }
+
+  /* 1px rules between rows, hidden above and below the selected row. */
+  .discover-row + .discover-row > .discover-row-button::before {
+    content: "";
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline: 9px 12px;
+    border-top: 1px solid var(--trip-ink-12);
+    pointer-events: none;
+  }
+
+  .discover-row-button[data-selected]::before,
+  .discover-row:has(> .discover-row-button[data-selected])
+    + .discover-row
+    > .discover-row-button::before {
+    border-top-color: transparent;
+  }
+
+  @media (hover: hover) {
+    .discover-row-button:not([data-selected]):hover {
+      background-color: var(--discover-ink-04);
+    }
+  }
+
+  /* Its marker is under the pointer (16.11.1). */
+  .discover-row-button[data-map-hover] {
+    background-color: var(--discover-ink-04);
+  }
+
+  .discover-row-button:not([data-selected]):active {
+    background-color: var(--trip-ink-08);
+  }
+
+  .discover-row-button[data-selected] {
+    border-inline-start-color: var(--color-ink);
+    background-color: var(--trip-ink-06);
+  }
+
+  .discover-row-name {
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+
+  .discover-row-meta {
+    margin-top: 2px;
+    color: var(--color-stone);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .discover-row-button[data-selected] .discover-row-meta {
+    color: var(--color-ink);
+  }
+
+  .discover-row-activity {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+  }
+
+  /* Loading: a static bar where the line will be. */
+  .discover-activity-bar {
+    width: 140px;
+    height: 12px;
+    margin-block: 4px;
+  }
+
+  .discover-row-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-top: 4px;
+    color: var(--color-stone);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .discover-row-note > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Activity glyph, 12px (16.8.6): hollow, dotted, or filled. It keeps its
+   * look in forced-colors mode, like the markers.
+   * ------------------------------------------------------------------ */
+  .discover-glyph {
+    flex: none;
+    display: grid;
+    place-items: center;
+    box-sizing: border-box;
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--color-ink);
+    border-radius: 50%;
+    background-color: var(--color-paper);
+    forced-color-adjust: none;
+  }
+
+  .discover-glyph[data-level="some"]::after {
+    content: "";
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background-color: var(--color-ink);
+  }
+
+  .discover-glyph[data-level="many"] {
+    border: none;
+    background-color: var(--color-ink);
+  }
+
+  /* ------------------------------------------------------------------ *
+   * The Trail Detail popup (16.9). In the DOM after its row; positioned
+   * over the map against the section (16.10, 16.11.2). Its place is
+   * written by the section; until then it is hidden.
+   * ------------------------------------------------------------------ */
+  .discover-popup {
+    position: absolute;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    width: var(--discover-popup-width);
+    max-height: calc(100% - 2 * var(--discover-inset));
+    border: 1px solid var(--discover-ink-24);
+    border-radius: 12px;
+    background-color: var(--color-paper);
+    box-shadow: 0 4px 16px rgb(11 28 32 / 0.16);
+    color: var(--color-ink);
+    cursor: auto;
+  }
+
+  .discover-popup:not([data-placed]) {
+    visibility: hidden;
+  }
+
+  /* FEATURE-010 §9.3, §18.3: from 1024px, while the Community rail is open,
+     the popup stays mounted and placed but is hidden (and inert), tip
+     included, so only one `paper` surface is over the map. It returns where
+     its anchor puts it, with no entrance animation. */
+  .discover-popup[data-community-hidden] {
+    visibility: hidden;
+  }
+
+  .discover-popup[data-placed] {
+    animation: discover-popup-in var(--duration-base) var(--ease-ui) both;
+  }
+
+  /* Opening: a 4px slide from the marker's side (16.14). */
+  .discover-popup[data-side="right"] {
+    --discover-popup-from: -4px;
+  }
+
+  .discover-popup[data-side="left"] {
+    --discover-popup-from: 4px;
+  }
+
+  /* Scrolls only when the safe-area height is reached. The tip is outside
+     it, so it is never clipped. */
+  .discover-popup-scroll {
+    min-height: 0;
+    overflow-y: auto;
+    border-radius: 11px;
+  }
+
+  /* The tip: a 12px square turned 45°, bordered on its two outer edges,
+     protruding 6px toward the marker, centred on the marker's y. */
+  .discover-popup-tip {
+    display: none;
+    position: absolute;
+    z-index: 1;
+    inset-block-start: calc(var(--discover-tip-y, 0px) - 7px);
+    width: 12px;
+    height: 12px;
+    background-color: var(--color-paper);
+    transform: rotate(45deg);
+    pointer-events: none;
+  }
+
+  .discover-popup[data-tip][data-side="right"] > .discover-popup-tip {
+    display: block;
+    inset-inline-start: -4.5px;
+    border-bottom: 1px solid var(--discover-ink-24);
+    border-left: 1px solid var(--discover-ink-24);
+  }
+
+  .discover-popup[data-tip][data-side="left"] > .discover-popup-tip {
+    display: block;
+    inset-inline-end: -4.5px;
+    border-top: 1px solid var(--discover-ink-24);
+    border-right: 1px solid var(--discover-ink-24);
+  }
+
+  .discover-popup-image {
+    display: block;
+    width: 100%;
+    aspect-ratio: 5 / 2;
+    border-start-start-radius: 11px;
+    border-start-end-radius: 11px;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity var(--duration-base) var(--ease-ui);
+  }
+
+  .discover-popup-image[data-ready] {
+    opacity: 1;
+  }
+
+  /* The text area: Close sits at its top right. */
+  .discover-popup-body {
+    position: relative;
+    padding: 20px;
+  }
+
+  .discover-popup-name {
+    padding-inline-end: 44px;
+    font-size: 1.125rem;
+    line-height: 1.5rem;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+
+  .discover-popup-scenery {
+    margin-top: 4px;
+    color: var(--color-stone);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .discover-popup-facts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 12px;
+    margin-top: 12px;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .discover-popup-fact dt {
+    color: var(--color-stone);
+  }
+
+  .discover-popup-fact dd {
+    color: var(--color-ink);
+    font-weight: 600;
+  }
+
+  .discover-popup-activity {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-top: 12px;
+    color: var(--color-ink);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+  }
+
+  /* The glyph sits on the first line; wrapped lines align with the text. */
+  .discover-popup-activity > .discover-glyph {
+    align-self: flex-start;
+    margin-top: 4px;
+  }
+
+  .discover-popup-activity[data-quiet],
+  .discover-popup-quiet {
+    color: var(--color-stone);
+    font-weight: 400;
+  }
+
+  .discover-popup-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-top: 8px;
+    color: var(--color-stone);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .discover-popup-note > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+  }
+
+  .discover-popup-description {
+    margin-top: 12px;
+    color: var(--color-ink);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    overflow-wrap: anywhere;
+  }
+
+  /* TD6: 8px below the description, else 12px below the activity. */
+  .discover-popup-sample {
+    margin-top: 12px;
+    color: var(--color-stone);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .discover-popup-description + .discover-popup-sample {
+    margin-top: 8px;
+  }
+
+  .discover-popup-primary,
+  .discover-popup-secondary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 16px;
+    border-radius: 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  /* The page's only `conifer` element (16.1). */
+  .discover-popup-primary {
+    margin-top: 16px;
+    /* An edge in forced-colors mode. */
+    border: 1px solid transparent;
+    background-color: var(--color-conifer);
+    color: var(--color-snow);
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: 600;
+  }
+
+  @media (hover: hover) {
+    .discover-popup-primary:not([aria-disabled="true"]):hover {
+      background-color: var(--color-conifer-deep);
+    }
+  }
+
+  .discover-popup-primary:not([aria-disabled="true"]):active {
+    background-color: var(--color-conifer-press);
+  }
+
+  .discover-popup-secondary {
+    margin-top: 8px;
+    border: 1px solid var(--color-stone);
+    background-color: transparent;
+    color: var(--color-ink);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+  }
+
+  @media (hover: hover) {
+    .discover-popup-secondary:not([aria-disabled="true"]):hover {
+      background-color: var(--trip-ink-06);
+    }
+  }
+
+  .discover-popup-secondary:not([aria-disabled="true"]):active {
+    background-color: var(--trip-ink-10);
+  }
+
+  .discover-popup-primary .landing-auth-spinner {
+    color: var(--color-snow);
+  }
+
+  .discover-popup-secondary .landing-auth-spinner {
+    color: var(--color-ink);
+  }
+
+  /* F3 (16.9.2): empty, the slot takes no space. */
+  .discover-popup-message {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-top: 8px;
+    color: var(--color-ink);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+    overflow-wrap: anywhere;
+    animation: trip-fade-in var(--duration-base) var(--ease-ui) both;
+  }
+
+  .discover-popup-message > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+    color: var(--color-ember);
+  }
+
+  /* Close: a 36px circle (44 on a coarse pointer), last in the DOM. */
+  .discover-popup-close {
+    position: absolute;
+    inset-block-start: 12px;
+    inset-inline-end: 12px;
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    color: var(--color-ink);
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  @media (pointer: coarse) {
+    .discover-popup-close {
+      width: 44px;
+      height: 44px;
+      inset-block-start: 8px;
+      inset-inline-end: 8px;
+    }
+  }
+
+  .discover-popup-close > svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  @media (hover: hover) {
+    .discover-popup-close:hover {
+      background-color: var(--trip-ink-06);
+    }
+  }
+
+  .discover-popup-close:active {
+    background-color: var(--trip-ink-10);
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Map region (16.7.1, 16.12 D6–D8). Its own stacking context, so the
+   * map library's layers stay inside it and the popup is drawn above.
+   * Over the map: zoom, attribution, marker labels, the gesture hint, and
+   * the map's own loading and failure states, nothing else.
+   * ------------------------------------------------------------------ */
+  .discover-map {
+    position: relative;
+    isolation: isolate;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    background-color: var(--map-land);
+    color: var(--color-ink);
+  }
+
+  .discover-map-canvas {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* The canvas's focus ring is drawn inset, over the map (16.13). */
+  .discover-map::after {
+    content: "";
+    position: absolute;
+    z-index: 6;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .discover-map:has(.maplibregl-canvas:focus-visible)::after {
+    box-shadow:
+      inset 0 0 0 2px var(--color-ink),
+      inset 0 0 0 4px var(--color-sun),
+      inset 0 0 0 6px var(--color-ink);
+  }
+
+  /* D6–D8: centred in the part of the region left of a docked popup. */
+  .discover-map-state {
+    position: absolute;
+    z-index: 5;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    padding-inline-end: calc(24px + var(--discover-docked-clearance, 0px));
+    background-color: var(--map-land);
+  }
+
+  .discover-map-state-block {
+    max-width: 320px;
+  }
+
+  .discover-map-state-line {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    color: var(--color-ink);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+  }
+
+  .discover-map-state-line > svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+  }
+
+  .discover-map-state-action {
+    margin-top: 16px;
+  }
+
+  /* The cooperative-gesture hint (16.8.3): an opaque `ink` box, no dimming.
+     The library's own message screen is not shown. */
+  .discover-map .maplibregl-cooperative-gesture-screen {
+    display: none;
+  }
+
+  .discover-hint {
+    position: absolute;
+    z-index: 4;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 16px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--duration-base) var(--ease-ui);
+  }
+
+  .discover-hint[data-visible] {
+    opacity: 1;
+    transition-duration: var(--duration-fast);
+  }
+
+  .discover-hint-box {
+    max-width: 320px;
+    padding: 8px 16px;
+    border-radius: 12px;
+    background-color: var(--color-ink);
+    color: var(--color-snow);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+    text-align: center;
+  }
+
+  /* Zoom (16.8.4): two buttons in one group, top right, inset P. */
+  .discover-zoom {
+    position: absolute;
+    z-index: 5;
+    inset-block-start: var(--discover-inset);
+    inset-inline-end: var(--discover-inset);
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--color-stone);
+    border-radius: 12px;
+    background-color: var(--color-paper);
+  }
+
+  .discover-zoom-button {
+    display: grid;
+    place-items: center;
+    width: var(--discover-zoom-size);
+    height: var(--discover-zoom-size);
+    color: var(--color-ink);
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  .discover-zoom-button:first-child {
+    border-radius: 11px 11px 0 0;
+  }
+
+  .discover-zoom-button:last-child {
+    border-top: 1px solid var(--trip-ink-12);
+    border-radius: 0 0 11px 11px;
+  }
+
+  .discover-zoom-button > svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  @media (hover: hover) {
+    .discover-zoom-button:not([aria-disabled="true"]):hover {
+      background-color: var(--trip-ink-06);
+    }
+  }
+
+  .discover-zoom-button:not([aria-disabled="true"]):active {
+    background-color: var(--trip-ink-10);
+  }
+
+  .discover-zoom-button[aria-disabled="true"] {
+    color: var(--color-stone);
+    cursor: default;
+  }
+
+  .discover-zoom-button:focus-visible {
+    position: relative;
+    z-index: 1;
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    box-shadow: var(--focus-ring);
+  }
+
+  /* Attribution (16.8.5): bottom right, always expanded, wrapping. */
+  .discover-attribution {
+    position: absolute;
+    z-index: 5;
+    inset-block-end: 0;
+    inset-inline-end: 0;
+    max-width: 100%;
+    padding: 4px 8px;
+    border-start-start-radius: 8px;
+    background-color: var(--color-paper);
+    color: var(--color-stone);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .discover-attribution-link {
+    border-radius: 4px;
+    color: var(--color-ink);
+    text-decoration-line: underline;
+    text-underline-offset: 2px;
+  }
+
+  @media (hover: hover) {
+    .discover-attribution-link:hover {
+      text-decoration-thickness: 2px;
+    }
+  }
+
+  .discover-attribution-link:focus-visible {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    box-shadow: var(--focus-ring);
+  }
+
+  /* ------------------------------------------------------------------ *
+   * The Community rail (FEATURE-010 §18.3). From 1024px it is docked over
+   * the map's far edge (its styles are in community-memories.css). While
+   * it is open the section carries `data-community-open` and the rail's
+   * width, and the map's overlays move clear of it so the zoom group and
+   * the licence text stay visible. Nothing else in the map changes.
+   * ------------------------------------------------------------------ */
+  @media (width >= 1024px) {
+    .discover[data-community-open] {
+      --community-panel-width: 360px;
+    }
+
+    .discover[data-community-open] .discover-zoom {
+      inset-inline-end: calc(
+        var(--discover-inset) + var(--community-panel-width)
+      );
+    }
+
+    .discover[data-community-open] .discover-attribution {
+      inset-inline-end: var(--community-panel-width);
+      max-width: calc(100% - var(--community-panel-width));
+    }
+
+    .discover[data-community-open] .discover-map-state {
+      padding-inline-end: calc(
+        24px + var(--discover-docked-clearance, 0px) +
+          var(--community-panel-width)
+      );
+    }
+
+    .discover[data-community-open] .discover-hint {
+      padding-inline-end: calc(16px + var(--community-panel-width));
+    }
+  }
+
+  @media (width >= 1280px) {
+    .discover[data-community-open] {
+      --community-panel-width: 380px;
+    }
+  }
+
+  @media (width >= 1440px) {
+    .discover[data-community-open] {
+      --community-panel-width: 400px;
+    }
+  }
+
+  @media (width >= 1680px) {
+    .discover[data-community-open] {
+      --community-panel-width: 440px;
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Trail points (16.8.6) are drawn by the map itself (a clustered GeoJSON
+   * source; see the runtime), so no DOM element exists per trail. The one
+   * hover label is a single reusable element over the map: `paper`, never
+   * interactive, never a count. To the point's right, or its left near the
+   * map's right edge; `--reach` is the point's radius plus 8px.
+   * ------------------------------------------------------------------ */
+  .discover-map-label {
+    --reach: 18px;
+
+    position: absolute;
+    z-index: 2;
+    width: max-content;
+    max-width: 240px;
+    padding: 4px 8px;
+    border: 1px solid var(--discover-ink-16);
+    border-radius: 8px;
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+    white-space: normal;
+    pointer-events: none;
+    transform: translate(var(--reach), -50%);
+    animation: trip-fade-in var(--duration-fast) var(--ease-ui) both;
+  }
+
+  .discover-map-label[hidden] {
+    display: none;
+  }
+
+  .discover-map-label[data-level="many"] {
+    --reach: 20px;
+  }
+
+  .discover-map-label[data-side="start"] {
+    transform: translate(calc(-100% - var(--reach)), -50%);
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Below 768px (16.16.3, best effort): one column, not tied to the
+   * viewport height. The heading, the map, then the list, which does not
+   * scroll by itself. The popup is in the flow under its row.
+   * ------------------------------------------------------------------ */
+  @media (width < 768px) {
+    .discover-rail {
+      display: contents;
+    }
+
+    .discover-heading {
+      order: 1;
+      padding: 24px var(--trip-gutter);
+    }
+
+    .discover-map {
+      order: 2;
+      height: clamp(320px, 56vh, 480px);
+      height: clamp(320px, 56dvh, 480px);
+    }
+
+    .discover-list {
+      order: 3;
+      margin-top: 0;
+      padding: 24px var(--trip-gutter);
+    }
+
+    /* The bleed never passes the gutter, so nothing scrolls sideways. */
+    .discover-rows,
+    .discover-search-results {
+      margin-inline: calc(-1 * min(20px, var(--trip-gutter)));
+      overflow-y: visible;
+    }
+
+    .discover-popup {
+      position: static;
+      width: auto;
+      max-height: none;
+      margin-block: 4px 8px;
+      box-shadow: none;
+    }
+
+    .discover-popup-tip {
+      display: none !important;
+    }
+
+    .discover-popup-scroll {
+      overflow: visible;
+    }
+  }
+}
+
+/* Popup entrance: opacity and a 4px slide from the marker's side (16.14). */
+@keyframes discover-popup-in {
+  from {
+    opacity: 0;
+    translate: var(--discover-popup-from, 0px) 0;
+  }
+}
+
+/* The map library's own canvas outline is replaced by the inset ring. */
+.discover-map .maplibregl-canvas:focus-visible {
+  outline: none;
+}
+
+@media (forced-colors: active) {
+  .discover-map .maplibregl-canvas:focus-visible {
+    outline: 2px solid CanvasText;
+    outline-offset: -4px;
+  }
+}
+
+/* Reduced motion (16.14): nothing eases, fades, or turns. Loaders stay,
+   static, with their text. */
+@media (prefers-reduced-motion: reduce) {
+  .discover-popup[data-placed],
+  .discover-popup-message,
+  .discover-map-label {
+    animation: none;
+  }
+
+  .discover-popup-image,
+  .discover-hint {
+    transition: none;
+  }
+
+  .public-home .trip-spin {
+    animation: none;
+  }
+
+  .discover-popup-primary[data-state="working"] {
+    background-color: var(--color-conifer-press);
+  }
+
+  .discover-popup-secondary[data-state="working"] {
+    background-color: var(--trip-ink-10);
+  }
+
+  .public-header-sign-in[data-state="working"] {
+    background-color: var(--trip-snow-20);
+  }
+}

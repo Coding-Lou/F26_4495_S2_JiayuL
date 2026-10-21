@@ -1,0 +1,2331 @@
+{
+ "avatar-base.glb": {
+  "report": {
+   "path": "/Users/jay/Desktop/F26_4495_S2_JiayuL/Project/Frontend/public/models/avatar/avatar-base.glb",
+   "bytes": 630128,
+   "sha256": "50b58cd3e285307c2433a6e78da27aa93f11c0058ea77e32e781e632ff235efb",
+   "header": {
+    "magic": "glTF",
+    "version": 2,
+    "declared": 630128,
+    "chunks": [
+     "JSON",
+     "BIN"
+    ]
+   },
+   "generator": "Khronos glTF Blender I/O v5.2.40",
+   "extensionsUsed": null,
+   "extensionsRequired": null,
+   "scene_roots": [
+    "Avatar_Root"
+   ],
+   "nodes": [
+    {
+     "name": "Breath",
+     "parent": "Chest",
+     "mesh": null,
+     "skin": null,
+     "world_t": [
+      0.0,
+      1.28,
+      0.06
+     ],
+     "world_rot_deg": 180.00001,
+     "world_s": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "local_s": null
+    },
+    {
+     "name": "Slot_Head",
+     "parent": "Head",
+     "mesh": null,
+     "skin": null,
+     "world_t": [
+      0.0,
+      1.65,
+      -0.015
+     ],
+     "world_rot_deg": 0.0,
+     "world_s": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "local_s": [
+      0.9999999403953552,
+      1,
+      1
+     ]
+    },
+    {
+     "name": "Head",
+     "parent": "Neck",
+     "mesh": null,
+     "skin": null,
+     "world_t": [
+      0.0,
+      1.5,
+      -0.015
+     ],
+     "world_rot_deg": 0.0,
+     "world_s": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "local_s": [
+      1,
+      0.9999999403953552,
+      0.9999999403953552
+     ]
+    },
+    {
+     "name": "Neck",
+     "parent": "Chest",
+     "mesh": null,
+     "skin": null,
+     "world_t": [
+      0.0,
+      1.43,
+      -0.02
+     ],
+     "world_rot_deg": 4.08555,
+     "world_s": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "local_s": null
+    },
+    {
+     "name": "Slot_Hand_L",
+     "parent": "Hand_L",
+     "mesh": null,
+     "skin": null,
+     "world_t": [
+      0.458716,
+      0.874037,
+      0.021419
+     ],
+     "world_rot_deg": 0.0,
+     "world_s": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "local_s": [
+      1,
+      1,
+      0.9999999403953552
+     ]
+    },
+    {
+     "name": "Hand_L",
+     "parent": "LowerArm_L",
+     "mesh": null,
+     "skin": null,
+     "world_t": [
+      0.444068,
+      0.95128,
+      0.010467
+     ],
+     "world_rot_deg": 150.05726,
+     "world_s": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "local_s": [
+      1,
+      1,
+      0.9999999403953552
+     ]
+    },
+    {
+     "name": "LowerArm_L",
+     "parent": "UpperArm_L",
+     "mesh": null,
+     "skin": null,
+     "world_t": [
+      0.32,
+      1.166173,
+      -0.02
+     ],
+     "world_rot_deg": 150.05725,
+     "world_s": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "local_s": [
+      1,
+      1,
+      0.9999999403953552
+     ]
+    },
+    {
+     "name": "UpperArm_L",
+     "parent": "Shoulder_L",
+     "mesh": null,
+     "skin": null,
+     "world_t": [
+      0.185,
+      1.4,
+      -0.02
+     ],
+     "world_rot_deg": 150.0,
+     "world_s": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "local_s": null
+    },
+    {
+     "name": "Shoulder_L",
+     "parent": "Chest",
+     "mesh": null,
+     "skin": null,
+     "world_t": [
+      0.03,
+      1.4,
+      -0.02
+     ],
+     "world_rot_deg": 90.0,
+     "world_s": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "local_s": null
+    },
+    {
+     "name": "Slot_Hand_R",
+     "parent": "Hand_R",
+     "mesh": null,
+     "skin": null,
+     "world_t": [
+      -0.458716,
+      0.874037,
+      0.021419
+     ],
+     "world_rot_deg": 0.0,
+     "world_s": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "local_s": [
+      1,
+      1,
+      0.9999999403953552
+     ]
+    },
+    {
+     "name": "Hand_R",
+     "parent": "LowerArm_R",
+     "mesh": null,
+     "skin": null,
+     "world_t": [
+      -0.444068,
+      0.95128,
+      0.010467
+     ],
+     "world_rot_deg": 150.05725,
+     "world_s": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "local_s": [
+      1,
+      1,
+      0.9999999403953552
+     ]
+    },
+    {
+     "name": "LowerArm_R",
+     "parent": "UpperArm_R",
+     "mesh": null,
+     "skin": null,
+     "world_t": [
+      -0.32,
+      1.166173,
+      -0.02
+     ],
+     "world_rot_deg": 150.05725,
+     "world_s": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "local_s": [
+      1,
+      1,
+      0.9999999403953552
+     ]
+    },
+    {
+     "name": "UpperArm_R",
+     "parent": "Shoulder_R",
+     "mesh": null,
+     "skin": null,
+     "world_t": [
+      -0.185,
+      1.4,
+      -0.02
+     ],
+     "world_rot_deg": 150.0,
+     "world_s": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "local_s": null
+    },
+    {
+     "name": "Shoulder_R",
+     "parent": "Chest",
+     "mesh": null,
+     "skin": null,
+     "world_t": [
+      -0.03,
+      1.4,
+      -0.02
+     ],
+     "world_rot_deg": 90.0,
+     "world_s": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "local_s": null
+    },
+    {
+     "name": "Slot_Back",
+     "parent": "Chest",
+     "mesh": null,
+     "skin": null,
+     "world_t": [
+      0.0,
+      1.3,
+      -0.105
+     ],
+     "world_rot_deg": 0.0,
+     "world_s": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "local_s": [
+      0.9999999403953552,
+      1,
+      0.9999999403953552
+     ]
+    },
+    {
+     "name": "Chest",
+     "parent": "Spine",
+     "mesh": null,
+     "skin": null,
+     "world_t": [
+      0.0,
+      1.2,
+      -0.015
+     ],
+     "world_rot_deg": 1.24425,
+     "world_s": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "local_s": null
+    },
+    {
+     "name": "Spine",
+     "parent": "Hips",
+     "mesh": null,
+     "skin": null,
+     "world_t": [
+      0.0,
+      1.05,
+      -0.01
+     ],
+     "world_rot_deg": 1.90899,
+     "world_s": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "local_s": [
+      1,
+      0.9999999403953552,
+      1
+     ]
+    },
+    {
+     "name": "Toes_L",
+     "parent": "Foot_L",
+     "mesh": null,
+     "skin": null,
+     "world_t": [
+      0.09,
+      0.02,
+      0.1
+     ],
+     "world_rot_deg": 180.00001,
+     "world_s": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "local_s": null
+    },
+    {
+     "name": "Foot_L",
+     "parent": "LowerLeg_L",
+     "mesh": null,
+     "skin": null,
+     "world_t": [
+      0.09,
+      0.09,
+      -0.03
+     ],
+     "world_rot_deg": 179.99999,
+     "world_s": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "local_s": [
+      1,
+      1.0000001192092896,
+      1
+     ]
+    },
+    {
+     "name": "LowerLeg_L",
+     "parent": "UpperLeg_L",
+     "mesh": null,
+     "skin": null,
+     "world_t": [
+      0.09,
+      0.5,
+      -0.006
+     ],
+     "world_rot_deg": 180.00001,
+     "world_s": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "local_s": [
+      1,
+      0.9999999403953552,
+      0.9999999403953552
+     ]
+    },
+    {
+     "name": "UpperLeg_L",
+     "parent": "Hips",
+     "mesh": null,
+     "skin": null,
+     "world_t": [
+      0.09,
+      0.93,
+      -0.01
+     ],
+     "world_rot_deg": 180.00001,
+     "world_s": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "local_s": [
+      1,
+      0.9999999403953552,
+      1
+     ]
+    },
+    {
+     "name": "Toes_R",
+     "parent": "Foot_R",
+     "mesh": null,
+     "skin": null,
+     "world_t": [
+      -0.09,
+      0.02,
+      0.1
+     ],
+     "world_rot_deg": 180.00001,
+     "world_s": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "local_s": null
+    },
+    {
+     "name": "Foot_R",
+     "parent": "LowerLeg_R",
+     "mesh": null,
+     "skin": null,
+     "world_t": [
+      -0.09,
+      0.09,
+      -0.03
+     ],
+     "world_rot_deg": 179.99999,
+     "world_s": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "local_s": [
+      1,
+      1.0000001192092896,
+      1
+     ]
+    },
+    {
+     "name": "LowerLeg_R",
+     "parent": "UpperLeg_R",
+     "mesh": null,
+     "skin": null,
+     "world_t": [
+      -0.09,
+      0.5,
+      -0.006
+     ],
+     "world_rot_deg": 180.00001,
+     "world_s": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "local_s": [
+      1,
+      0.9999999403953552,
+      0.9999999403953552
+     ]
+    },
+    {
+     "name": "UpperLeg_R",
+     "parent": "Hips",
+     "mesh": null,
+     "skin": null,
+     "world_t": [
+      -0.09,
+      0.93,
+      -0.01
+     ],
+     "world_rot_deg": 180.00001,
+     "world_s": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "local_s": [
+      1,
+      0.9999999403953552,
+      1
+     ]
+    },
+    {
+     "name": "Hips",
+     "parent": "Root",
+     "mesh": null,
+     "skin": null,
+     "world_t": [
+      0.0,
+      0.95,
+      -0.01
+     ],
+     "world_rot_deg": 0.0,
+     "world_s": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "local_s": null
+    },
+    {
+     "name": "Root",
+     "parent": "Avatar_Armature",
+     "mesh": null,
+     "skin": null,
+     "world_t": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "world_rot_deg": 0.0,
+     "world_s": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "local_s": null
+    },
+    {
+     "name": "Avatar_Hair_Base",
+     "parent": "Avatar_Armature",
+     "mesh": "Avatar_Hair_Base_Mesh",
+     "skin": 0,
+     "world_t": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "world_rot_deg": 0.0,
+     "world_s": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "local_s": null
+    },
+    {
+     "name": "Avatar_Hair_Top",
+     "parent": "Avatar_Armature",
+     "mesh": "Avatar_Hair_Top_Mesh",
+     "skin": 0,
+     "world_t": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "world_rot_deg": 0.0,
+     "world_s": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "local_s": null
+    },
+    {
+     "name": "Avatar_Hands",
+     "parent": "Avatar_Armature",
+     "mesh": "Avatar_Hands_Mesh",
+     "skin": 0,
+     "world_t": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "world_rot_deg": 0.0,
+     "world_s": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "local_s": null
+    },
+    {
+     "name": "Avatar_Head",
+     "parent": "Avatar_Armature",
+     "mesh": "Avatar_Head_Mesh",
+     "skin": 0,
+     "world_t": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "world_rot_deg": 0.0,
+     "world_s": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "local_s": null
+    },
+    {
+     "name": "Avatar_Legs",
+     "parent": "Avatar_Armature",
+     "mesh": "Avatar_Legs_Mesh",
+     "skin": 0,
+     "world_t": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "world_rot_deg": 0.0,
+     "world_s": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "local_s": null
+    },
+    {
+     "name": "Avatar_Shoes_Default",
+     "parent": "Avatar_Armature",
+     "mesh": "Avatar_Shoes_Default_Mesh",
+     "skin": 0,
+     "world_t": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "world_rot_deg": 0.0,
+     "world_s": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "local_s": null
+    },
+    {
+     "name": "Avatar_Top_Base",
+     "parent": "Avatar_Armature",
+     "mesh": "Avatar_Top_Base_Mesh",
+     "skin": 0,
+     "world_t": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "world_rot_deg": 0.0,
+     "world_s": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "local_s": null
+    },
+    {
+     "name": "Wear_Boots",
+     "parent": "Avatar_Armature",
+     "mesh": "Wear_Boots_Mesh",
+     "skin": 0,
+     "world_t": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "world_rot_deg": 0.0,
+     "world_s": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "local_s": null
+    },
+    {
+     "name": "Wear_Shell",
+     "parent": "Avatar_Armature",
+     "mesh": "Wear_Shell_Mesh",
+     "skin": 0,
+     "world_t": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "world_rot_deg": 0.0,
+     "world_s": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "local_s": null
+    },
+    {
+     "name": "Wear_WarmLayer_Body",
+     "parent": "Avatar_Armature",
+     "mesh": "Wear_WarmLayer_Body_Mesh",
+     "skin": 0,
+     "world_t": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "world_rot_deg": 0.0,
+     "world_s": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "local_s": null
+    },
+    {
+     "name": "Wear_WarmLayer_Collar",
+     "parent": "Avatar_Armature",
+     "mesh": "Wear_WarmLayer_Collar_Mesh",
+     "skin": 0,
+     "world_t": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "world_rot_deg": 0.0,
+     "world_s": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "local_s": null
+    },
+    {
+     "name": "Avatar_Armature",
+     "parent": "Avatar_Root",
+     "mesh": null,
+     "skin": null,
+     "world_t": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "world_rot_deg": 0.0,
+     "world_s": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "local_s": null
+    },
+    {
+     "name": "Avatar_Root",
+     "parent": null,
+     "mesh": null,
+     "skin": null,
+     "world_t": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "world_rot_deg": 0.0,
+     "world_s": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "local_s": null
+    }
+   ],
+   "mesh_names": [
+    "Avatar_Hair_Base_Mesh",
+    "Avatar_Hair_Top_Mesh",
+    "Avatar_Hands_Mesh",
+    "Avatar_Head_Mesh",
+    "Avatar_Legs_Mesh",
+    "Avatar_Shoes_Default_Mesh",
+    "Avatar_Top_Base_Mesh",
+    "Wear_Boots_Mesh",
+    "Wear_Shell_Mesh",
+    "Wear_WarmLayer_Body_Mesh",
+    "Wear_WarmLayer_Collar_Mesh"
+   ],
+   "material_names": [
+    "Avatar_Mat_Hair",
+    "Avatar_Mat_Skin",
+    "Avatar_Mat_Eye",
+    "Avatar_Mat_EyeLight",
+    "Avatar_Mat_Trousers",
+    "Avatar_Mat_Shoe",
+    "Avatar_Mat_Sole",
+    "Avatar_Mat_Top",
+    "Wear_Mat_Boot",
+    "Wear_Mat_Shell",
+    "Wear_Mat_ShellTrim",
+    "Wear_Mat_Fleece"
+   ],
+   "skins": [
+    {
+     "name": "Avatar_Armature",
+     "joints": [
+      "Root",
+      "Hips",
+      "Spine",
+      "Chest",
+      "Breath",
+      "Neck",
+      "Head",
+      "Shoulder_L",
+      "UpperArm_L",
+      "LowerArm_L",
+      "Hand_L",
+      "Shoulder_R",
+      "UpperArm_R",
+      "LowerArm_R",
+      "Hand_R",
+      "UpperLeg_L",
+      "LowerLeg_L",
+      "Foot_L",
+      "Toes_L",
+      "UpperLeg_R",
+      "LowerLeg_R",
+      "Foot_R",
+      "Toes_R"
+     ]
+    }
+   ],
+   "animation_names": [
+    "Idle"
+   ],
+   "tris_per_mesh": {
+    "Avatar_Hair_Base_Mesh": 546,
+    "Avatar_Hair_Top_Mesh": 1538,
+    "Avatar_Hands_Mesh": 608,
+    "Avatar_Head_Mesh": 3196,
+    "Avatar_Legs_Mesh": 1352,
+    "Avatar_Shoes_Default_Mesh": 1104,
+    "Avatar_Top_Base_Mesh": 2048,
+    "Wear_Boots_Mesh": 1536,
+    "Wear_Shell_Mesh": 3064,
+    "Wear_WarmLayer_Body_Mesh": 2048,
+    "Wear_WarmLayer_Collar_Mesh": 576
+   },
+   "tris_total": 17616,
+   "primitives": 16,
+   "materials_per_mesh": {
+    "Avatar_Hair_Base": [
+     "Avatar_Mat_Hair"
+    ],
+    "Avatar_Hair_Top": [
+     "Avatar_Mat_Hair"
+    ],
+    "Avatar_Hands": [
+     "Avatar_Mat_Skin"
+    ],
+    "Avatar_Head": [
+     "Avatar_Mat_Skin",
+     "Avatar_Mat_Eye",
+     "Avatar_Mat_EyeLight"
+    ],
+    "Avatar_Legs": [
+     "Avatar_Mat_Trousers"
+    ],
+    "Avatar_Shoes_Default": [
+     "Avatar_Mat_Shoe",
+     "Avatar_Mat_Sole"
+    ],
+    "Avatar_Top_Base": [
+     "Avatar_Mat_Top"
+    ],
+    "Wear_Boots": [
+     "Wear_Mat_Boot",
+     "Avatar_Mat_Sole"
+    ],
+    "Wear_Shell": [
+     "Wear_Mat_Shell",
+     "Wear_Mat_ShellTrim"
+    ],
+    "Wear_WarmLayer_Body": [
+     "Wear_Mat_Fleece"
+    ],
+    "Wear_WarmLayer_Collar": [
+     "Wear_Mat_Fleece"
+    ]
+   },
+   "materials": {
+    "Avatar_Mat_Hair": {
+     "baseColorFactor": [
+      0.25818,
+      0.11193,
+      0.04971,
+      1
+     ],
+     "expected": [
+      0.25818,
+      0.11193,
+      0.04971
+     ],
+     "max_dev": 0.0,
+     "metallic": 0,
+     "roughness": "absent=1",
+     "doubleSided": "absent=false",
+     "alphaMode": "absent=OPAQUE",
+     "extensions": [],
+     "ok": true
+    },
+    "Avatar_Mat_Skin": {
+     "baseColorFactor": [
+      0.81485,
+      0.48515,
+      0.31399,
+      1
+     ],
+     "expected": [
+      0.81485,
+      0.48515,
+      0.31399
+     ],
+     "max_dev": 0.0,
+     "metallic": 0,
+     "roughness": "absent=1",
+     "doubleSided": "absent=false",
+     "alphaMode": "absent=OPAQUE",
+     "extensions": [],
+     "ok": true
+    },
+    "Avatar_Mat_Eye": {
+     "baseColorFactor": [
+      0.01033,
+      0.00802,
+      0.007,
+      1
+     ],
+     "expected": [
+      0.01033,
+      0.00802,
+      0.007
+     ],
+     "max_dev": 0.0,
+     "metallic": 0,
+     "roughness": "absent=1",
+     "doubleSided": "absent=false",
+     "alphaMode": "absent=OPAQUE",
+     "extensions": [],
+     "ok": true
+    },
+    "Avatar_Mat_EyeLight": {
+     "baseColorFactor": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "expected": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "max_dev": 0.0,
+     "metallic": 0,
+     "roughness": "absent=1",
+     "doubleSided": "absent=false",
+     "alphaMode": "absent=OPAQUE",
+     "extensions": [],
+     "ok": true
+    },
+    "Avatar_Mat_Trousers": {
+     "baseColorFactor": [
+      0.17465,
+      0.21586,
+      0.19807,
+      1
+     ],
+     "expected": [
+      0.17465,
+      0.21586,
+      0.19807
+     ],
+     "max_dev": 0.0,
+     "metallic": 0,
+     "roughness": "absent=1",
+     "doubleSided": "absent=false",
+     "alphaMode": "absent=OPAQUE",
+     "extensions": [],
+     "ok": true
+    },
+    "Avatar_Mat_Shoe": {
+     "baseColorFactor": [
+      0.48515,
+      0.51492,
+      0.48515,
+      1
+     ],
+     "expected": [
+      0.48515,
+      0.51492,
+      0.48515
+     ],
+     "max_dev": 0.0,
+     "metallic": 0,
+     "roughness": "absent=1",
+     "doubleSided": "absent=false",
+     "alphaMode": "absent=OPAQUE",
+     "extensions": [],
+     "ok": true
+    },
+    "Avatar_Mat_Sole": {
+     "baseColorFactor": [
+      0.0331,
+      0.05127,
+      0.04971,
+      1
+     ],
+     "expected": [
+      0.0331,
+      0.05127,
+      0.04971
+     ],
+     "max_dev": 0.0,
+     "metallic": 0,
+     "roughness": "absent=1",
+     "doubleSided": "absent=false",
+     "alphaMode": "absent=OPAQUE",
+     "extensions": [],
+     "ok": true
+    },
+    "Avatar_Mat_Top": {
+     "baseColorFactor": [
+      0.33716,
+      0.40198,
+      0.34191,
+      1
+     ],
+     "expected": [
+      0.33716,
+      0.40198,
+      0.34191
+     ],
+     "max_dev": 0.0,
+     "metallic": 0,
+     "roughness": "absent=1",
+     "doubleSided": "absent=false",
+     "alphaMode": "absent=OPAQUE",
+     "extensions": [],
+     "ok": true
+    },
+    "Wear_Mat_Boot": {
+     "baseColorFactor": [
+      0.32314,
+      0.14413,
+      0.05951,
+      1
+     ],
+     "expected": [
+      0.32314,
+      0.14413,
+      0.05951
+     ],
+     "max_dev": 0.0,
+     "metallic": 0,
+     "roughness": "absent=1",
+     "doubleSided": "absent=false",
+     "alphaMode": "absent=OPAQUE",
+     "extensions": [],
+     "ok": true
+    },
+    "Wear_Mat_Shell": {
+     "baseColorFactor": [
+      0.62396,
+      0.14413,
+      0.0319,
+      1
+     ],
+     "expected": [
+      0.62396,
+      0.14413,
+      0.0319
+     ],
+     "max_dev": 0.0,
+     "metallic": 0,
+     "roughness": "absent=1",
+     "doubleSided": "absent=false",
+     "alphaMode": "absent=OPAQUE",
+     "extensions": [],
+     "ok": true
+    },
+    "Wear_Mat_ShellTrim": {
+     "baseColorFactor": [
+      0.2705,
+      0.05781,
+      0.01444,
+      1
+     ],
+     "expected": [
+      0.2705,
+      0.05781,
+      0.01444
+     ],
+     "max_dev": 0.0,
+     "metallic": 0,
+     "roughness": "absent=1",
+     "doubleSided": "absent=false",
+     "alphaMode": "absent=OPAQUE",
+     "extensions": [],
+     "ok": true
+    },
+    "Wear_Mat_Fleece": {
+     "baseColorFactor": [
+      0.82279,
+      0.73791,
+      0.57758,
+      1
+     ],
+     "expected": [
+      0.82279,
+      0.73791,
+      0.57758
+     ],
+     "max_dev": 0.0,
+     "metallic": 0,
+     "roughness": "absent=1",
+     "doubleSided": "absent=false",
+     "alphaMode": "absent=OPAQUE",
+     "extensions": [],
+     "ok": true
+    }
+   },
+   "tris_default_visible": 10392,
+   "tris_worst_loadout_avatar_part": 12416,
+   "slots": {
+    "Slot_Head": {
+     "world_t_G": [
+      0.0,
+      1.65,
+      -0.015
+     ],
+     "world_rot_deg": 0.0,
+     "world_s": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "offset_from_nominal": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "Slot_Back": {
+     "world_t_G": [
+      0.0,
+      1.3,
+      -0.105
+     ],
+     "world_rot_deg": 0.0,
+     "world_s": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "offset_from_nominal": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "Slot_Hand_L": {
+     "world_t_G": [
+      0.458716,
+      0.874037,
+      0.021419
+     ],
+     "world_rot_deg": 0.0,
+     "world_s": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "offset_from_nominal": [
+      -0.01628,
+      -0.02096,
+      0.01142
+     ]
+    },
+    "Slot_Hand_R": {
+     "world_t_G": [
+      -0.458716,
+      0.874037,
+      0.021419
+     ],
+     "world_rot_deg": 0.0,
+     "world_s": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "offset_from_nominal": [
+      0.01628,
+      -0.02096,
+      0.01142
+     ]
+    }
+   },
+   "extents_B": {
+    "lowest_z": 0,
+    "highest_z": 1.75241,
+    "highest_mesh": "Avatar_Hair_Top_Mesh",
+    "x": [
+     -0.50118,
+     0.50118
+    ],
+    "x_extent": 1.00235,
+    "x_asym": 0.0,
+    "y_extent": 0.333,
+    "boots_low": 0,
+    "shoes_low": 0
+   },
+   "facing": {
+    "eye_min_z": 0.06091,
+    "slot_back_z": -0.105,
+    "toesL_minus_footL_z": 0.13,
+    "slot_hand_x": [
+     0.458716,
+     -0.458716
+    ],
+    "head_joint_y": 1.5
+   },
+   "animation_channels": [
+    {
+     "animation": "Idle",
+     "node": "Breath",
+     "path": "translation",
+     "interp": "LINEAR",
+     "keys": 121,
+     "t_first": 0.0,
+     "t_last": 4.0,
+     "first_minus_rest": 7.450580596923828e-09,
+     "first_minus_last": 0.0,
+     "max_motion": 0.005148,
+     "unit": "m"
+    },
+    {
+     "animation": "Idle",
+     "node": "Neck",
+     "path": "rotation",
+     "interp": "LINEAR",
+     "keys": 121,
+     "t_first": 0.0,
+     "t_last": 4.0,
+     "first_minus_rest": 1.7763568394002505e-15,
+     "first_minus_last": 0.0,
+     "max_motion": 0.497321,
+     "unit": "deg"
+    },
+    {
+     "animation": "Idle",
+     "node": "Head",
+     "path": "rotation",
+     "interp": "LINEAR",
+     "keys": 121,
+     "t_first": 0.0,
+     "t_last": 4.0,
+     "first_minus_rest": 0.0,
+     "first_minus_last": 0.0,
+     "max_motion": 0.800148,
+     "unit": "deg"
+    }
+   ]
+  },
+  "checks": {
+   "header": true,
+   "size_budget": true,
+   "asset_version": true,
+   "extensions": true,
+   "one_scene": true,
+   "one_embedded_buffer": true,
+   "no_images_textures_samplers_cameras_lights": true,
+   "node_scale_1": true,
+   "no_dup_suffix_no_neutral_bone": true,
+   "primitive_attributes": true,
+   "materials": true,
+   "scene_roots": true,
+   "root_and_armature_identity": true,
+   "joints_23": true,
+   "slots_parents": true,
+   "mesh_nodes_11": true,
+   "skinned_under_root": true,
+   "total_nodes_40": true,
+   "skin": true,
+   "materials_12": true,
+   "material_use_per_mesh": true,
+   "primitives_le_20": true,
+   "tris": true,
+   "slots_world": true,
+   "extents": true,
+   "facing": true,
+   "animation": true
+  },
+  "reimport": {
+   "result": [
+    "FINISHED"
+   ],
+   "objects": [
+    {
+     "name": "Avatar_Armature",
+     "type": "ARMATURE",
+     "parent": "Avatar_Root",
+     "parent_bone": null,
+     "world_t": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "bones": 23,
+     "bone_names_ok": true
+    },
+    {
+     "name": "Avatar_Hair_Base",
+     "type": "MESH",
+     "parent": "Avatar_Armature",
+     "parent_bone": null,
+     "world_t": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "mats": [
+      "Avatar_Mat_Hair"
+     ],
+     "backface_culling": [
+      true
+     ]
+    },
+    {
+     "name": "Avatar_Hair_Top",
+     "type": "MESH",
+     "parent": "Avatar_Armature",
+     "parent_bone": null,
+     "world_t": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "mats": [
+      "Avatar_Mat_Hair"
+     ],
+     "backface_culling": [
+      true
+     ]
+    },
+    {
+     "name": "Avatar_Hands",
+     "type": "MESH",
+     "parent": "Avatar_Armature",
+     "parent_bone": null,
+     "world_t": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "mats": [
+      "Avatar_Mat_Skin"
+     ],
+     "backface_culling": [
+      true
+     ]
+    },
+    {
+     "name": "Avatar_Head",
+     "type": "MESH",
+     "parent": "Avatar_Armature",
+     "parent_bone": null,
+     "world_t": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "mats": [
+      "Avatar_Mat_Skin",
+      "Avatar_Mat_Eye",
+      "Avatar_Mat_EyeLight"
+     ],
+     "backface_culling": [
+      true,
+      true,
+      true
+     ]
+    },
+    {
+     "name": "Avatar_Legs",
+     "type": "MESH",
+     "parent": "Avatar_Armature",
+     "parent_bone": null,
+     "world_t": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "mats": [
+      "Avatar_Mat_Trousers"
+     ],
+     "backface_culling": [
+      true
+     ]
+    },
+    {
+     "name": "Avatar_Root",
+     "type": "EMPTY",
+     "parent": null,
+     "parent_bone": null,
+     "world_t": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "name": "Avatar_Shoes_Default",
+     "type": "MESH",
+     "parent": "Avatar_Armature",
+     "parent_bone": null,
+     "world_t": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "mats": [
+      "Avatar_Mat_Shoe",
+      "Avatar_Mat_Sole"
+     ],
+     "backface_culling": [
+      true,
+      true
+     ]
+    },
+    {
+     "name": "Avatar_Top_Base",
+     "type": "MESH",
+     "parent": "Avatar_Armature",
+     "parent_bone": null,
+     "world_t": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "mats": [
+      "Avatar_Mat_Top"
+     ],
+     "backface_culling": [
+      true
+     ]
+    },
+    {
+     "name": "Slot_Back",
+     "type": "EMPTY",
+     "parent": "Avatar_Armature",
+     "parent_bone": "Chest",
+     "world_t": [
+      -0.0,
+      0.105,
+      1.3
+     ]
+    },
+    {
+     "name": "Slot_Hand_L",
+     "type": "EMPTY",
+     "parent": "Avatar_Armature",
+     "parent_bone": "Hand_L",
+     "world_t": [
+      0.45872,
+      -0.02142,
+      0.87404
+     ]
+    },
+    {
+     "name": "Slot_Hand_R",
+     "type": "EMPTY",
+     "parent": "Avatar_Armature",
+     "parent_bone": "Hand_R",
+     "world_t": [
+      -0.45872,
+      -0.02142,
+      0.87404
+     ]
+    },
+    {
+     "name": "Slot_Head",
+     "type": "EMPTY",
+     "parent": "Avatar_Armature",
+     "parent_bone": "Head",
+     "world_t": [
+      0.0,
+      0.015,
+      1.65
+     ]
+    },
+    {
+     "name": "Wear_Boots",
+     "type": "MESH",
+     "parent": "Avatar_Armature",
+     "parent_bone": null,
+     "world_t": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "mats": [
+      "Wear_Mat_Boot",
+      "Avatar_Mat_Sole"
+     ],
+     "backface_culling": [
+      true,
+      true
+     ]
+    },
+    {
+     "name": "Wear_Shell",
+     "type": "MESH",
+     "parent": "Avatar_Armature",
+     "parent_bone": null,
+     "world_t": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "mats": [
+      "Wear_Mat_Shell",
+      "Wear_Mat_ShellTrim"
+     ],
+     "backface_culling": [
+      true,
+      true
+     ]
+    },
+    {
+     "name": "Wear_WarmLayer_Body",
+     "type": "MESH",
+     "parent": "Avatar_Armature",
+     "parent_bone": null,
+     "world_t": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "mats": [
+      "Wear_Mat_Fleece"
+     ],
+     "backface_culling": [
+      true
+     ]
+    },
+    {
+     "name": "Wear_WarmLayer_Collar",
+     "type": "MESH",
+     "parent": "Avatar_Armature",
+     "parent_bone": null,
+     "world_t": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "mats": [
+      "Wear_Mat_Fleece"
+     ],
+     "backface_culling": [
+      true
+     ]
+    }
+   ],
+   "actions": [
+    "Idle"
+   ],
+   "collections": [],
+   "world_bounds_B": {
+    "x": [
+     -0.5012,
+     0.5012
+    ],
+    "y": [
+     -0.192,
+     0.141
+    ],
+    "z": [
+     -0.0,
+     1.7524
+    ]
+   }
+  }
+ },
+ "gear-backpack.glb": {
+  "report": {
+   "path": "/Users/jay/Desktop/F26_4495_S2_JiayuL/Project/Frontend/public/models/gear/gear-backpack.glb",
+   "bytes": 79208,
+   "sha256": "2bcd49ab28146e9f3086b3bc49c9ce157e009d2b23b71823f245e7a7de1d7938",
+   "header": {
+    "magic": "glTF",
+    "version": 2,
+    "declared": 79208,
+    "chunks": [
+     "JSON",
+     "BIN"
+    ]
+   },
+   "generator": "Khronos glTF Blender I/O v5.2.40",
+   "extensionsUsed": null,
+   "extensionsRequired": null,
+   "scene_roots": [
+    "Gear_Backpack"
+   ],
+   "nodes": [
+    {
+     "name": "Gear_Backpack",
+     "parent": null,
+     "mesh": "Gear_Backpack_Mesh",
+     "skin": null,
+     "world_t": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "world_rot_deg": 0.0,
+     "world_s": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "local_s": null
+    }
+   ],
+   "mesh_names": [
+    "Gear_Backpack_Mesh"
+   ],
+   "material_names": [
+    "Gear_Mat_Pack_Body",
+    "Gear_Mat_Pack_Trim",
+    "Gear_Mat_Pack_Accent"
+   ],
+   "skins": [],
+   "animation_names": [],
+   "tris_per_mesh": {
+    "Gear_Backpack_Mesh": 3368
+   },
+   "tris_total": 3368,
+   "primitives": 3,
+   "materials_per_mesh": {
+    "Gear_Backpack": [
+     "Gear_Mat_Pack_Body",
+     "Gear_Mat_Pack_Trim",
+     "Gear_Mat_Pack_Accent"
+    ]
+   },
+   "materials": {
+    "Gear_Mat_Pack_Body": {
+     "baseColorFactor": [
+      0.65837,
+      0.32778,
+      0.04231,
+      1
+     ],
+     "expected": [
+      0.65837,
+      0.32778,
+      0.04231
+     ],
+     "max_dev": 0.0,
+     "metallic": 0,
+     "roughness": "absent=1",
+     "doubleSided": "absent=false",
+     "alphaMode": "absent=OPAQUE",
+     "extensions": [],
+     "ok": true
+    },
+    "Gear_Mat_Pack_Trim": {
+     "baseColorFactor": [
+      0.02843,
+      0.04374,
+      0.04667,
+      1
+     ],
+     "expected": [
+      0.02843,
+      0.04374,
+      0.04667
+     ],
+     "max_dev": 0.0,
+     "metallic": 0,
+     "roughness": "absent=1",
+     "doubleSided": "absent=false",
+     "alphaMode": "absent=OPAQUE",
+     "extensions": [],
+     "ok": true
+    },
+    "Gear_Mat_Pack_Accent": {
+     "baseColorFactor": [
+      0.93011,
+      0.9131,
+      0.86316,
+      1
+     ],
+     "expected": [
+      0.93011,
+      0.9131,
+      0.86316
+     ],
+     "max_dev": 0.0,
+     "metallic": 0,
+     "roughness": "absent=1",
+     "doubleSided": "absent=false",
+     "alphaMode": "absent=OPAQUE",
+     "extensions": [],
+     "ok": true
+    }
+   },
+   "assembled_B": {
+    "Gear_Backpack": {
+     "local_lowest_Gy": -0.36744,
+     "slot_Gy": 1.3,
+     "x": [
+      -0.19021,
+      0.19021
+     ],
+     "y": [
+      -0.13494,
+      0.31844
+     ],
+     "z": [
+      0.93256,
+      1.47689
+     ]
+    }
+   }
+  },
+  "checks": {
+   "header": true,
+   "size_budget": true,
+   "asset_version": true,
+   "extensions": true,
+   "one_scene": true,
+   "one_embedded_buffer": true,
+   "no_images_textures_samplers_cameras_lights": true,
+   "node_scale_1": true,
+   "no_dup_suffix_no_neutral_bone": true,
+   "primitive_attributes": true,
+   "materials": true,
+   "scene_roots": true,
+   "no_other_nodes": true,
+   "attach_identity": true,
+   "meshes": true,
+   "no_skins_animations": true,
+   "primitives": true,
+   "tris": true,
+   "extents": true
+  },
+  "reimport": {
+   "result": [
+    "FINISHED"
+   ],
+   "objects": [
+    {
+     "name": "Gear_Backpack",
+     "type": "MESH",
+     "parent": null,
+     "parent_bone": null,
+     "world_t": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "mats": [
+      "Gear_Mat_Pack_Body",
+      "Gear_Mat_Pack_Trim",
+      "Gear_Mat_Pack_Accent"
+     ],
+     "backface_culling": [
+      true,
+      true,
+      true
+     ]
+    }
+   ],
+   "actions": [],
+   "collections": [],
+   "world_bounds_B": {
+    "x": [
+     -0.1902,
+     0.1902
+    ],
+    "y": [
+     -0.2399,
+     0.2134
+    ],
+    "z": [
+     -0.3674,
+     0.1769
+    ]
+   }
+  }
+ },
+ "gear-trekking-poles.glb": {
+  "report": {
+   "path": "/Users/jay/Desktop/F26_4495_S2_JiayuL/Project/Frontend/public/models/gear/gear-trekking-poles.glb",
+   "bytes": 31824,
+   "sha256": "89f2da06305445d2f1a0eda1e298eea05d3f572790a53338c9f956c8249e3b21",
+   "header": {
+    "magic": "glTF",
+    "version": 2,
+    "declared": 31824,
+    "chunks": [
+     "JSON",
+     "BIN"
+    ]
+   },
+   "generator": "Khronos glTF Blender I/O v5.2.40",
+   "extensionsUsed": null,
+   "extensionsRequired": null,
+   "scene_roots": [
+    "Gear_TrekkingPole_L",
+    "Gear_TrekkingPole_R"
+   ],
+   "nodes": [
+    {
+     "name": "Gear_TrekkingPole_L",
+     "parent": null,
+     "mesh": "Gear_TrekkingPole_L_Mesh",
+     "skin": null,
+     "world_t": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "world_rot_deg": 0.0,
+     "world_s": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "local_s": null
+    },
+    {
+     "name": "Gear_TrekkingPole_R",
+     "parent": null,
+     "mesh": "Gear_TrekkingPole_R_Mesh",
+     "skin": null,
+     "world_t": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "world_rot_deg": 0.0,
+     "world_s": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "local_s": null
+    }
+   ],
+   "mesh_names": [
+    "Gear_TrekkingPole_L_Mesh",
+    "Gear_TrekkingPole_R_Mesh"
+   ],
+   "material_names": [
+    "Gear_Mat_Pole_Shaft",
+    "Gear_Mat_Pole_Grip",
+    "Gear_Mat_Pole_Accent"
+   ],
+   "skins": [],
+   "animation_names": [],
+   "tris_per_mesh": {
+    "Gear_TrekkingPole_L_Mesh": 688,
+    "Gear_TrekkingPole_R_Mesh": 688
+   },
+   "tris_total": 1376,
+   "primitives": 6,
+   "materials_per_mesh": {
+    "Gear_TrekkingPole_L": [
+     "Gear_Mat_Pole_Shaft",
+     "Gear_Mat_Pole_Grip",
+     "Gear_Mat_Pole_Accent"
+    ],
+    "Gear_TrekkingPole_R": [
+     "Gear_Mat_Pole_Shaft",
+     "Gear_Mat_Pole_Grip",
+     "Gear_Mat_Pole_Accent"
+    ]
+   },
+   "materials": {
+    "Gear_Mat_Pole_Shaft": {
+     "baseColorFactor": [
+      0.58408,
+      0.62396,
+      0.60383,
+      1
+     ],
+     "expected": [
+      0.58408,
+      0.62396,
+      0.60383
+     ],
+     "max_dev": 0.0,
+     "metallic": 0,
+     "roughness": "absent=1",
+     "doubleSided": "absent=false",
+     "alphaMode": "absent=OPAQUE",
+     "extensions": [],
+     "ok": true
+    },
+    "Gear_Mat_Pole_Grip": {
+     "baseColorFactor": [
+      0.57758,
+      0.32778,
+      0.14413,
+      1
+     ],
+     "expected": [
+      0.57758,
+      0.32778,
+      0.14413
+     ],
+     "max_dev": 0.0,
+     "metallic": 0,
+     "roughness": "absent=1",
+     "doubleSided": "absent=false",
+     "alphaMode": "absent=OPAQUE",
+     "extensions": [],
+     "ok": true
+    },
+    "Gear_Mat_Pole_Accent": {
+     "baseColorFactor": [
+      0.62396,
+      0.14413,
+      0.0319,
+      1
+     ],
+     "expected": [
+      0.62396,
+      0.14413,
+      0.0319
+     ],
+     "max_dev": 0.0,
+     "metallic": 0,
+     "roughness": "absent=1",
+     "doubleSided": "absent=false",
+     "alphaMode": "absent=OPAQUE",
+     "extensions": [],
+     "ok": true
+    }
+   },
+   "assembled_B": {
+    "Gear_TrekkingPole_L": {
+     "local_lowest_Gy": -0.87204,
+     "slot_Gy": 0.874037,
+     "x": [
+      0.43072,
+      0.48672
+     ],
+     "y": [
+      -0.04942,
+      0.00658
+     ],
+     "z": [
+      0.002,
+      0.9612
+     ]
+    },
+    "Gear_TrekkingPole_R": {
+     "local_lowest_Gy": -0.87204,
+     "slot_Gy": 0.874037,
+     "x": [
+      -0.48672,
+      -0.43072
+     ],
+     "y": [
+      -0.04942,
+      0.00658
+     ],
+     "z": [
+      0.002,
+      0.9612
+     ]
+    }
+   },
+   "CA3": {
+    "Gear_TrekkingPole_L": 0.002,
+    "Gear_TrekkingPole_R": 0.002
+   }
+  },
+  "checks": {
+   "header": true,
+   "size_budget": true,
+   "asset_version": true,
+   "extensions": true,
+   "one_scene": true,
+   "one_embedded_buffer": true,
+   "no_images_textures_samplers_cameras_lights": true,
+   "node_scale_1": true,
+   "no_dup_suffix_no_neutral_bone": true,
+   "primitive_attributes": true,
+   "materials": true,
+   "scene_roots": true,
+   "no_other_nodes": true,
+   "attach_identity": true,
+   "meshes": true,
+   "no_skins_animations": true,
+   "primitives": true,
+   "tris": true,
+   "extents": true,
+   "CA3": true
+  },
+  "reimport": {
+   "result": [
+    "FINISHED"
+   ],
+   "objects": [
+    {
+     "name": "Gear_TrekkingPole_L",
+     "type": "MESH",
+     "parent": null,
+     "parent_bone": null,
+     "world_t": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "mats": [
+      "Gear_Mat_Pole_Shaft",
+      "Gear_Mat_Pole_Grip",
+      "Gear_Mat_Pole_Accent"
+     ],
+     "backface_culling": [
+      true,
+      true,
+      true
+     ]
+    },
+    {
+     "name": "Gear_TrekkingPole_R",
+     "type": "MESH",
+     "parent": null,
+     "parent_bone": null,
+     "world_t": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "mats": [
+      "Gear_Mat_Pole_Shaft",
+      "Gear_Mat_Pole_Grip",
+      "Gear_Mat_Pole_Accent"
+     ],
+     "backface_culling": [
+      true,
+      true,
+      true
+     ]
+    }
+   ],
+   "actions": [],
+   "collections": [],
+   "world_bounds_B": {
+    "x": [
+     -0.028,
+     0.028
+    ],
+    "y": [
+     -0.028,
+     0.028
+    ],
+    "z": [
+     -0.872,
+     0.0872
+    ]
+   }
+  }
+ },
+ "gear-headlamp.glb": {
+  "report": {
+   "path": "/Users/jay/Desktop/F26_4495_S2_JiayuL/Project/Frontend/public/models/gear/gear-headlamp.glb",
+   "bytes": 31536,
+   "sha256": "735d3a2d617b786a709105475ade696fceac314575ff4f48575af7c59140e165",
+   "header": {
+    "magic": "glTF",
+    "version": 2,
+    "declared": 31536,
+    "chunks": [
+     "JSON",
+     "BIN"
+    ]
+   },
+   "generator": "Khronos glTF Blender I/O v5.2.40",
+   "extensionsUsed": null,
+   "extensionsRequired": null,
+   "scene_roots": [
+    "Gear_Headlamp"
+   ],
+   "nodes": [
+    {
+     "name": "Gear_Headlamp",
+     "parent": null,
+     "mesh": "Gear_Headlamp_Mesh",
+     "skin": null,
+     "world_t": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "world_rot_deg": 0.0,
+     "world_s": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "local_s": null
+    }
+   ],
+   "mesh_names": [
+    "Gear_Headlamp_Mesh"
+   ],
+   "material_names": [
+    "Gear_Mat_Lamp_Body",
+    "Gear_Mat_Lamp_Lens",
+    "Gear_Mat_Lamp_Band"
+   ],
+   "skins": [],
+   "animation_names": [],
+   "tris_per_mesh": {
+    "Gear_Headlamp_Mesh": 1296
+   },
+   "tris_total": 1296,
+   "primitives": 3,
+   "materials_per_mesh": {
+    "Gear_Headlamp": [
+     "Gear_Mat_Lamp_Body",
+     "Gear_Mat_Lamp_Lens",
+     "Gear_Mat_Lamp_Band"
+    ]
+   },
+   "materials": {
+    "Gear_Mat_Lamp_Body": {
+     "baseColorFactor": [
+      0.62396,
+      0.14413,
+      0.0319,
+      1
+     ],
+     "expected": [
+      0.62396,
+      0.14413,
+      0.0319
+     ],
+     "max_dev": 0.0,
+     "metallic": 0,
+     "roughness": "absent=1",
+     "doubleSided": "absent=false",
+     "alphaMode": "absent=OPAQUE",
+     "extensions": [],
+     "ok": true
+    },
+    "Gear_Mat_Lamp_Lens": {
+     "baseColorFactor": [
+      1,
+      0.64448,
+      0.19462,
+      1
+     ],
+     "expected": [
+      1.0,
+      0.64448,
+      0.19462
+     ],
+     "max_dev": 0.0,
+     "metallic": 0,
+     "roughness": "absent=1",
+     "doubleSided": "absent=false",
+     "alphaMode": "absent=OPAQUE",
+     "extensions": [],
+     "ok": true
+    },
+    "Gear_Mat_Lamp_Band": {
+     "baseColorFactor": [
+      0.02843,
+      0.04374,
+      0.04667,
+      1
+     ],
+     "expected": [
+      0.02843,
+      0.04374,
+      0.04667
+     ],
+     "max_dev": 0.0,
+     "metallic": 0,
+     "roughness": "absent=1",
+     "doubleSided": "absent=false",
+     "alphaMode": "absent=OPAQUE",
+     "extensions": [],
+     "ok": true
+    }
+   },
+   "assembled_B": {
+    "Gear_Headlamp": {
+     "local_lowest_Gy": -0.014,
+     "slot_Gy": 1.65,
+     "x": [
+      -0.11086,
+      0.11086
+     ],
+     "y": [
+      -0.12471,
+      0.14444
+     ],
+     "z": [
+      1.636,
+      1.69195
+     ]
+    }
+   },
+   "lens_min_z_local_G": 0.13321
+  },
+  "checks": {
+   "header": true,
+   "size_budget": true,
+   "asset_version": true,
+   "extensions": true,
+   "one_scene": true,
+   "one_embedded_buffer": true,
+   "no_images_textures_samplers_cameras_lights": true,
+   "node_scale_1": true,
+   "no_dup_suffix_no_neutral_bone": true,
+   "primitive_attributes": true,
+   "materials": true,
+   "scene_roots": true,
+   "no_other_nodes": true,
+   "attach_identity": true,
+   "meshes": true,
+   "no_skins_animations": true,
+   "primitives": true,
+   "tris": true,
+   "extents": true,
+   "lens_facing": true
+  },
+  "reimport": {
+   "result": [
+    "FINISHED"
+   ],
+   "objects": [
+    {
+     "name": "Gear_Headlamp",
+     "type": "MESH",
+     "parent": null,
+     "parent_bone": null,
+     "world_t": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "mats": [
+      "Gear_Mat_Lamp_Body",
+      "Gear_Mat_Lamp_Lens",
+      "Gear_Mat_Lamp_Band"
+     ],
+     "backface_culling": [
+      true,
+      true,
+      true
+     ]
+    }
+   ],
+   "actions": [],
+   "collections": [],
+   "world_bounds_B": {
+    "x": [
+     -0.1109,
+     0.1109
+    ],
+    "y": [
+     -0.1397,
+     0.1294
+    ],
+    "z": [
+     -0.014,
+     0.0419
+    ]
+   }
+  }
+ },
+ "full_loadout": {
+  "height": 1.75241,
+  "max_radius_reimported": 0.50176,
+  "height_reimported": 1.75241,
+  "ok": true
+ },
+ "all_pass": true
+}

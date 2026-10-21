@@ -1,0 +1,35 @@
+server:
+  port: 8086
+
+spring:
+  application:
+    name: plan-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/plan_db
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+    hikari:
+      data-source-properties:
+        # A unique-index violation (a concurrent create, spec section 10) would
+        # otherwise carry "Key (owner_subject, ...)=(<sub>, ...)" into exception
+        # messages and Hibernate's error log; owner subjects are never logged
+        # (spec section 18, rule 7).
+        logServerErrorDetail: false
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    # Required (spec section 10): each TransactionTemplate gets a fresh
+    # EntityManager, so the re-read after a failed concurrent insert never runs
+    # in the discarded session.
+    open-in-view: false
+  flyway:
+    enabled: true
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8180/realms/outdoor-trip
+
+services:
+  trail:
+    base-url: ${TRAIL_SERVICE_BASE_URL:http://localhost:8082}

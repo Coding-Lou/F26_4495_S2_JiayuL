@@ -1,0 +1,110 @@
+Blender 5.2.2 LTS, bpy.ops.export_scene.gltf: every property, its declared default, and the value passed.
+Per file: export_animations=True for avatar-base.glb, False for the gear files. Contract options: 53, all present.
+check_existing | BOOLEAN | default=True | passed=False | CONTRACT
+export_import_convert_lighting_mode | ENUM | default='SPEC' | passed='SPEC'
+gltf_export_id | STRING | default='' | passed=''
+export_use_gltfpack | BOOLEAN | default=False | passed=False | CONTRACT
+export_gltfpack_tc | BOOLEAN | default=True | passed=True
+export_gltfpack_tq | INT | default=8 | passed=8
+export_gltfpack_si | FLOAT | default=1.0 | passed=1.0
+export_gltfpack_sa | BOOLEAN | default=False | passed=False
+export_gltfpack_slb | BOOLEAN | default=False | passed=False
+export_gltfpack_vp | INT | default=14 | passed=14
+export_gltfpack_vt | INT | default=12 | passed=12
+export_gltfpack_vn | INT | default=8 | passed=8
+export_gltfpack_vc | INT | default=8 | passed=8
+export_gltfpack_vpi | ENUM | default='Integer' | passed='Integer'
+export_gltfpack_noq | BOOLEAN | default=True | passed=True
+export_gltfpack_kn | BOOLEAN | default=False | passed=False
+export_format | ENUM | default='' | passed='GLB' | CONTRACT
+ui_tab | ENUM | default='GENERAL' | passed='GENERAL'
+export_copyright | STRING | default='' | passed=''
+export_image_format | ENUM | default='AUTO' | passed='NONE' | CONTRACT
+export_image_add_webp | BOOLEAN | default=False | passed=False
+export_image_webp_fallback | BOOLEAN | default=False | passed=False
+export_texture_dir | STRING | default='' | passed=''
+export_jpeg_quality | INT | default=75 | passed=75
+export_image_quality | INT | default=75 | passed=75
+export_keep_originals | BOOLEAN | default=False | passed=False
+export_texcoords | BOOLEAN | default=True | passed=False | CONTRACT
+export_normals | BOOLEAN | default=True | passed=True | CONTRACT
+export_gn_mesh | BOOLEAN | default=False | passed=False | CONTRACT
+export_meshopt_compression_enable | BOOLEAN | default=False | passed=False | CONTRACT
+export_meshopt_extension | ENUM | default='EXT_meshopt_compression' | passed='EXT_meshopt_compression'
+export_draco_mesh_compression_enable | BOOLEAN | default=False | passed=False | CONTRACT
+export_draco_mesh_compression_level | INT | default=6 | passed=6
+export_draco_position_quantization | INT | default=14 | passed=14
+export_draco_normal_quantization | INT | default=10 | passed=10
+export_draco_texcoord_quantization | INT | default=12 | passed=12
+export_draco_color_quantization | INT | default=10 | passed=10
+export_draco_generic_quantization | INT | default=12 | passed=12
+export_tangents | BOOLEAN | default=False | passed=False | CONTRACT
+export_materials | ENUM | default='EXPORT' | passed='EXPORT' | CONTRACT
+export_unused_images | BOOLEAN | default=False | passed=False | CONTRACT
+export_unused_textures | BOOLEAN | default=False | passed=False | CONTRACT
+export_vertex_color | ENUM | default='MATERIAL' | passed='NONE' | CONTRACT
+export_vertex_color_name | STRING | default='Color' | passed='Color'
+export_all_vertex_colors | BOOLEAN | default=True | passed=True
+export_active_vertex_color_when_no_material | BOOLEAN | default=True | passed=True
+export_attributes | BOOLEAN | default=False | passed=False | CONTRACT
+use_mesh_edges | BOOLEAN | default=False | passed=False
+use_mesh_vertices | BOOLEAN | default=False | passed=False
+export_cameras | BOOLEAN | default=False | passed=False | CONTRACT
+use_selection | BOOLEAN | default=False | passed=True | CONTRACT
+use_visible | BOOLEAN | default=False | passed=False | CONTRACT
+use_renderable | BOOLEAN | default=False | passed=False | CONTRACT
+use_active_collection_with_nested | BOOLEAN | default=True | passed=True
+use_active_collection | BOOLEAN | default=False | passed=False | CONTRACT
+use_active_scene | BOOLEAN | default=False | passed=False | CONTRACT
+collection | STRING | default='' | passed=''
+at_collection_center | BOOLEAN | default=False | passed=False
+export_extras | BOOLEAN | default=False | passed=False | CONTRACT
+export_yup | BOOLEAN | default=True | passed=True | CONTRACT
+export_apply | BOOLEAN | default=False | passed=True | CONTRACT
+export_shared_accessors | BOOLEAN | default=False | passed=False | CONTRACT
+export_animations | BOOLEAN | default=True | passed=True
+export_frame_range | BOOLEAN | default=False | passed=True | CONTRACT
+export_frame_step | INT | default=1 | passed=1 | CONTRACT
+export_force_sampling | BOOLEAN | default=True | passed=True | CONTRACT
+export_sampling_interpolation_fallback | ENUM | default='LINEAR' | passed='LINEAR'
+export_pointer_animation | BOOLEAN | default=False | passed=False
+export_animation_mode | ENUM | default='ACTIONS' | passed='ACTIONS' | CONTRACT
+export_nla_strips_merged_animation_name | STRING | default='Animation' | passed='Animation'
+export_def_bones | BOOLEAN | default=False | passed=False | CONTRACT
+export_hierarchy_flatten_bones | BOOLEAN | default=False | passed=False | CONTRACT
+export_hierarchy_flatten_objs | BOOLEAN | default=False | passed=False | CONTRACT
+export_armature_object_remove | BOOLEAN | default=False | passed=False | CONTRACT
+export_leaf_bone | BOOLEAN | default=False | passed=False | CONTRACT
+export_optimize_animation_size | BOOLEAN | default=True | passed=True | CONTRACT
+export_optimize_animation_keep_anim_armature | BOOLEAN | default=True | passed=False | CONTRACT
+export_optimize_animation_keep_anim_object | BOOLEAN | default=False | passed=False
+export_optimize_disable_viewport | BOOLEAN | default=False | passed=False
+export_negative_frame | ENUM | default='SLIDE' | passed='SLIDE'
+export_anim_slide_to_zero | BOOLEAN | default=False | passed=True | CONTRACT
+export_bake_animation | BOOLEAN | default=False | passed=False | CONTRACT
+export_merge_animation | ENUM | default='ACTION' | passed='ACTION' | CONTRACT
+export_anim_single_armature | BOOLEAN | default=True | passed=True | CONTRACT
+export_reset_pose_bones | BOOLEAN | default=True | passed=True | CONTRACT
+export_current_frame | BOOLEAN | default=False | passed=False | CONTRACT
+export_rest_position_armature | BOOLEAN | default=True | passed=True | CONTRACT
+export_anim_scene_split_object | BOOLEAN | default=True | passed=True
+export_skins | BOOLEAN | default=True | passed=True | CONTRACT
+export_influence_nb | INT | default=4 | passed=4 | CONTRACT
+export_all_influences | BOOLEAN | default=False | passed=False | CONTRACT
+export_morph | BOOLEAN | default=True | passed=False | CONTRACT
+export_morph_normal | BOOLEAN | default=True | passed=True
+export_morph_tangent | BOOLEAN | default=False | passed=False
+export_morph_animation | BOOLEAN | default=True | passed=True
+export_morph_reset_sk_data | BOOLEAN | default=True | passed=True
+export_lights | BOOLEAN | default=False | passed=False | CONTRACT
+export_try_sparse_sk | BOOLEAN | default=True | passed=True
+export_try_omit_sparse_sk | BOOLEAN | default=False | passed=False
+export_gpu_instances | BOOLEAN | default=False | passed=False | CONTRACT
+export_action_filter | BOOLEAN | default=False | passed=False | CONTRACT
+export_convert_animation_pointer | BOOLEAN | default=False | passed=False
+export_nla_strips | BOOLEAN | default=True | passed=True
+export_original_specular | BOOLEAN | default=False | passed=False
+will_save_settings | BOOLEAN | default=False | passed=False | CONTRACT
+export_hierarchy_full_collections | BOOLEAN | default=False | passed=False | CONTRACT
+export_extra_animations | BOOLEAN | default=False | passed=False | CONTRACT
+export_loglevel | INT | default=-1 | passed=-1

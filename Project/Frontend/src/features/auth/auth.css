@@ -1,0 +1,180 @@
+/*
+ * FEATURE-002: what authentication adds outside the Public Landing.
+ *
+ * Imported by src/index.css. The gate and the notices are the landing's and
+ * live in features/landing/landing.css; this file holds the waiting screen
+ * (§21.3) and the two header additions of the application layout (§21.4).
+ *
+ * Tokens come from docs/DESIGN_SYSTEM.md Version 2; feature-level values from
+ * docs/features/002-authentication.md section 21.
+ */
+
+/* One turn per 900ms, linear (§21.2.3, §21.3). */
+@keyframes auth-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.auth-spinner {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  animation: auth-spin 900ms linear infinite;
+}
+
+/* The waiting line: shown after the delay, with a short fade. */
+@keyframes auth-waiting-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@layer components {
+  /* ------------------------------------------------------------------ *
+   * Waiting screen, W1 and W2 (§21.3): the full viewport in `paper`, with
+   * the wordmark and the waiting line centred on both axes. No media, no card.
+   * ------------------------------------------------------------------ */
+  .auth-waiting {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding: 24px 16px;
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family:
+      ui-sans-serif,
+      system-ui,
+      -apple-system,
+      "Segoe UI",
+      Roboto,
+      "Helvetica Neue",
+      Arial,
+      "Noto Sans",
+      sans-serif;
+    text-align: center;
+  }
+
+  .auth-waiting-brand {
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+  }
+
+  /* Holds the line's height from the first paint, so the wordmark does not
+     move when the line appears. */
+  .auth-waiting-status {
+    min-height: 20px;
+  }
+
+  .auth-waiting-line {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+    animation: auth-waiting-in var(--duration-fast) var(--ease-ui) both;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Account group in the application layout's header (§21.4.1, §21.4.2):
+   * identity, 12px, Sign out. Below 640px it takes what the navigation
+   * leaves of the second header row and is aligned to its end.
+   * ------------------------------------------------------------------ */
+  .auth-account {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  /* From 640px the group shrinks before the row would wrap: a long name is
+     truncated, and Sign out keeps its size. */
+  @media (width >= 40rem) {
+    .auth-account {
+      flex: 0 1 auto;
+    }
+  }
+
+  /* One line, truncated with an ellipsis; the full value stays in the DOM. */
+  .auth-identity {
+    min-width: 0;
+    overflow: hidden;
+    /* The layout's existing muted foreground. */
+    color: var(--muted-foreground);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 400;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  @media (width >= 40rem) {
+    .auth-identity {
+      max-width: 240px;
+    }
+  }
+
+  /* W3: the page under the header while sign-out is in flight (§21.3). */
+  .auth-layout-main {
+    transition: opacity var(--duration-fast) var(--ease-ui);
+  }
+
+  .auth-layout-main[aria-busy="true"] {
+    opacity: 0.4;
+  }
+}
+
+/*
+ * Sign out is the existing outline button. These rules are unlayered because
+ * they replace two things the button primitive sets with utilities: its
+ * height on touch layouts and its default focus ring (§21.4.2).
+ */
+.auth-sign-out {
+  flex: none;
+  height: 44px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+@media (width >= 48rem) {
+  .auth-sign-out {
+    height: 36px;
+  }
+}
+
+@media (pointer: coarse) {
+  .auth-sign-out {
+    height: 44px;
+  }
+}
+
+.auth-sign-out:focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  box-shadow: var(--focus-ring);
+}
+
+.auth-sign-out[data-state="working"] {
+  cursor: progress;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-spinner,
+  .auth-waiting-line {
+    animation: none;
+  }
+
+  .auth-layout-main {
+    transition: none;
+  }
+}

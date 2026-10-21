@@ -1,0 +1,44 @@
+server:
+  port: 8085
+  tomcat:
+    max-swallow-size: 25MB
+
+spring:
+  application:
+    name: memory-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/memory_db
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 11MB
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8180/realms/outdoor-trip
+
+services:
+  trail:
+    base-url: ${TRAIL_SERVICE_BASE_URL:http://localhost:8082}
+
+memory:
+  photos:
+    url-ttl: 15m
+  storage:
+    type: ${MEMORY_STORAGE_TYPE:local}          # local | s3
+    local:
+      root: ${MEMORY_STORAGE_LOCAL_ROOT:./.local-storage}
+      signing-secret: ${MEMORY_STORAGE_LOCAL_SIGNING_SECRET:}
+      public-base-url: ${MEMORY_STORAGE_LOCAL_PUBLIC_BASE_URL:}
+    s3:
+      bucket: ${MEMORY_S3_BUCKET:}
+      region: ${MEMORY_S3_REGION:}

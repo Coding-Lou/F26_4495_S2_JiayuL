@@ -1,0 +1,970 @@
+/*
+ * Outdoor Trip Companion: Keycloak login theme.
+ *
+ * Specification: docs/features/002-authentication.md, sections 11 and
+ * 21.5-21.7. Colours and the focus ring are the tokens of
+ * docs/DESIGN_SYSTEM.md Version 2; everything else is a feature-level value
+ * of that specification.
+ *
+ * Loaded after the parent theme's stylesheets (PatternFly 5 and
+ * keycloak.v2/css/styles.css) and written against the parent's markup, which
+ * this theme does not change (its one template override, the page-expired
+ * page, keeps the same shell):
+ *
+ *   html.login-pf > body#keycloak-bg[data-page-id]
+ *     .pf-v5-c-login
+ *       .pf-v5-c-login__container
+ *         header#kc-header > #kc-header-wrapper      identity region
+ *         main.pf-v5-c-login__main                   form region
+ *           .pf-v5-c-login__main-header > h1#kc-page-title
+ *           .pf-v5-c-login__main-body                messages, form, links
+ *
+ * Every selector starts at `.login-pf`, so it outranks the parent's rule for
+ * the same element without depending on source order. `!important` appears
+ * only where the parent's markup carries a PatternFly utility class, which is
+ * itself `!important`.
+ *
+ * Nothing here loads from another origin, and nothing animates: the only
+ * motion is a 150ms change of colour, and none at all under reduced motion.
+ */
+
+/* ------------------------------------------------------------------------ *
+ * Tokens. One appearance: light only (21.5.1).
+ * ------------------------------------------------------------------------ */
+:root {
+  color-scheme: light;
+
+  --otc-ink: #0b1c20;
+  --otc-snow: #ffffff;
+  --otc-paper: #f7f5ef;
+  --otc-stone: #55615d;
+  --otc-conifer: #1f5a46;
+  --otc-conifer-deep: #18493a;
+  --otc-conifer-press: #123a2e;
+  --otc-sun: #ffd27a;
+  --otc-ember: #c8452d;
+  /* Error text on `paper`: 6.00:1. `ember` itself is 4.43:1 and is kept for
+     outlines and icons (21.6.4). */
+  --otc-error-text: #a8361f;
+
+  --otc-radius: 12px;
+  --otc-column: 440px;
+  --otc-font:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  --otc-focus-ring:
+    0 0 0 2px var(--otc-ink), 0 0 0 4px var(--otc-sun),
+    0 0 0 6px var(--otc-ink);
+  --otc-transition: 150ms cubic-bezier(0.2, 0, 0, 1);
+
+  /* Alert icon for field errors, embedded so that no file is requested. */
+  --otc-icon-alert: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 8v4'/%3E%3Cpath d='M12 16h.01'/%3E%3C/svg%3E");
+
+  /*
+   * PatternFly's own globals, pointed at the same palette. The pages designed
+   * below set their values directly; these keep any page that is not designed
+   * individually (required actions and the like) in the same font and colours.
+   */
+  --pf-v5-global--FontFamily--text: var(--otc-font);
+  --pf-v5-global--FontFamily--heading: var(--otc-font);
+  --pf-v5-global--FontFamily--heading--vf: var(--otc-font);
+  --pf-v5-global--FontFamily--text--vf: var(--otc-font);
+  --pf-v5-global--FontSize--xs: 0.875rem;
+  --pf-v5-global--Color--100: var(--otc-ink);
+  --pf-v5-global--Color--200: var(--otc-stone);
+  --pf-v5-global--BackgroundColor--100: var(--otc-snow);
+  --pf-v5-global--BackgroundColor--200: var(--otc-paper);
+  --pf-v5-global--BorderColor--100: var(--otc-stone);
+  --pf-v5-global--primary-color--100: var(--otc-conifer);
+  --pf-v5-global--primary-color--200: var(--otc-conifer-deep);
+  --pf-v5-global--link--Color: var(--otc-conifer);
+  --pf-v5-global--link--Color--hover: var(--otc-conifer-deep);
+  --pf-v5-global--danger-color--100: var(--otc-ember);
+  --pf-v5-global--danger-color--200: var(--otc-error-text);
+  --pf-v5-global--success-color--100: var(--otc-conifer);
+  --pf-v5-global--info-color--100: var(--otc-conifer);
+  --pf-v5-global--BoxShadow--sm: none;
+  --pf-v5-global--BoxShadow--md: none;
+  --pf-v5-global--BoxShadow--lg: none;
+  --pf-v5-global--BoxShadow--xl: none;
+}
+
+/* ------------------------------------------------------------------------ *
+ * Page shell (21.5.1)
+ * ------------------------------------------------------------------------ */
+html.login-pf {
+  height: auto;
+  min-height: 100%;
+  background-color: var(--otc-paper);
+}
+
+/* The parent paints a full-page image here; this is a flat surface. */
+.login-pf body {
+  height: auto;
+  min-height: 100vh;
+  min-height: 100dvh;
+  margin: 0;
+  background: var(--otc-paper);
+  color: var(--otc-ink);
+  font-family: var(--otc-font);
+  font-size: 1rem;
+  line-height: 1.5rem;
+  overflow-x: hidden;
+}
+
+.login-pf :is(h1, h2, h3, p, label, legend, button, input, select, textarea, a) {
+  font-family: var(--otc-font);
+}
+
+/* Only colour changes move, and only briefly. */
+.login-pf :is(a, button, input, select, textarea),
+.login-pf .pf-v5-c-form-control,
+.login-pf .pf-v5-c-form-control::before,
+.login-pf .pf-v5-c-button {
+  transition:
+    color var(--otc-transition),
+    background-color var(--otc-transition),
+    border-color var(--otc-transition),
+    box-shadow var(--otc-transition);
+}
+
+/*
+ * One column, below 1024px (21.5.3): an `ink` brand band, then the form
+ * region. Nothing is fixed to the viewport, so with an on-screen keyboard the
+ * focused field and the primary action can both be scrolled into view.
+ */
+.login-pf .pf-v5-c-login {
+  display: block;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 0;
+}
+
+.login-pf .pf-v5-c-login__container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: none;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 0;
+}
+
+/* ------------------------------------------------------------------------ *
+ * Identity region: the wordmark, and from 1024px the product line.
+ * No link, no image, no rule (21.5.2).
+ * ------------------------------------------------------------------------ */
+.login-pf #kc-header {
+  flex: none;
+  display: flex;
+  align-items: center;
+  height: 56px;
+  margin: 0;
+  padding: 0 16px;
+  background-color: var(--otc-ink);
+  color: var(--otc-snow);
+}
+
+/* The wordmark, as on the landing: 16/24, weight 700, one line. The parent
+   sets this element in large spaced capitals with an `!important` colour. */
+.login-pf #kc-header-wrapper {
+  width: auto;
+  height: auto;
+  margin: 0;
+  color: var(--otc-snow) !important;
+  font-family: var(--otc-font);
+  font-size: 1rem;
+  line-height: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-align: start;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+/* The product line is not shown below 1024px. */
+.login-pf #kc-header-wrapper > p {
+  display: none;
+  margin: 0;
+}
+
+/* ------------------------------------------------------------------------ *
+ * Form region. `paper`, no card, no shadow. Its blocks share one column:
+ * the content width with 16px gutters, at most 440px.
+ * ------------------------------------------------------------------------ */
+.login-pf .pf-v5-c-login__main {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  align-self: stretch;
+  margin: 0;
+  padding: 40px 16px calc(40px + env(safe-area-inset-bottom, 0px));
+  background-color: var(--otc-paper);
+  box-shadow: none;
+  color: var(--otc-ink);
+}
+
+.login-pf .pf-v5-c-login__main > * {
+  width: 100%;
+  max-width: var(--otc-column);
+}
+
+.login-pf .pf-v5-c-login__main-header {
+  display: block;
+  margin: 0 0 24px;
+  padding: 0;
+  border: 0;
+}
+
+.login-pf .pf-v5-c-login__main-body,
+.login-pf .pf-v5-c-login__main-footer {
+  padding: 0;
+}
+
+/* Page heading: 28/36 below 1024px (21.6.1). */
+.login-pf #kc-page-title {
+  margin: 0;
+  color: var(--otc-ink);
+  font-family: var(--otc-font);
+  font-size: 1.75rem;
+  line-height: 2.25rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+@media (min-width: 768px) {
+  .login-pf #kc-header {
+    height: 76px;
+    padding-inline: 48px;
+  }
+
+  .login-pf .pf-v5-c-login__main {
+    padding: 64px 48px 48px;
+  }
+}
+
+/*
+ * Two regions, from 1024px (21.5.2): identity 5 parts, form 7 parts. The
+ * parent renders the header and the form area as siblings of one container,
+ * so the container becomes a two-column grid. The identity region is pinned
+ * to the viewport while the form region scrolls with the page.
+ */
+@media (min-width: 1024px) {
+  :root {
+    --otc-column: 400px;
+    --otc-identity-pad: 64px;
+  }
+
+  .login-pf .pf-v5-c-login__container {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    grid-template-areas: "header main";
+    column-gap: 0;
+    justify-content: stretch;
+  }
+
+  .login-pf #kc-header {
+    position: sticky;
+    top: 0;
+    grid-area: header;
+    align-items: stretch;
+    align-self: start;
+    height: 100vh;
+    height: 100dvh;
+    margin: 0;
+    padding: 24px var(--otc-identity-pad) var(--otc-identity-pad);
+  }
+
+  .login-pf #kc-header-wrapper {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    justify-content: space-between;
+    min-width: 0;
+  }
+
+  /* The wordmark sits in a 44px box, where the landing's navigation has it. */
+  .login-pf #kc-header-wrapper > span {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
+  /* PRD section 60. Its last line ends where the region's padding begins. */
+  .login-pf #kc-header-wrapper > p {
+    display: block;
+    max-width: 440px;
+    font-size: 2rem;
+    line-height: 2.5rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+    white-space: normal;
+  }
+
+  /* Centred on both axes. The auto margins keep the centring safe: a form
+     taller than the region starts at the top and the page scrolls. */
+  .login-pf .pf-v5-c-login__main {
+    grid-area: main;
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding: 48px 32px;
+  }
+
+  .login-pf .pf-v5-c-login__main > :first-child {
+    margin-top: auto;
+  }
+
+  .login-pf .pf-v5-c-login__main > :last-child {
+    margin-bottom: auto;
+  }
+
+  .login-pf .pf-v5-c-login__main-header {
+    margin-bottom: 32px;
+  }
+
+  .login-pf #kc-page-title {
+    font-size: 2rem;
+    line-height: 2.5rem;
+  }
+}
+
+/* Short desktop: the wordmark moves up with the landing's navigation. */
+@media (min-width: 1024px) and (max-height: 839px) {
+  .login-pf #kc-header {
+    padding-top: 16px;
+  }
+}
+
+@media (min-width: 1440px) {
+  :root {
+    --otc-identity-pad: 80px;
+  }
+
+  .login-pf #kc-header {
+    padding-top: 32px;
+  }
+
+  .login-pf #kc-header-wrapper > p {
+    font-size: 2.5rem;
+    line-height: 3rem;
+  }
+}
+
+@media (min-width: 1440px) and (max-height: 839px) {
+  .login-pf #kc-header {
+    padding-top: 16px;
+  }
+}
+
+/* ------------------------------------------------------------------------ *
+ * Forms: spacing and labels (21.6.1)
+ * ------------------------------------------------------------------------ */
+.login-pf .pf-v5-c-form {
+  gap: 20px;
+}
+
+.login-pf #kc-register-form {
+  gap: 16px;
+}
+
+.login-pf .pf-v5-c-form__group-label {
+  padding-block-end: 6px !important;
+}
+
+/* A block, so the label's box is exactly its 20px line and the 6px gap to
+   the field is measured from it. */
+.login-pf .pf-v5-c-form__label {
+  display: block;
+  color: var(--otc-ink);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.login-pf .pf-v5-c-form__label-text {
+  font-weight: 600;
+}
+
+/* The required mark is a symbol explained in words, not a colour. */
+.login-pf .pf-v5-c-form__label-required {
+  margin-inline-start: 4px;
+  color: var(--otc-ink);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+/* Registration: "Fields marked * are required." directly under the heading.
+   The parent prints its own asterisk before the sentence; it is not needed. */
+.login-pf body[data-page-id="login-register"] .pf-v5-c-login__main-header {
+  margin-bottom: 8px;
+}
+
+.login-pf .pf-v5-c-login__main-body > div:has(> .subtitle) {
+  margin: 0 0 24px !important;
+}
+
+.login-pf .subtitle,
+.login-pf .subtitle .pf-v5-c-helper-text__item-text {
+  color: var(--otc-stone);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 400;
+}
+
+.login-pf .subtitle .pf-v5-c-form__label-required {
+  display: none;
+}
+
+/* ------------------------------------------------------------------------ *
+ * Text field (21.6.2): 48px tall, 12px radius, `snow` on `paper`, with a 1px
+ * `stone` boundary drawn by the wrapper's ::before so that the invalid state
+ * can thicken it inward without changing the field's size.
+ * ------------------------------------------------------------------------ */
+.login-pf span.pf-v5-c-form-control,
+.login-pf div.pf-v5-c-form-control {
+  display: block;
+  width: 100%;
+  min-height: 48px;
+  border-radius: var(--otc-radius);
+  background-color: var(--otc-snow);
+  color: var(--otc-ink);
+  font-size: 1rem;
+  line-height: 1.5rem;
+  cursor: text;
+}
+
+.login-pf .pf-v5-c-form-control::before {
+  border: 1px solid var(--otc-stone);
+  border-radius: inherit;
+}
+
+.login-pf .pf-v5-c-form-control::after {
+  border: 0;
+}
+
+.login-pf .pf-v5-c-form-control > :is(input, select, textarea) {
+  display: block;
+  width: 100%;
+  min-height: 48px;
+  margin: 0;
+  padding: 12px 14px;
+  border: 0;
+  border-radius: inherit;
+  outline: none;
+  background-color: transparent;
+  box-shadow: none;
+  color: var(--otc-ink);
+  caret-color: var(--otc-conifer);
+  font-family: var(--otc-font);
+  font-size: 1rem;
+  line-height: 1.5rem;
+  font-weight: 400;
+  text-overflow: clip;
+}
+
+/* The registration fields carry the control class on the input as well. */
+.login-pf input.pf-v5-c-form-control::before,
+.login-pf input.pf-v5-c-form-control::after {
+  content: none;
+}
+
+@media (hover: hover) {
+  .login-pf .pf-v5-c-form-control:hover::before {
+    border-color: var(--otc-ink);
+  }
+}
+
+/* Focus: `ink` boundary and the design system's focus ring around the whole
+   field. Text inputs match :focus-visible on pointer focus as well, so a
+   field always shows where typing goes. */
+.login-pf .pf-v5-c-form-control:has(> :is(input, select, textarea):focus-visible) {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  box-shadow: var(--otc-focus-ring);
+}
+
+.login-pf .pf-v5-c-form-control:has(> :is(input, select, textarea):focus-visible)::before {
+  border-color: var(--otc-ink);
+}
+
+/* Invalid: 2px `ember`, inside the same box. The parent marks the field with
+   aria-invalid="true" (and writes aria-invalid="" when it is valid). */
+.login-pf .pf-v5-c-form-control.pf-m-error::before,
+.login-pf .pf-v5-c-form-control:has(> [aria-invalid="true"])::before {
+  border: 2px solid var(--otc-ember);
+}
+
+/* Invalid and focused: the boundary stays `ember` under the focus ring. */
+.login-pf .pf-v5-c-form-control.pf-m-error:has(> :is(input, select, textarea):focus-visible)::before,
+.login-pf .pf-v5-c-form-control:has(> [aria-invalid="true"]:is(input, select, textarea):focus-visible)::before {
+  border-color: var(--otc-ember);
+}
+
+/* Disabled or read-only. */
+.login-pf .pf-v5-c-form-control.pf-m-readonly,
+.login-pf .pf-v5-c-form-control.pf-m-disabled,
+.login-pf .pf-v5-c-form-control:has(> :is(input, select, textarea):is(:disabled, [readonly])) {
+  background-color: var(--otc-paper);
+  cursor: not-allowed;
+}
+
+.login-pf .pf-v5-c-form-control > :is(input, select, textarea):is(:disabled, [readonly]) {
+  color: var(--otc-stone);
+  -webkit-text-fill-color: var(--otc-stone);
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+/* Autofill: the browser's tint is not shown; the field stays `snow`. */
+.login-pf .pf-v5-c-form-control > input:is(:-webkit-autofill, :autofill) {
+  -webkit-text-fill-color: var(--otc-ink);
+  box-shadow: 0 0 0 1000px var(--otc-snow) inset;
+  caret-color: var(--otc-conifer);
+}
+
+/* The parent's in-field status icon. The error line below carries the icon. */
+.login-pf .pf-v5-c-form-control__utilities:has(.pf-m-status) {
+  display: none;
+}
+
+/* ------------------------------------------------------------------------ *
+ * Show/hide password (21.6.3): a 44px button inside the field's end, inset
+ * 2px. The field's text stops 52px short of the edge, so it never runs
+ * under the button.
+ * ------------------------------------------------------------------------ */
+.login-pf .pf-v5-c-input-group {
+  position: relative;
+  display: block;
+}
+
+.login-pf .pf-v5-c-input-group__item {
+  display: block;
+  margin: 0;
+  border: 0;
+  background-color: transparent;
+}
+
+.login-pf .pf-v5-c-input-group__item:has(> [data-password-toggle]) {
+  position: absolute;
+  inset-block-start: 2px;
+  inset-inline-end: 2px;
+}
+
+.login-pf .pf-v5-c-input-group:has([data-password-toggle]) .pf-v5-c-form-control > input {
+  padding-inline-end: 52px;
+}
+
+.login-pf .pf-v5-c-button.pf-m-control {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 10px;
+  background-color: transparent;
+  color: var(--otc-stone);
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.login-pf .pf-v5-c-button.pf-m-control::after {
+  border: 0;
+}
+
+@media (hover: hover) {
+  .login-pf .pf-v5-c-button.pf-m-control:hover {
+    color: var(--otc-ink);
+  }
+}
+
+.login-pf .pf-v5-c-button.pf-m-control:active {
+  background-color: var(--otc-paper);
+  color: var(--otc-ink);
+}
+
+/* ------------------------------------------------------------------------ *
+ * Help text and field errors (21.6.1, 21.6.4)
+ * ------------------------------------------------------------------------ */
+.login-pf .pf-v5-c-form__helper-text {
+  margin-block-start: 6px;
+  color: var(--otc-stone);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+/* The parent leaves an empty helper row under each password field. */
+.login-pf .pf-v5-c-form__helper-text:not(:has(.pf-v5-c-helper-text__item, li, input)) {
+  display: none;
+}
+
+.login-pf .pf-v5-c-helper-text {
+  gap: 6px;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.login-pf .pf-v5-c-helper-text__item-text {
+  color: var(--otc-stone);
+}
+
+/* "Forgot password?": end-aligned in a row 8px below the password field,
+   at the size of every other link (16/24). */
+.login-pf .pf-v5-c-form__helper-text:has(a) {
+  margin-block-start: 8px;
+}
+
+.login-pf .pf-v5-c-helper-text__item-text:has(> a) {
+  font-size: 1rem;
+  line-height: 1.5rem;
+}
+
+.login-pf .pf-v5-c-helper-text__item:has(a) {
+  margin-inline-start: auto;
+}
+
+/*
+ * A field error: a 16px alert icon in `ember`, then the message in the
+ * darker error colour, 14/20 weight 500. Words, icon, and outline each carry
+ * the error; colour is never the only cue.
+ */
+.login-pf .pf-v5-c-helper-text__item.pf-m-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.login-pf .pf-v5-c-helper-text__item.pf-m-error::before {
+  content: "";
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  background-color: var(--otc-ember);
+  -webkit-mask: var(--otc-icon-alert) center / contain no-repeat;
+  mask: var(--otc-icon-alert) center / contain no-repeat;
+}
+
+.login-pf .pf-v5-c-helper-text__item-text.pf-m-error {
+  margin: 0;
+  padding: 0;
+  color: var(--otc-error-text);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 500;
+  list-style: none;
+}
+
+/* ------------------------------------------------------------------------ *
+ * Buttons (21.6.3). One primary action per page: full column width, 48px,
+ * `conifer` with `snow` text.
+ * ------------------------------------------------------------------------ */
+.login-pf .pf-v5-c-form__actions {
+  margin: 4px 0 0;
+  padding: 0 !important;
+}
+
+.login-pf .pf-v5-c-form__actions > * {
+  margin: 0;
+}
+
+.login-pf #kc-register-form > #kc-form-buttons {
+  margin-top: 8px;
+}
+
+.login-pf .pf-v5-c-button.pf-m-primary {
+  display: block;
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 16px;
+  border: 0;
+  border-radius: var(--otc-radius);
+  background-color: var(--otc-conifer);
+  color: var(--otc-snow);
+  font-family: var(--otc-font);
+  font-size: 1rem;
+  line-height: 1.5rem;
+  font-weight: 600;
+  white-space: normal;
+  cursor: pointer;
+}
+
+.login-pf .pf-v5-c-button.pf-m-primary::after {
+  border: 0;
+}
+
+@media (hover: hover) {
+  .login-pf .pf-v5-c-button.pf-m-primary:hover {
+    background-color: var(--otc-conifer-deep);
+    color: var(--otc-snow);
+  }
+}
+
+.login-pf .pf-v5-c-button.pf-m-primary:active {
+  background-color: var(--otc-conifer-press);
+  color: var(--otc-snow);
+}
+
+.login-pf .pf-v5-c-button.pf-m-primary:is(:disabled, [aria-disabled="true"], .pf-m-disabled) {
+  background-color: var(--otc-stone);
+  color: var(--otc-snow);
+  cursor: not-allowed;
+}
+
+/* Secondary actions are text links, never a second filled button. */
+.login-pf .pf-v5-c-button:is(.pf-m-secondary, .pf-m-link) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  min-height: 44px;
+  padding: 0;
+  border-radius: 6px;
+  background-color: transparent;
+  color: var(--otc-conifer);
+  font-family: var(--otc-font);
+  font-size: 1rem;
+  line-height: 1.5rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.login-pf .pf-v5-c-button:is(.pf-m-secondary, .pf-m-link)::after {
+  border: 0;
+}
+
+.login-pf .pf-v5-c-form__actions:has(> .pf-m-secondary) {
+  gap: 12px;
+}
+
+/* ------------------------------------------------------------------------ *
+ * Text links (21.6.3): `conifer`, weight 600, always underlined, so they are
+ * told apart from text by more than colour.
+ * ------------------------------------------------------------------------ */
+.login-pf .pf-v5-c-login__main a:not(.pf-v5-c-button) {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  border-radius: 6px;
+  color: var(--otc-conifer);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  .login-pf .pf-v5-c-login__main a:hover {
+    color: var(--otc-conifer-deep);
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
+  }
+}
+
+.login-pf .pf-v5-c-login__main a:active {
+  color: var(--otc-conifer-press);
+}
+
+/* With a fine pointer on a desktop layout the hit box is one line of text. */
+@media (min-width: 1024px) and (pointer: fine) {
+  .login-pf .pf-v5-c-login__main a:not(.pf-v5-c-button),
+  .login-pf .pf-v5-c-button:is(.pf-m-secondary, .pf-m-link) {
+    min-height: 24px;
+  }
+}
+
+/* The secondary line: 24px under the primary action, start-aligned, with no
+   rule above it ("New here? Create account", "Back to sign in"). */
+.login-pf .pf-v5-c-login__main-footer-band {
+  margin: 24px 0 0;
+  padding: 0;
+  border: 0;
+  color: var(--otc-ink);
+  font-size: 1rem;
+  line-height: 1.5rem;
+  text-align: start;
+}
+
+.login-pf .pf-v5-c-login__main-footer-band > * {
+  padding: 0;
+}
+
+.login-pf #kc-register-form > .pf-v5-c-login__main-footer-band {
+  margin-top: 8px;
+}
+
+.login-pf #kc-registration > span {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 0.35em;
+}
+
+/* ------------------------------------------------------------------------ *
+ * Focus (design system section 18): the same ring on every control. Fields
+ * carry theirs on the wrapper, above.
+ * ------------------------------------------------------------------------ */
+.login-pf :is(a, button, input[type="submit"], input[type="checkbox"], input[type="radio"], select, [tabindex]):focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  box-shadow: var(--otc-focus-ring);
+}
+
+/* A link's ring is drawn on a box padded 4px around its text. */
+.login-pf .pf-v5-c-login__main a:not(.pf-v5-c-button):focus-visible {
+  margin: 0 -4px;
+  padding: 0 4px;
+}
+
+/* ------------------------------------------------------------------------ *
+ * Page messages (21.6.4): a block between the heading and the first field,
+ * with a 3px rule on its start edge. No fill, no radius, no shadow.
+ * ------------------------------------------------------------------------ */
+.login-pf .pf-v5-c-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 0 0 24px !important;
+  padding: 12px 16px;
+  border: 0;
+  border-inline-start: 3px solid var(--otc-ink);
+  border-radius: 0;
+  background-color: transparent;
+  box-shadow: none;
+  color: var(--otc-ink);
+}
+
+.login-pf .pf-v5-c-alert__icon {
+  flex: none;
+  margin: 0;
+  color: var(--otc-ink);
+  font-size: 1.25rem;
+  line-height: 1.25rem;
+}
+
+.login-pf .pf-v5-c-alert__icon > span {
+  width: 20px;
+  height: 20px;
+  line-height: 20px;
+}
+
+.login-pf .pf-v5-c-alert__title {
+  color: var(--otc-ink);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 500;
+}
+
+/* Error: rule and icon `ember`, text in the darker error colour. */
+.login-pf .pf-v5-c-alert.pf-m-danger {
+  border-inline-start-color: var(--otc-ember);
+}
+
+.login-pf .pf-v5-c-alert.pf-m-danger .pf-v5-c-alert__icon {
+  color: var(--otc-ember);
+}
+
+.login-pf .pf-v5-c-alert.pf-m-danger .pf-v5-c-alert__title {
+  color: var(--otc-error-text);
+}
+
+/* Information and success: rule and icon `conifer`, text `ink`. A warning
+   keeps the block's `ink` for all three. */
+.login-pf .pf-v5-c-alert:is(.pf-m-info, .pf-m-success) {
+  border-inline-start-color: var(--otc-conifer);
+}
+
+.login-pf .pf-v5-c-alert:is(.pf-m-info, .pf-m-success) .pf-v5-c-alert__icon {
+  color: var(--otc-conifer);
+}
+
+/* ------------------------------------------------------------------------ *
+ * Pages without fields (21.7): error, page expired, sign-out confirmation,
+ * information. Heading, body 16px below it, action 24px below the body, in
+ * the same column and position as the sign-in form.
+ * ------------------------------------------------------------------------ */
+.login-pf body:is([data-page-id="login-error"], [data-page-id="login-login-page-expired"], [data-page-id="login-logout-confirm"], [data-page-id="login-info"]) .pf-v5-c-login__main-header {
+  margin-bottom: 16px;
+}
+
+/* From 1024px the block is as tall as the sign-in form, so its heading sits
+   where the sign-in heading sits. The sign-in form is 360px tall with its
+   heading: 40 + 32 + two fields of 74 with 20 between + 24 + 48 + 24 + 24.
+   (It has no "Forgot password?" row, which the realm keeps off; with that row
+   it would be 392px and this value 336px.) 360 - 40 - 16 = 304. */
+@media (min-width: 1024px) {
+  .login-pf body:is([data-page-id="login-error"], [data-page-id="login-login-page-expired"], [data-page-id="login-logout-confirm"], [data-page-id="login-info"]) .pf-v5-c-login__main-body {
+    min-height: 304px;
+  }
+}
+
+.login-pf .instruction {
+  margin: 0;
+  color: var(--otc-ink);
+  font-size: 1rem;
+  line-height: 1.5rem;
+}
+
+.login-pf .instruction + .instruction {
+  margin-top: 8px;
+}
+
+.login-pf :is(#kc-error-message, #kc-info-message) > p:has(> a) {
+  margin: 24px 0 0;
+}
+
+.login-pf #kc-logout-confirm .form-actions {
+  margin-top: 24px;
+}
+
+.login-pf #kc-logout-confirm #kc-info-message > p {
+  margin: 24px 0 0;
+}
+
+/* Page expired: this theme's template renders the body and one link, each in
+   its own paragraph (login-page-expired.ftl). */
+.login-pf .pf-v5-c-login__main-body > p:has(> #loginRestartLink) {
+  margin: 24px 0 0;
+}
+
+/* ------------------------------------------------------------------------ *
+ * Checkbox and radio, where another page of the shell shows one (21.6.2):
+ * 20px, `conifer` when checked, 44px hit area with its label.
+ * ------------------------------------------------------------------------ */
+.login-pf .pf-v5-c-check {
+  align-items: center;
+  min-height: 44px;
+  column-gap: 10px;
+}
+
+.login-pf :is(input[type="checkbox"], input[type="radio"]) {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--otc-conifer);
+  transform: none;
+}
+
+.login-pf .pf-v5-c-check__label {
+  color: var(--otc-ink);
+  font-size: 1rem;
+  line-height: 1.5rem;
+}
+
+/* ------------------------------------------------------------------------ *
+ * Reduced motion: no transition at all (21.5.1).
+ * ------------------------------------------------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+  .login-pf *,
+  .login-pf *::before,
+  .login-pf *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}

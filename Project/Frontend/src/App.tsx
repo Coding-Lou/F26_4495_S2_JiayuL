@@ -1,25 +1,11 @@
-import keycloak from "./keycloak";
+import { RouterProvider } from "react-router-dom"
+import { AppProviders } from "@/app/providers/AppProviders"
+import { router } from "@/app/router"
 
-function App() {
-  const token = keycloak.tokenParsed;
-
+export default function App() {
   return (
-      <div>
-        <h1>Outdoor Trip Companion</h1>
-
-        <p>
-          <strong>Subject:</strong> {token?.sub}
-        </p>
-
-        <p>
-          <strong>Username:</strong> {token?.preferred_username}
-        </p>
-
-        <p>
-          <strong>Email:</strong> {token?.email}
-        </p>
-      </div>
-  );
+    <AppProviders>
+      <RouterProvider router={router} />
+    </AppProviders>
+  )
 }
-
-export default App;

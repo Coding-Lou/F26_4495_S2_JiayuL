@@ -1,0 +1,654 @@
+/*
+ * FEATURE-003 — the Authenticated Home shell: media layers, header scrim,
+ * header, and the box the planner panel stands in.
+ *
+ * Imported by src/index.css. Every rule is scoped to .home; no other page is
+ * affected. The planner's own surfaces are in features/planning/planner.css.
+ *
+ * Tokens come from docs/DESIGN_SYSTEM.md Version 2. Feature-level values come
+ * from docs/features/003-conversational-planner.md; section numbers in
+ * comments refer to that specification. Breakpoints are written in px because
+ * the same widths are tested in script.
+ */
+
+@layer components {
+  /* ------------------------------------------------------------------ *
+   * Per-tier values (§9.2, §17.1). Mobile is the unprefixed block only
+   * because min-width queries cascade upward; desktop is the primary design.
+   * ------------------------------------------------------------------ */
+  .home {
+    /* `ink` at 0.72 and 0.88: the scrim plateau and quiet-control fills. */
+    --home-scrim: color-mix(in srgb, var(--color-ink) 72%, transparent);
+    --home-scrim-strong: color-mix(in srgb, var(--color-ink) 88%, transparent);
+
+    /* The viewport height the layout is sized from. Script replaces it with
+       the visual viewport's height while an on-screen keyboard is open. */
+    --home-vh: 100vh;
+
+    /* Below 768px: bottom sheet */
+    --home-gutter: 16px;
+    --home-header-height: 56px;
+    --home-feather: 24px;
+    --home-media-position: 64% 50%;
+    --home-main-top: 60px;
+    --home-main-bottom: 0px;
+    --home-panel-width: 100%;
+    --home-panel-height: max(
+      420px,
+      min(
+        var(--home-vh) - 116px,
+        max(560px, var(--home-vh) - 256px)
+      )
+    );
+    --home-control-height: 44px;
+    --home-identity-max: 160px;
+
+    @supports (height: 100dvh) {
+      --home-vh: 100dvh;
+    }
+
+    @media (width < 360px) {
+      --home-gutter: 12px;
+    }
+
+    /* 768–1023px: docked at the bottom, centred */
+    @media (width >= 768px) {
+      --home-gutter: 32px;
+      --home-header-height: 64px;
+      --home-feather: 40px;
+      --home-media-position: 68% 50%;
+      /* 8px, the 44px background control, 8px. */
+      --home-main-top: 60px;
+      --home-main-bottom: 24px;
+      --home-panel-width: min(640px, 100%);
+      --home-panel-height: max(
+        420px,
+        min(
+          var(--home-vh) - 148px,
+          max(560px, var(--home-vh) * 0.62)
+        )
+      );
+    }
+
+    /* Tier S, 1024–1279px: panel at the left */
+    @media (width >= 1024px) {
+      --home-media-position: 100% 30%;
+      --home-main-top: 16px;
+      --home-panel-width: 560px;
+      --home-panel-height: clamp(
+        480px,
+        var(--home-vh) - var(--home-header-height) - var(--home-main-top) -
+          var(--home-main-bottom),
+        760px
+      );
+      --home-control-height: 36px;
+      --home-control-bottom: 24px;
+    }
+
+    /* Tier M, 1280–1439px */
+    @media (width >= 1280px) {
+      --home-gutter: 40px;
+      --home-panel-width: 620px;
+      --home-identity-max: 200px;
+    }
+
+    /* Tier L, 1440–1679px */
+    @media (width >= 1440px) {
+      --home-gutter: 56px;
+      --home-header-height: 72px;
+      --home-main-top: 32px;
+      --home-main-bottom: 40px;
+      --home-panel-width: 640px;
+      --home-identity-max: 240px;
+      --home-control-bottom: 40px;
+    }
+
+    /* Tier XL, from 1680px. Above 1920px the panel stays on this gutter and
+       the room simply grows (§9.2). */
+    @media (width >= 1680px) {
+      --home-gutter: 64px;
+      --home-panel-width: 680px;
+    }
+
+    /* Every control is 44px tall on a coarse pointer, at any width (§19.6). */
+    @media (pointer: coarse) {
+      --home-control-height: 44px;
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Shell (§8.3.1). `.home` is the one stacking context of the page:
+   *   -2    poster, then video
+   *   -1    header scrim
+   *   auto  header, main, background control
+   * Nothing between `.home` and the scrim may form a stacking context, or
+   * the scrim would be lifted over the header it sits under.
+   * ------------------------------------------------------------------ */
+  .home {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    flex-direction: column;
+    min-height: var(--home-vh);
+    /* Layer 0: always painted, whatever the media does. */
+    background-color: var(--color-ink);
+    color: var(--color-snow);
+    font-family:
+      ui-sans-serif,
+      system-ui,
+      -apple-system,
+      "Segoe UI",
+      Roboto,
+      "Helvetica Neue",
+      Arial,
+      "Noto Sans",
+      sans-serif;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Media layers (§8.2 M1, M7; §8.3.2). Fixed to the viewport, behind
+   * everything, cover-cropped with one position for both, never stretched.
+   * Decorative: no pointer events, hidden from assistive technology in markup.
+   * ------------------------------------------------------------------ */
+  .home-media-layer {
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: var(--home-media-position);
+    pointer-events: none;
+    user-select: none;
+  }
+
+  /* Layer 1: fades in from the base once decoded. */
+  .home-media-poster {
+    opacity: 0;
+    transition: opacity var(--duration-scene-fade) var(--ease-scene);
+  }
+
+  .home-media-poster[data-ready] {
+    opacity: 1;
+  }
+
+  /* Layer 2: hidden until it is showing frames, then revealed over the
+     poster, whose frame it opens on. */
+  .home-media-video {
+    opacity: 0;
+    transition: opacity var(--duration-base) var(--ease-ui);
+  }
+
+  .home-media-video[data-revealed] {
+    opacity: 1;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Focus ring and control edges. One box-shadow made of two parts, so a
+   * hover edge and the focus ring add up instead of replacing each other.
+   * ------------------------------------------------------------------ */
+  .home-control {
+    --home-edge: 0 0 0 0 transparent;
+
+    box-shadow: var(--home-edge);
+  }
+
+  .home-control:focus-visible {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    box-shadow: var(--home-edge), var(--focus-ring);
+  }
+
+  /* Quiet control (§8.3.3): `ink` at 0.72, a 1px `snow` border, `snow`
+     content. Hover: more solid and a 2px edge, the border plus a 1px inset
+     ring so nothing shifts. Pressed: solid `ink`. */
+  .home-quiet {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--color-snow);
+    background-color: var(--home-scrim);
+    color: var(--color-snow);
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  @media (hover: hover) {
+    .home-quiet:hover {
+      --home-edge: inset 0 0 0 1px var(--color-snow);
+
+      background-color: var(--home-scrim-strong);
+    }
+  }
+
+  .home-quiet:active {
+    --home-edge: inset 0 0 0 1px var(--color-snow);
+
+    background-color: var(--color-ink);
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Header (§9.5, §17.2): one row over the scrim plateau. No fill, border,
+   * or shadow of its own. Not a stacking context.
+   * ------------------------------------------------------------------ */
+  .home-header {
+    position: relative;
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: var(--home-header-height);
+    padding-inline: calc(var(--home-gutter) + env(safe-area-inset-left, 0px))
+      calc(var(--home-gutter) + env(safe-area-inset-right, 0px));
+  }
+
+  /* Scrim plateau (§8.3.3): `ink` at 0.72 across the full width and the full
+     header height, then a feather to nothing. No text sits in the feather.
+     The feather follows the eased profile of the landing's scrims. */
+  .home-header::before {
+    --f: var(--home-feather);
+
+    content: "";
+    position: absolute;
+    z-index: -1;
+    inset: 0 0 calc(-1 * var(--f)) 0;
+    background-image: linear-gradient(
+      to bottom,
+      var(--home-scrim) 0,
+      var(--home-scrim) calc(100% - var(--f)),
+      color-mix(in srgb, var(--color-ink) 60.5%, transparent)
+        calc(100% - var(--f) * 0.75),
+      color-mix(in srgb, var(--color-ink) 36%, transparent)
+        calc(100% - var(--f) * 0.5),
+      color-mix(in srgb, var(--color-ink) 11.5%, transparent)
+        calc(100% - var(--f) * 0.25),
+      transparent 100%
+    );
+    pointer-events: none;
+  }
+
+  /* Below 1024px the brand and New Plan are ordinary items of the row. */
+  .home-header-start {
+    display: contents;
+  }
+
+  .home-header-end {
+    flex: 0 1 auto;
+    display: flex;
+    align-items: center;
+    min-width: 0;
+  }
+
+  /* From 1024px the left group is exactly as wide as the panel: the brand on
+     its left edge, New Plan on its right edge. */
+  @media (width >= 1024px) {
+    .home-header-start {
+      flex: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      width: var(--home-panel-width);
+    }
+
+    .home-header-end {
+      margin-inline-start: auto;
+    }
+  }
+
+  /* Brand: a link to /home with a 44px-tall hit box. */
+  .home-brand {
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 44px;
+    margin-inline: -8px auto;
+    padding-inline: 8px;
+    border-radius: 8px;
+    color: var(--color-snow);
+    font-size: 1rem;
+    line-height: 1.25rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
+    cursor: pointer;
+  }
+
+  /* Below 480px it is set on two lines; from there on one. */
+  @media (width >= 480px) {
+    .home-brand {
+      display: inline-flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 0.3em;
+      line-height: 1.5rem;
+      white-space: nowrap;
+    }
+  }
+
+  @media (width >= 1024px) {
+    .home-brand {
+      margin-inline-end: 0;
+    }
+  }
+
+  @media (hover: hover) {
+    .home-brand:hover {
+      text-decoration-line: underline;
+    }
+  }
+
+  /* Gear: a link with a 44px-tall hit box. */
+  .home-nav-link {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding-inline: 12px;
+    border-radius: 8px;
+    color: var(--color-snow);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
+    cursor: pointer;
+  }
+
+  @media (hover: hover) {
+    .home-nav-link:hover {
+      text-decoration-line: underline;
+    }
+  }
+
+  .home-nav-link:active {
+    background-color: color-mix(in srgb, var(--color-snow) 12%, transparent);
+  }
+
+  /* Identity, 24px after Gear; Sign out, 12px after the identity. */
+  .home-account {
+    display: flex;
+    min-width: 0;
+  }
+
+  .home-header-end > .home-account {
+    margin-inline-start: 24px;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Menu, below 768px (§17.2)
+   * ------------------------------------------------------------------ */
+  .home-menu-button {
+    flex: none;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+  }
+
+  .home-menu-button > svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  /* The popover surface of §11.5.2, end-aligned under the header. */
+  .home-menu {
+    position: absolute;
+    z-index: 30;
+    inset-block-start: 100%;
+    inset-inline-end: calc(
+      var(--home-gutter) + env(safe-area-inset-right, 0px)
+    );
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: min(280px, 100vw - 24px);
+    padding: 16px;
+    border: 1px solid color-mix(in srgb, var(--color-ink) 16%, transparent);
+    border-radius: 16px;
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    box-shadow: 0 8px 24px color-mix(in srgb, var(--color-ink) 24%, transparent);
+    animation: home-fade-in var(--duration-fast) var(--ease-ui) both;
+  }
+
+  .home-menu-link {
+    display: flex;
+    align-items: center;
+    min-height: 48px;
+    margin-inline: -8px;
+    padding-inline: 8px;
+    border-radius: 10px;
+    color: var(--color-ink);
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-ui);
+  }
+
+  @media (hover: hover) {
+    .home-menu-link:hover {
+      background-color: color-mix(in srgb, var(--color-ink) 6%, transparent);
+    }
+  }
+
+  .home-menu-link:active {
+    background-color: color-mix(in srgb, var(--color-ink) 10%, transparent);
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Main and the panel's box (§9.2, §17.1, §17.3). Position and size depend
+   * on the viewport only, never on the panel's content (§9.6).
+   * ------------------------------------------------------------------ */
+  .home-main {
+    flex: 1 0 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    padding: var(--home-main-top) 0 var(--home-main-bottom);
+    transition: opacity var(--duration-fast) var(--ease-ui);
+  }
+
+  /* W3 of FEATURE-002: the page while sign-out is in flight. */
+  .home-main[aria-busy="true"] {
+    opacity: 0.4;
+  }
+
+  .home-panel {
+    flex: none;
+    width: var(--home-panel-width);
+    min-width: 0;
+    height: var(--home-panel-height);
+  }
+
+  @media (width >= 768px) {
+    .home-main {
+      padding-inline: var(--home-gutter);
+    }
+  }
+
+  /* From 1024px the panel stands at the left of the room, on the gutter. It
+     does not follow the landing's centred container (§9.2). */
+  @media (width >= 1024px) {
+    .home-main {
+      justify-content: flex-start;
+      align-items: flex-start;
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Background control (§8.3.4): one 44px circle, quiet-control recipe.
+   * From 1024px it is fixed at the bottom-right, on the gutter. From 768px
+   * to 1023px it sits at the top-right, 8px under the header, in the strip
+   * the docked panel always leaves free. It does not exist below 768px.
+   * ------------------------------------------------------------------ */
+  .home-media-control {
+    position: absolute;
+    inset-block-start: calc(var(--home-header-height) + 8px);
+    inset-inline-end: calc(
+      var(--home-gutter) + env(safe-area-inset-right, 0px)
+    );
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+  }
+
+  @media (width >= 1024px) {
+    .home-media-control {
+      position: fixed;
+      inset-block-start: auto;
+      inset-block-end: var(--home-control-bottom);
+    }
+  }
+
+  .home-media-control > svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+@keyframes home-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/*
+ * The account controls are FEATURE-002's own component (identity, Sign out,
+ * and the working state). Only their presentation over media is the Home's
+ * (§9.5). These rules are unlayered because they replace what the button
+ * primitive sets with utilities, as FEATURE-002's own rules for it do.
+ */
+.home .auth-account {
+  flex: 0 1 auto;
+  gap: 12px;
+  min-width: 0;
+}
+
+.home .auth-identity {
+  max-width: var(--home-identity-max);
+  color: var(--color-snow);
+}
+
+/* Sign out: quiet-control recipe, pill. */
+.home .auth-sign-out {
+  --home-edge: 0 0 0 0 transparent;
+
+  height: auto;
+  min-height: var(--home-control-height);
+  padding: 0 16px;
+  border: 1px solid var(--color-snow);
+  border-radius: 9999px;
+  background-color: var(--home-scrim);
+  box-shadow: var(--home-edge);
+  color: var(--color-snow);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 600;
+  transition: background-color var(--duration-fast) var(--ease-ui);
+}
+
+@media (hover: hover) {
+  .home .auth-sign-out:not([aria-disabled="true"]):hover {
+    --home-edge: inset 0 0 0 1px var(--color-snow);
+
+    background-color: var(--home-scrim-strong);
+  }
+}
+
+.home .auth-sign-out:not([aria-disabled="true"]):active {
+  --home-edge: inset 0 0 0 1px var(--color-snow);
+
+  background-color: var(--color-ink);
+}
+
+.home .auth-sign-out:focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  box-shadow: var(--home-edge), var(--focus-ring);
+}
+
+/*
+ * In the Menu (§17.2) the identity and Sign out are separated by Gear, so
+ * each is its own instance of the component showing one part. The hidden
+ * part is out of the accessibility tree and the tab order.
+ */
+.home-account[data-part="identity"] .auth-sign-out,
+.home-account[data-part="identity"] [role="status"],
+.home-account[data-part="sign-out"] .auth-identity {
+  display: none;
+}
+
+.home-menu .home-account,
+.home-menu .auth-account {
+  display: block;
+}
+
+/* "Signed in as" above the name, which wraps and is never truncated. */
+.home-menu .auth-identity {
+  display: block;
+  max-width: none;
+  overflow: visible;
+  color: var(--color-ink);
+  font-size: 1rem;
+  line-height: 1.5rem;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+/* The label FEATURE-002 keeps for assistive technology is shown here. */
+.home-menu .auth-identity > .sr-only {
+  position: static;
+  display: block;
+  width: auto;
+  height: auto;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  clip-path: none;
+  color: var(--color-stone);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  white-space: normal;
+}
+
+/* Sign out as a row of the Menu. */
+.home-menu .auth-sign-out {
+  width: 100%;
+  min-height: 48px;
+  border-color: var(--color-stone);
+  border-radius: 10px;
+  background-color: transparent;
+  color: var(--color-ink);
+}
+
+@media (hover: hover) {
+  .home-menu .auth-sign-out:not([aria-disabled="true"]):hover {
+    --home-edge: 0 0 0 0 transparent;
+
+    background-color: color-mix(in srgb, var(--color-ink) 6%, transparent);
+  }
+}
+
+.home-menu .auth-sign-out:not([aria-disabled="true"]):active {
+  --home-edge: 0 0 0 0 transparent;
+
+  background-color: color-mix(in srgb, var(--color-ink) 10%, transparent);
+}
+
+/* Reduced motion (§18.1): the poster appears at once; fades are removed.
+   Color-only hover and press changes are kept. */
+@media (prefers-reduced-motion: reduce) {
+  .home-media-poster,
+  .home-media-video,
+  .home-main {
+    transition: none;
+  }
+
+  .home-menu {
+    animation: none;
+  }
+}
