@@ -1,0 +1,3501 @@
+{
+ "filepath": "/Users/jay/Desktop/F26_4495_S2_JiayuL/assets/blender/feature012/avatar-gear-studio-ready-to-go.blend",
+ "is_dirty_after_load": false,
+ "use_autopack": false,
+ "version": [
+  5,
+  2,
+  45
+ ],
+ "scenes": {
+  "Scene": {
+   "custom_props": {},
+   "render_filepath": "/tmp/",
+   "render_engine": "BLENDER_EEVEE",
+   "resolution": [
+    768,
+    1024,
+    100
+   ],
+   "file_format": "PNG",
+   "film_transparent": false,
+   "frame_start": 1,
+   "frame_end": 121,
+   "frame_current": 1,
+   "fps": 30,
+   "fps_base": 1.0,
+   "use_preview_range": false,
+   "camera": "Preview_Camera",
+   "world": "World",
+   "unit_scale": 1.0,
+   "unit_system": "METRIC",
+   "view_layers": [
+    "ViewLayer"
+   ],
+   "view_transform": "Standard",
+   "gltf_props": {}
+  }
+ },
+ "collections": {
+  "F005_Avatar": {
+   "objects": [
+    "Avatar_Head",
+    "Avatar_Hair_Base",
+    "Avatar_Hair_Top",
+    "Avatar_Top_Base",
+    "Avatar_Hands",
+    "Avatar_Legs",
+    "Avatar_Shoes_Default",
+    "Avatar_Root",
+    "Avatar_Armature",
+    "Slot_Head",
+    "Slot_Back",
+    "Slot_Hand_L",
+    "Slot_Hand_R",
+    "Wear_WarmLayer_Body",
+    "Wear_WarmLayer_Collar",
+    "Wear_Shell",
+    "Wear_Boots"
+   ],
+   "children": [],
+   "hide_viewport": false,
+   "hide_render": false,
+   "custom_props": {},
+   "exporters": []
+  },
+  "F005_Gear_Backpack": {
+   "objects": [
+    "Gear_Backpack"
+   ],
+   "children": [],
+   "hide_viewport": false,
+   "hide_render": false,
+   "custom_props": {},
+   "exporters": []
+  },
+  "F005_Gear_Headlamp": {
+   "objects": [
+    "Gear_Headlamp"
+   ],
+   "children": [],
+   "hide_viewport": false,
+   "hide_render": false,
+   "custom_props": {},
+   "exporters": []
+  },
+  "F005_Gear_TrekkingPoles": {
+   "objects": [
+    "Gear_TrekkingPole_L",
+    "Gear_TrekkingPole_R"
+   ],
+   "children": [],
+   "hide_viewport": false,
+   "hide_render": false,
+   "custom_props": {},
+   "exporters": []
+  },
+  "F005_Preview": {
+   "objects": [
+    "Preview_Camera",
+    "Preview_Key",
+    "Preview_Fill"
+   ],
+   "children": [],
+   "hide_viewport": false,
+   "hide_render": false,
+   "custom_props": {},
+   "exporters": []
+  },
+  "F005_Scratch": {
+   "objects": [],
+   "children": [],
+   "hide_viewport": false,
+   "hide_render": false,
+   "custom_props": {},
+   "exporters": []
+  }
+ },
+ "libraries": [],
+ "images": [
+  [
+   "Render Result",
+   "",
+   "VIEWER",
+   false
+  ],
+  [
+   "Viewer Node",
+   "",
+   "VIEWER",
+   false
+  ]
+ ],
+ "texts": {},
+ "sounds": [],
+ "movieclips": [],
+ "cache_files": [],
+ "fonts": [],
+ "node_groups": [],
+ "workspaces": [
+  "Animation",
+  "Compositing",
+  "Geometry Nodes",
+  "Layout",
+  "Modeling",
+  "Rendering",
+  "Sculpting",
+  "Shading",
+  "Texture Paint",
+  "UV Editing"
+ ],
+ "window_managers": [
+  "WinMan"
+ ],
+ "screens_count": 10,
+ "file_browser_spaces": [
+  [
+   "Shading",
+   "/Users/jay/",
+   ""
+  ]
+ ],
+ "all_idprops": [],
+ "objects": {
+  "Avatar_Armature": {
+   "type": "ARMATURE",
+   "parent": "Avatar_Root",
+   "parent_type": "OBJECT",
+   "parent_bone": null,
+   "users_collection": [
+    "F005_Avatar"
+   ],
+   "hide_viewport": false,
+   "hide_render": false,
+   "hide_get": false,
+   "hide_select": false,
+   "select": false,
+   "loc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rot_mode": "XYZ",
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "constraints": [],
+   "modifiers": [],
+   "anim": {
+    "action": "Idle",
+    "drivers": 0,
+    "nla_tracks": [],
+    "use_nla": true,
+    "use_tweak_mode": false,
+    "action_slot": "OBAvatar_Armature",
+    "last_slot_identifier": "OBAvatar_Armature",
+    "action_extrapolation": "HOLD",
+    "action_blend_type": "REPLACE",
+    "action_influence": 1.0
+   }
+  },
+  "Avatar_Hair_Base": {
+   "type": "MESH",
+   "parent": "Avatar_Armature",
+   "parent_type": "OBJECT",
+   "parent_bone": null,
+   "users_collection": [
+    "F005_Avatar"
+   ],
+   "hide_viewport": false,
+   "hide_render": false,
+   "hide_get": false,
+   "hide_select": false,
+   "select": false,
+   "loc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rot_mode": "XYZ",
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "constraints": [],
+   "modifiers": [
+    [
+     "ARMATURE",
+     "Avatar_Armature"
+    ]
+   ],
+   "anim": null
+  },
+  "Avatar_Hair_Top": {
+   "type": "MESH",
+   "parent": "Avatar_Armature",
+   "parent_type": "OBJECT",
+   "parent_bone": null,
+   "users_collection": [
+    "F005_Avatar"
+   ],
+   "hide_viewport": false,
+   "hide_render": false,
+   "hide_get": false,
+   "hide_select": false,
+   "select": false,
+   "loc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rot_mode": "XYZ",
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "constraints": [],
+   "modifiers": [
+    [
+     "ARMATURE",
+     "Avatar_Armature"
+    ]
+   ],
+   "anim": null
+  },
+  "Avatar_Hands": {
+   "type": "MESH",
+   "parent": "Avatar_Armature",
+   "parent_type": "OBJECT",
+   "parent_bone": null,
+   "users_collection": [
+    "F005_Avatar"
+   ],
+   "hide_viewport": false,
+   "hide_render": false,
+   "hide_get": false,
+   "hide_select": false,
+   "select": false,
+   "loc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rot_mode": "XYZ",
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "constraints": [],
+   "modifiers": [
+    [
+     "ARMATURE",
+     "Avatar_Armature"
+    ]
+   ],
+   "anim": null
+  },
+  "Avatar_Head": {
+   "type": "MESH",
+   "parent": "Avatar_Armature",
+   "parent_type": "OBJECT",
+   "parent_bone": null,
+   "users_collection": [
+    "F005_Avatar"
+   ],
+   "hide_viewport": false,
+   "hide_render": false,
+   "hide_get": false,
+   "hide_select": false,
+   "select": false,
+   "loc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rot_mode": "XYZ",
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "constraints": [],
+   "modifiers": [
+    [
+     "ARMATURE",
+     "Avatar_Armature"
+    ]
+   ],
+   "anim": null
+  },
+  "Avatar_Legs": {
+   "type": "MESH",
+   "parent": "Avatar_Armature",
+   "parent_type": "OBJECT",
+   "parent_bone": null,
+   "users_collection": [
+    "F005_Avatar"
+   ],
+   "hide_viewport": false,
+   "hide_render": false,
+   "hide_get": false,
+   "hide_select": false,
+   "select": false,
+   "loc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rot_mode": "XYZ",
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "constraints": [],
+   "modifiers": [
+    [
+     "ARMATURE",
+     "Avatar_Armature"
+    ]
+   ],
+   "anim": null
+  },
+  "Avatar_Root": {
+   "type": "EMPTY",
+   "parent": null,
+   "parent_type": "OBJECT",
+   "parent_bone": null,
+   "users_collection": [
+    "F005_Avatar"
+   ],
+   "hide_viewport": false,
+   "hide_render": false,
+   "hide_get": false,
+   "hide_select": false,
+   "select": false,
+   "loc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rot_mode": "XYZ",
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "constraints": [],
+   "modifiers": [],
+   "anim": null
+  },
+  "Avatar_Shoes_Default": {
+   "type": "MESH",
+   "parent": "Avatar_Armature",
+   "parent_type": "OBJECT",
+   "parent_bone": null,
+   "users_collection": [
+    "F005_Avatar"
+   ],
+   "hide_viewport": false,
+   "hide_render": false,
+   "hide_get": false,
+   "hide_select": false,
+   "select": false,
+   "loc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rot_mode": "XYZ",
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "constraints": [],
+   "modifiers": [
+    [
+     "ARMATURE",
+     "Avatar_Armature"
+    ]
+   ],
+   "anim": null
+  },
+  "Avatar_Top_Base": {
+   "type": "MESH",
+   "parent": "Avatar_Armature",
+   "parent_type": "OBJECT",
+   "parent_bone": null,
+   "users_collection": [
+    "F005_Avatar"
+   ],
+   "hide_viewport": false,
+   "hide_render": false,
+   "hide_get": false,
+   "hide_select": false,
+   "select": false,
+   "loc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rot_mode": "XYZ",
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "constraints": [],
+   "modifiers": [
+    [
+     "ARMATURE",
+     "Avatar_Armature"
+    ]
+   ],
+   "anim": null
+  },
+  "Gear_Backpack": {
+   "type": "MESH",
+   "parent": "Slot_Back",
+   "parent_type": "OBJECT",
+   "parent_bone": null,
+   "users_collection": [
+    "F005_Gear_Backpack"
+   ],
+   "hide_viewport": false,
+   "hide_render": false,
+   "hide_get": false,
+   "hide_select": false,
+   "select": false,
+   "loc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rot_mode": "XYZ",
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "constraints": [],
+   "modifiers": [],
+   "anim": null
+  },
+  "Gear_Headlamp": {
+   "type": "MESH",
+   "parent": "Slot_Head",
+   "parent_type": "OBJECT",
+   "parent_bone": null,
+   "users_collection": [
+    "F005_Gear_Headlamp"
+   ],
+   "hide_viewport": false,
+   "hide_render": false,
+   "hide_get": false,
+   "hide_select": false,
+   "select": false,
+   "loc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rot_mode": "XYZ",
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "constraints": [],
+   "modifiers": [],
+   "anim": null
+  },
+  "Gear_TrekkingPole_L": {
+   "type": "MESH",
+   "parent": "Slot_Hand_L",
+   "parent_type": "OBJECT",
+   "parent_bone": null,
+   "users_collection": [
+    "F005_Gear_TrekkingPoles"
+   ],
+   "hide_viewport": false,
+   "hide_render": false,
+   "hide_get": false,
+   "hide_select": false,
+   "select": false,
+   "loc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rot_mode": "XYZ",
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "constraints": [],
+   "modifiers": [],
+   "anim": null
+  },
+  "Gear_TrekkingPole_R": {
+   "type": "MESH",
+   "parent": "Slot_Hand_R",
+   "parent_type": "OBJECT",
+   "parent_bone": null,
+   "users_collection": [
+    "F005_Gear_TrekkingPoles"
+   ],
+   "hide_viewport": false,
+   "hide_render": false,
+   "hide_get": false,
+   "hide_select": false,
+   "select": false,
+   "loc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rot_mode": "XYZ",
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "constraints": [],
+   "modifiers": [],
+   "anim": null
+  },
+  "Preview_Camera": {
+   "type": "CAMERA",
+   "parent": null,
+   "parent_type": "OBJECT",
+   "parent_bone": null,
+   "users_collection": [
+    "F005_Preview"
+   ],
+   "hide_viewport": false,
+   "hide_render": false,
+   "hide_get": false,
+   "hide_select": false,
+   "select": false,
+   "loc": [
+    4.234674,
+    -0.0,
+    1.618727
+   ],
+   "rot_mode": "QUATERNION",
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "constraints": [],
+   "modifiers": [],
+   "anim": null
+  },
+  "Preview_Fill": {
+   "type": "LIGHT",
+   "parent": "Preview_Camera",
+   "parent_type": "OBJECT",
+   "parent_bone": null,
+   "users_collection": [
+    "F005_Preview"
+   ],
+   "hide_viewport": false,
+   "hide_render": false,
+   "hide_get": false,
+   "hide_select": false,
+   "select": false,
+   "loc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rot_mode": "QUATERNION",
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "constraints": [],
+   "modifiers": [],
+   "anim": null
+  },
+  "Preview_Key": {
+   "type": "LIGHT",
+   "parent": "Preview_Camera",
+   "parent_type": "OBJECT",
+   "parent_bone": null,
+   "users_collection": [
+    "F005_Preview"
+   ],
+   "hide_viewport": false,
+   "hide_render": false,
+   "hide_get": false,
+   "hide_select": false,
+   "select": false,
+   "loc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rot_mode": "QUATERNION",
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "constraints": [],
+   "modifiers": [],
+   "anim": null
+  },
+  "Slot_Back": {
+   "type": "EMPTY",
+   "parent": "Avatar_Armature",
+   "parent_type": "BONE",
+   "parent_bone": "Chest",
+   "users_collection": [
+    "F005_Avatar"
+   ],
+   "hide_viewport": false,
+   "hide_render": false,
+   "hide_get": false,
+   "hide_select": false,
+   "select": false,
+   "loc": [
+    0.0,
+    -0.128122,
+    -0.087805
+   ],
+   "rot_mode": "XYZ",
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "constraints": [],
+   "modifiers": [],
+   "anim": null
+  },
+  "Slot_Hand_L": {
+   "type": "EMPTY",
+   "parent": "Avatar_Armature",
+   "parent_type": "BONE",
+   "parent_bone": "Hand_L",
+   "users_collection": [
+    "F005_Avatar"
+   ],
+   "hide_viewport": false,
+   "hide_render": false,
+   "hide_get": false,
+   "hide_select": false,
+   "select": false,
+   "loc": [
+    0.025936,
+    -0.015,
+    0.001825
+   ],
+   "rot_mode": "XYZ",
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "constraints": [],
+   "modifiers": [],
+   "anim": null
+  },
+  "Slot_Hand_R": {
+   "type": "EMPTY",
+   "parent": "Avatar_Armature",
+   "parent_type": "BONE",
+   "parent_bone": "Hand_R",
+   "users_collection": [
+    "F005_Avatar"
+   ],
+   "hide_viewport": false,
+   "hide_render": false,
+   "hide_get": false,
+   "hide_select": false,
+   "select": false,
+   "loc": [
+    -0.025936,
+    -0.015,
+    0.001825
+   ],
+   "rot_mode": "XYZ",
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "constraints": [],
+   "modifiers": [],
+   "anim": null
+  },
+  "Slot_Head": {
+   "type": "EMPTY",
+   "parent": "Avatar_Armature",
+   "parent_type": "BONE",
+   "parent_bone": "Head",
+   "users_collection": [
+    "F005_Avatar"
+   ],
+   "hide_viewport": false,
+   "hide_render": false,
+   "hide_get": false,
+   "hide_select": false,
+   "select": false,
+   "loc": [
+    -0.0,
+    -0.05,
+    -0.0
+   ],
+   "rot_mode": "XYZ",
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "constraints": [],
+   "modifiers": [],
+   "anim": null
+  },
+  "Wear_Boots": {
+   "type": "MESH",
+   "parent": "Avatar_Armature",
+   "parent_type": "OBJECT",
+   "parent_bone": null,
+   "users_collection": [
+    "F005_Avatar"
+   ],
+   "hide_viewport": false,
+   "hide_render": false,
+   "hide_get": false,
+   "hide_select": false,
+   "select": false,
+   "loc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rot_mode": "XYZ",
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "constraints": [],
+   "modifiers": [
+    [
+     "ARMATURE",
+     "Avatar_Armature"
+    ]
+   ],
+   "anim": null
+  },
+  "Wear_Shell": {
+   "type": "MESH",
+   "parent": "Avatar_Armature",
+   "parent_type": "OBJECT",
+   "parent_bone": null,
+   "users_collection": [
+    "F005_Avatar"
+   ],
+   "hide_viewport": false,
+   "hide_render": false,
+   "hide_get": false,
+   "hide_select": false,
+   "select": false,
+   "loc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rot_mode": "XYZ",
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "constraints": [],
+   "modifiers": [
+    [
+     "ARMATURE",
+     "Avatar_Armature"
+    ]
+   ],
+   "anim": null
+  },
+  "Wear_WarmLayer_Body": {
+   "type": "MESH",
+   "parent": "Avatar_Armature",
+   "parent_type": "OBJECT",
+   "parent_bone": null,
+   "users_collection": [
+    "F005_Avatar"
+   ],
+   "hide_viewport": false,
+   "hide_render": false,
+   "hide_get": false,
+   "hide_select": false,
+   "select": false,
+   "loc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rot_mode": "XYZ",
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "constraints": [],
+   "modifiers": [
+    [
+     "ARMATURE",
+     "Avatar_Armature"
+    ]
+   ],
+   "anim": null
+  },
+  "Wear_WarmLayer_Collar": {
+   "type": "MESH",
+   "parent": "Avatar_Armature",
+   "parent_type": "OBJECT",
+   "parent_bone": null,
+   "users_collection": [
+    "F005_Avatar"
+   ],
+   "hide_viewport": false,
+   "hide_render": false,
+   "hide_get": false,
+   "hide_select": false,
+   "select": false,
+   "loc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rot_mode": "XYZ",
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "constraints": [],
+   "modifiers": [
+    [
+     "ARMATURE",
+     "Avatar_Armature"
+    ]
+   ],
+   "anim": null
+  }
+ },
+ "active_object": "Avatar_Armature",
+ "actions": {
+  "Idle": {
+   "users": 2,
+   "use_fake_user": true,
+   "frame_range": [
+    1.0,
+    121.0
+   ],
+   "use_frame_range": false,
+   "use_cyclic": false,
+   "custom_props": {},
+   "slots": [
+    [
+     "OBAvatar_Armature",
+     "Avatar_Armature",
+     "OBJECT",
+     [
+      "Avatar_Armature"
+     ]
+    ]
+   ],
+   "layers": 1,
+   "fcurves": [
+    {
+     "slot": "OBAvatar_Armature",
+     "path": "pose.bones[\"Breath\"].location",
+     "index": 0,
+     "keys": 121,
+     "interp": [
+      "LINEAR"
+     ],
+     "first": [
+      1.0,
+      0.0
+     ],
+     "last": [
+      121.0,
+      0.0
+     ],
+     "modifiers": [],
+     "extrapolation": "CONSTANT"
+    },
+    {
+     "slot": "OBAvatar_Armature",
+     "path": "pose.bones[\"Breath\"].location",
+     "index": 1,
+     "keys": 121,
+     "interp": [
+      "LINEAR"
+     ],
+     "first": [
+      1.0,
+      0.0
+     ],
+     "last": [
+      121.0,
+      0.0
+     ],
+     "modifiers": [],
+     "extrapolation": "CONSTANT"
+    },
+    {
+     "slot": "OBAvatar_Armature",
+     "path": "pose.bones[\"Breath\"].location",
+     "index": 2,
+     "keys": 121,
+     "interp": [
+      "LINEAR"
+     ],
+     "first": [
+      1.0,
+      0.0
+     ],
+     "last": [
+      121.0,
+      0.0
+     ],
+     "modifiers": [],
+     "extrapolation": "CONSTANT"
+    },
+    {
+     "slot": "OBAvatar_Armature",
+     "path": "pose.bones[\"Neck\"].rotation_quaternion",
+     "index": 0,
+     "keys": 121,
+     "interp": [
+      "LINEAR"
+     ],
+     "first": [
+      1.0,
+      1.0
+     ],
+     "last": [
+      121.0,
+      1.0
+     ],
+     "modifiers": [],
+     "extrapolation": "CONSTANT"
+    },
+    {
+     "slot": "OBAvatar_Armature",
+     "path": "pose.bones[\"Neck\"].rotation_quaternion",
+     "index": 1,
+     "keys": 121,
+     "interp": [
+      "LINEAR"
+     ],
+     "first": [
+      1.0,
+      0.0
+     ],
+     "last": [
+      121.0,
+      0.0
+     ],
+     "modifiers": [],
+     "extrapolation": "CONSTANT"
+    },
+    {
+     "slot": "OBAvatar_Armature",
+     "path": "pose.bones[\"Neck\"].rotation_quaternion",
+     "index": 2,
+     "keys": 121,
+     "interp": [
+      "LINEAR"
+     ],
+     "first": [
+      1.0,
+      0.0
+     ],
+     "last": [
+      121.0,
+      0.0
+     ],
+     "modifiers": [],
+     "extrapolation": "CONSTANT"
+    },
+    {
+     "slot": "OBAvatar_Armature",
+     "path": "pose.bones[\"Neck\"].rotation_quaternion",
+     "index": 3,
+     "keys": 121,
+     "interp": [
+      "LINEAR"
+     ],
+     "first": [
+      1.0,
+      0.0
+     ],
+     "last": [
+      121.0,
+      0.0
+     ],
+     "modifiers": [],
+     "extrapolation": "CONSTANT"
+    },
+    {
+     "slot": "OBAvatar_Armature",
+     "path": "pose.bones[\"Head\"].rotation_quaternion",
+     "index": 0,
+     "keys": 121,
+     "interp": [
+      "LINEAR"
+     ],
+     "first": [
+      1.0,
+      1.0
+     ],
+     "last": [
+      121.0,
+      1.0
+     ],
+     "modifiers": [],
+     "extrapolation": "CONSTANT"
+    },
+    {
+     "slot": "OBAvatar_Armature",
+     "path": "pose.bones[\"Head\"].rotation_quaternion",
+     "index": 1,
+     "keys": 121,
+     "interp": [
+      "LINEAR"
+     ],
+     "first": [
+      1.0,
+      0.0
+     ],
+     "last": [
+      121.0,
+      0.0
+     ],
+     "modifiers": [],
+     "extrapolation": "CONSTANT"
+    },
+    {
+     "slot": "OBAvatar_Armature",
+     "path": "pose.bones[\"Head\"].rotation_quaternion",
+     "index": 2,
+     "keys": 121,
+     "interp": [
+      "LINEAR"
+     ],
+     "first": [
+      1.0,
+      0.0
+     ],
+     "last": [
+      121.0,
+      0.0
+     ],
+     "modifiers": [],
+     "extrapolation": "CONSTANT"
+    },
+    {
+     "slot": "OBAvatar_Armature",
+     "path": "pose.bones[\"Head\"].rotation_quaternion",
+     "index": 3,
+     "keys": 121,
+     "interp": [
+      "LINEAR"
+     ],
+     "first": [
+      1.0,
+      0.0
+     ],
+     "last": [
+      121.0,
+      0.0
+     ],
+     "modifiers": [],
+     "extrapolation": "CONSTANT"
+    }
+   ]
+  },
+  "ready_to_go": {
+   "users": 1,
+   "use_fake_user": true,
+   "frame_range": [
+    1.0,
+    121.0
+   ],
+   "use_frame_range": false,
+   "use_cyclic": false,
+   "custom_props": {},
+   "slots": [
+    [
+     "OBAvatar_Armature",
+     "Avatar_Armature",
+     "OBJECT",
+     []
+    ]
+   ],
+   "layers": 1,
+   "fcurves": [
+    {
+     "slot": "OBAvatar_Armature",
+     "path": "pose.bones[\"Spine\"].rotation_quaternion",
+     "index": 0,
+     "keys": 121,
+     "interp": [
+      "LINEAR"
+     ],
+     "first": [
+      1.0,
+      1.0
+     ],
+     "last": [
+      121.0,
+      1.0
+     ],
+     "modifiers": [],
+     "extrapolation": "CONSTANT"
+    },
+    {
+     "slot": "OBAvatar_Armature",
+     "path": "pose.bones[\"Spine\"].rotation_quaternion",
+     "index": 1,
+     "keys": 121,
+     "interp": [
+      "LINEAR"
+     ],
+     "first": [
+      1.0,
+      0.0
+     ],
+     "last": [
+      121.0,
+      0.0
+     ],
+     "modifiers": [],
+     "extrapolation": "CONSTANT"
+    },
+    {
+     "slot": "OBAvatar_Armature",
+     "path": "pose.bones[\"Chest\"].rotation_quaternion",
+     "index": 0,
+     "keys": 121,
+     "interp": [
+      "LINEAR"
+     ],
+     "first": [
+      1.0,
+      1.0
+     ],
+     "last": [
+      121.0,
+      1.0
+     ],
+     "modifiers": [],
+     "extrapolation": "CONSTANT"
+    },
+    {
+     "slot": "OBAvatar_Armature",
+     "path": "pose.bones[\"Chest\"].rotation_quaternion",
+     "index": 1,
+     "keys": 121,
+     "interp": [
+      "LINEAR"
+     ],
+     "first": [
+      1.0,
+      0.0
+     ],
+     "last": [
+      121.0,
+      0.0
+     ],
+     "modifiers": [],
+     "extrapolation": "CONSTANT"
+    },
+    {
+     "slot": "OBAvatar_Armature",
+     "path": "pose.bones[\"Neck\"].rotation_quaternion",
+     "index": 0,
+     "keys": 121,
+     "interp": [
+      "LINEAR"
+     ],
+     "first": [
+      1.0,
+      1.0
+     ],
+     "last": [
+      121.0,
+      1.0
+     ],
+     "modifiers": [],
+     "extrapolation": "CONSTANT"
+    },
+    {
+     "slot": "OBAvatar_Armature",
+     "path": "pose.bones[\"Neck\"].rotation_quaternion",
+     "index": 1,
+     "keys": 121,
+     "interp": [
+      "LINEAR"
+     ],
+     "first": [
+      1.0,
+      0.0
+     ],
+     "last": [
+      121.0,
+      0.0
+     ],
+     "modifiers": [],
+     "extrapolation": "CONSTANT"
+    },
+    {
+     "slot": "OBAvatar_Armature",
+     "path": "pose.bones[\"Head\"].rotation_quaternion",
+     "index": 0,
+     "keys": 121,
+     "interp": [
+      "LINEAR"
+     ],
+     "first": [
+      1.0,
+      1.0
+     ],
+     "last": [
+      121.0,
+      1.0
+     ],
+     "modifiers": [],
+     "extrapolation": "CONSTANT"
+    },
+    {
+     "slot": "OBAvatar_Armature",
+     "path": "pose.bones[\"Head\"].rotation_quaternion",
+     "index": 1,
+     "keys": 121,
+     "interp": [
+      "LINEAR"
+     ],
+     "first": [
+      1.0,
+      0.0
+     ],
+     "last": [
+      121.0,
+      0.0
+     ],
+     "modifiers": [],
+     "extrapolation": "CONSTANT"
+    },
+    {
+     "slot": "OBAvatar_Armature",
+     "path": "pose.bones[\"Head\"].rotation_quaternion",
+     "index": 2,
+     "keys": 121,
+     "interp": [
+      "LINEAR"
+     ],
+     "first": [
+      1.0,
+      0.0
+     ],
+     "last": [
+      121.0,
+      0.0
+     ],
+     "modifiers": [],
+     "extrapolation": "CONSTANT"
+    },
+    {
+     "slot": "OBAvatar_Armature",
+     "path": "pose.bones[\"Head\"].rotation_quaternion",
+     "index": 3,
+     "keys": 121,
+     "interp": [
+      "LINEAR"
+     ],
+     "first": [
+      1.0,
+      0.0
+     ],
+     "last": [
+      121.0,
+      0.0
+     ],
+     "modifiers": [],
+     "extrapolation": "CONSTANT"
+    },
+    {
+     "slot": "OBAvatar_Armature",
+     "path": "pose.bones[\"Shoulder_L\"].rotation_quaternion",
+     "index": 0,
+     "keys": 121,
+     "interp": [
+      "LINEAR"
+     ],
+     "first": [
+      1.0,
+      1.0
+     ],
+     "last": [
+      121.0,
+      1.0
+     ],
+     "modifiers": [],
+     "extrapolation": "CONSTANT"
+    },
+    {
+     "slot": "OBAvatar_Armature",
+     "path": "pose.bones[\"Shoulder_L\"].rotation_quaternion",
+     "index": 1,
+     "keys": 121,
+     "interp": [
+      "LINEAR"
+     ],
+     "first": [
+      1.0,
+      0.0
+     ],
+     "last": [
+      121.0,
+      0.0
+     ],
+     "modifiers": [],
+     "extrapolation": "CONSTANT"
+    },
+    {
+     "slot": "OBAvatar_Armature",
+     "path": "pose.bones[\"Shoulder_L\"].rotation_quaternion",
+     "index": 2,
+     "keys": 121,
+     "interp": [
+      "LINEAR"
+     ],
+     "first": [
+      1.0,
+      0.0
+     ],
+     "last": [
+      121.0,
+      0.0
+     ],
+     "modifiers": [],
+     "extrapolation": "CONSTANT"
+    },
+    {
+     "slot": "OBAvatar_Armature",
+     "path": "pose.bones[\"Shoulder_L\"].rotation_quaternion",
+     "index": 3,
+     "keys": 121,
+     "interp": [
+      "LINEAR"
+     ],
+     "first": [
+      1.0,
+      0.0
+     ],
+     "last": [
+      121.0,
+      0.0
+     ],
+     "modifiers": [],
+     "extrapolation": "CONSTANT"
+    },
+    {
+     "slot": "OBAvatar_Armature",
+     "path": "pose.bones[\"UpperArm_L\"].rotation_quaternion",
+     "index": 0,
+     "keys": 121,
+     "interp": [
+      "LINEAR"
+     ],
+     "first": [
+      1.0,
+      1.0
+     ],
+     "last": [
+      121.0,
+      1.0
+     ],
+     "modifiers": [],
+     "extrapolation": "CONSTANT"
+    },
+    {
+     "slot": "OBAvatar_Armature",
+     "path": "pose.bones[\"UpperArm_L\"].rotation_quaternion",
+     "index": 1,
+     "keys": 121,
+     "interp": [
+      "LINEAR"
+     ],
+     "first": [
+      1.0,
+      0.0
+     ],
+     "last": [
+      121.0,
+      0.0
+     ],
+     "modifiers": [],
+     "extrapolation": "CONSTANT"
+    },
+    {
+     "slot": "OBAvatar_Armature",
+     "path": "pose.bones[\"UpperArm_L\"].rotation_quaternion",
+     "index": 2,
+     "keys": 121,
+     "interp": [
+      "LINEAR"
+     ],
+     "first": [
+      1.0,
+      0.0
+     ],
+     "last": [
+      121.0,
+      0.0
+     ],
+     "modifiers": [],
+     "extrapolation": "CONSTANT"
+    },
+    {
+     "slot": "OBAvatar_Armature",
+     "path": "pose.bones[\"UpperArm_L\"].rotation_quaternion",
+     "index": 3,
+     "keys": 121,
+     "interp": [
+      "LINEAR"
+     ],
+     "first": [
+      1.0,
+      0.0
+     ],
+     "last": [
+      121.0,
+      0.0
+     ],
+     "modifiers": [],
+     "extrapolation": "CONSTANT"
+    },
+    {
+     "slot": "OBAvatar_Armature",
+     "path": "pose.bones[\"LowerArm_L\"].rotation_quaternion",
+     "index": 0,
+     "keys": 121,
+     "interp": [
+      "LINEAR"
+     ],
+     "first": [
+      1.0,
+      1.0
+     ],
+     "last": [
+      121.0,
+      1.0
+     ],
+     "modifiers": [],
+     "extrapolation": "CONSTANT"
+    },
+    {
+     "slot": "OBAvatar_Armature",
+     "path": "pose.bones[\"LowerArm_L\"].rotation_quaternion",
+     "index": 1,
+     "keys": 121,
+     "interp": [
+      "LINEAR"
+     ],
+     "first": [
+      1.0,
+      0.0
+     ],
+     "last": [
+      121.0,
+      0.0
+     ],
+     "modifiers": [],
+     "extrapolation": "CONSTANT"
+    },
+    {
+     "slot": "OBAvatar_Armature",
+     "path": "pose.bones[\"Shoulder_R\"].rotation_quaternion",
+     "index": 0,
+     "keys": 121,
+     "interp": [
+      "LINEAR"
+     ],
+     "first": [
+      1.0,
+      1.0
+     ],
+     "last": [
+      121.0,
+      1.0
+     ],
+     "modifiers": [],
+     "extrapolation": "CONSTANT"
+    },
+    {
+     "slot": "OBAvatar_Armature",
+     "path": "pose.bones[\"Shoulder_R\"].rotation_quaternion",
+     "index": 1,
+     "keys": 121,
+     "interp": [
+      "LINEAR"
+     ],
+     "first": [
+      1.0,
+      0.0
+     ],
+     "last": [
+      121.0,
+      0.0
+     ],
+     "modifiers": [],
+     "extrapolation": "CONSTANT"
+    },
+    {
+     "slot": "OBAvatar_Armature",
+     "path": "pose.bones[\"Shoulder_R\"].rotation_quaternion",
+     "index": 2,
+     "keys": 121,
+     "interp": [
+      "LINEAR"
+     ],
+     "first": [
+      1.0,
+      0.0
+     ],
+     "last": [
+      121.0,
+      0.0
+     ],
+     "modifiers": [],
+     "extrapolation": "CONSTANT"
+    },
+    {
+     "slot": "OBAvatar_Armature",
+     "path": "pose.bones[\"Shoulder_R\"].rotation_quaternion",
+     "index": 3,
+     "keys": 121,
+     "interp": [
+      "LINEAR"
+     ],
+     "first": [
+      1.0,
+      0.0
+     ],
+     "last": [
+      121.0,
+      0.0
+     ],
+     "modifiers": [],
+     "extrapolation": "CONSTANT"
+    },
+    {
+     "slot": "OBAvatar_Armature",
+     "path": "pose.bones[\"UpperArm_R\"].rotation_quaternion",
+     "index": 0,
+     "keys": 121,
+     "interp": [
+      "LINEAR"
+     ],
+     "first": [
+      1.0,
+      1.0
+     ],
+     "last": [
+      121.0,
+      1.0
+     ],
+     "modifiers": [],
+     "extrapolation": "CONSTANT"
+    },
+    {
+     "slot": "OBAvatar_Armature",
+     "path": "pose.bones[\"UpperArm_R\"].rotation_quaternion",
+     "index": 1,
+     "keys": 121,
+     "interp": [
+      "LINEAR"
+     ],
+     "first": [
+      1.0,
+      0.0
+     ],
+     "last": [
+      121.0,
+      0.0
+     ],
+     "modifiers": [],
+     "extrapolation": "CONSTANT"
+    },
+    {
+     "slot": "OBAvatar_Armature",
+     "path": "pose.bones[\"UpperArm_R\"].rotation_quaternion",
+     "index": 2,
+     "keys": 121,
+     "interp": [
+      "LINEAR"
+     ],
+     "first": [
+      1.0,
+      0.0
+     ],
+     "last": [
+      121.0,
+      0.0
+     ],
+     "modifiers": [],
+     "extrapolation": "CONSTANT"
+    },
+    {
+     "slot": "OBAvatar_Armature",
+     "path": "pose.bones[\"UpperArm_R\"].rotation_quaternion",
+     "index": 3,
+     "keys": 121,
+     "interp": [
+      "LINEAR"
+     ],
+     "first": [
+      1.0,
+      0.0
+     ],
+     "last": [
+      121.0,
+      0.0
+     ],
+     "modifiers": [],
+     "extrapolation": "CONSTANT"
+    },
+    {
+     "slot": "OBAvatar_Armature",
+     "path": "pose.bones[\"LowerArm_R\"].rotation_quaternion",
+     "index": 0,
+     "keys": 121,
+     "interp": [
+      "LINEAR"
+     ],
+     "first": [
+      1.0,
+      1.0
+     ],
+     "last": [
+      121.0,
+      1.0
+     ],
+     "modifiers": [],
+     "extrapolation": "CONSTANT"
+    },
+    {
+     "slot": "OBAvatar_Armature",
+     "path": "pose.bones[\"LowerArm_R\"].rotation_quaternion",
+     "index": 1,
+     "keys": 121,
+     "interp": [
+      "LINEAR"
+     ],
+     "first": [
+      1.0,
+      0.0
+     ],
+     "last": [
+      121.0,
+      0.0
+     ],
+     "modifiers": [],
+     "extrapolation": "CONSTANT"
+    },
+    {
+     "slot": "OBAvatar_Armature",
+     "path": "pose.bones[\"Breath\"].location",
+     "index": 1,
+     "keys": 121,
+     "interp": [
+      "LINEAR"
+     ],
+     "first": [
+      1.0,
+      0.0
+     ],
+     "last": [
+      121.0,
+      0.0
+     ],
+     "modifiers": [],
+     "extrapolation": "CONSTANT"
+    },
+    {
+     "slot": "OBAvatar_Armature",
+     "path": "pose.bones[\"Breath\"].location",
+     "index": 2,
+     "keys": 121,
+     "interp": [
+      "LINEAR"
+     ],
+     "first": [
+      1.0,
+      0.0
+     ],
+     "last": [
+      121.0,
+      0.0
+     ],
+     "modifiers": [],
+     "extrapolation": "CONSTANT"
+    }
+   ]
+  }
+ },
+ "armature_data": {
+  "name": "Avatar_Armature_Data",
+  "pose_position": "POSE",
+  "display_type": "STICK",
+  "collections": []
+ },
+ "bones": {
+  "Root": {
+   "parent": null,
+   "use_deform": true,
+   "use_connect": false,
+   "inherit_scale": "FULL",
+   "use_inherit_rotation": true,
+   "use_local_location": true,
+   "head_w": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "tail_w": [
+    0.0,
+    0.0,
+    0.12
+   ],
+   "length": 0.12,
+   "roll_axes": {
+    "x": [
+     1.0,
+     0.0,
+     0.0
+    ],
+    "y": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "z": [
+     0.0,
+     -1.0,
+     0.0
+    ]
+   },
+   "rotation_mode": "QUATERNION",
+   "pose_loc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_rot_q": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_rot_e": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "constraints": [],
+   "lock_loc": [
+    false,
+    false,
+    false
+   ],
+   "lock_rot": [
+    false,
+    false,
+    false
+   ],
+   "ik": [
+    false,
+    false,
+    false
+   ]
+  },
+  "Hips": {
+   "parent": "Root",
+   "use_deform": true,
+   "use_connect": false,
+   "inherit_scale": "FULL",
+   "use_inherit_rotation": true,
+   "use_local_location": true,
+   "head_w": [
+    0.0,
+    0.01,
+    0.95
+   ],
+   "tail_w": [
+    0.0,
+    0.01,
+    1.05
+   ],
+   "length": 0.1,
+   "roll_axes": {
+    "x": [
+     1.0,
+     0.0,
+     0.0
+    ],
+    "y": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "z": [
+     0.0,
+     -1.0,
+     0.0
+    ]
+   },
+   "rotation_mode": "QUATERNION",
+   "pose_loc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_rot_q": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_rot_e": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "constraints": [],
+   "lock_loc": [
+    false,
+    false,
+    false
+   ],
+   "lock_rot": [
+    false,
+    false,
+    false
+   ],
+   "ik": [
+    false,
+    false,
+    false
+   ]
+  },
+  "Spine": {
+   "parent": "Hips",
+   "use_deform": true,
+   "use_connect": true,
+   "inherit_scale": "FULL",
+   "use_inherit_rotation": true,
+   "use_local_location": true,
+   "head_w": [
+    0.0,
+    0.01,
+    1.05
+   ],
+   "tail_w": [
+    0.0,
+    0.015,
+    1.2
+   ],
+   "length": 0.1501,
+   "roll_axes": {
+    "x": [
+     1.0,
+     0.0,
+     -0.0
+    ],
+    "y": [
+     0.0,
+     0.033,
+     0.999
+    ],
+    "z": [
+     0.0,
+     -0.999,
+     0.033
+    ]
+   },
+   "rotation_mode": "QUATERNION",
+   "pose_loc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_rot_q": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_rot_e": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "constraints": [],
+   "lock_loc": [
+    false,
+    false,
+    false
+   ],
+   "lock_rot": [
+    false,
+    false,
+    false
+   ],
+   "ik": [
+    false,
+    false,
+    false
+   ]
+  },
+  "Chest": {
+   "parent": "Spine",
+   "use_deform": true,
+   "use_connect": true,
+   "inherit_scale": "FULL",
+   "use_inherit_rotation": true,
+   "use_local_location": true,
+   "head_w": [
+    0.0,
+    0.015,
+    1.2
+   ],
+   "tail_w": [
+    0.0,
+    0.02,
+    1.43
+   ],
+   "length": 0.2301,
+   "roll_axes": {
+    "x": [
+     1.0,
+     0.0,
+     -0.0
+    ],
+    "y": [
+     -0.0,
+     0.022,
+     1.0
+    ],
+    "z": [
+     0.0,
+     -1.0,
+     0.022
+    ]
+   },
+   "rotation_mode": "QUATERNION",
+   "pose_loc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_rot_q": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_rot_e": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "constraints": [],
+   "lock_loc": [
+    false,
+    false,
+    false
+   ],
+   "lock_rot": [
+    false,
+    false,
+    false
+   ],
+   "ik": [
+    false,
+    false,
+    false
+   ]
+  },
+  "Breath": {
+   "parent": "Chest",
+   "use_deform": true,
+   "use_connect": false,
+   "inherit_scale": "FULL",
+   "use_inherit_rotation": true,
+   "use_local_location": true,
+   "head_w": [
+    0.0,
+    -0.06,
+    1.28
+   ],
+   "tail_w": [
+    0.0,
+    -0.11,
+    1.28
+   ],
+   "length": 0.05,
+   "roll_axes": {
+    "x": [
+     -1.0,
+     -0.0,
+     0.0
+    ],
+    "y": [
+     0.0,
+     -1.0,
+     0.0
+    ],
+    "z": [
+     0.0,
+     -0.0,
+     1.0
+    ]
+   },
+   "rotation_mode": "QUATERNION",
+   "pose_loc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_rot_q": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_rot_e": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "constraints": [],
+   "lock_loc": [
+    false,
+    false,
+    false
+   ],
+   "lock_rot": [
+    false,
+    false,
+    false
+   ],
+   "ik": [
+    false,
+    false,
+    false
+   ]
+  },
+  "Neck": {
+   "parent": "Chest",
+   "use_deform": true,
+   "use_connect": true,
+   "inherit_scale": "FULL",
+   "use_inherit_rotation": true,
+   "use_local_location": true,
+   "head_w": [
+    0.0,
+    0.02,
+    1.43
+   ],
+   "tail_w": [
+    0.0,
+    0.015,
+    1.5
+   ],
+   "length": 0.0702,
+   "roll_axes": {
+    "x": [
+     1.0,
+     0.0,
+     0.0
+    ],
+    "y": [
+     -0.0,
+     -0.071,
+     0.997
+    ],
+    "z": [
+     0.0,
+     -0.997,
+     -0.071
+    ]
+   },
+   "rotation_mode": "QUATERNION",
+   "pose_loc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_rot_q": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_rot_e": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "constraints": [],
+   "lock_loc": [
+    false,
+    false,
+    false
+   ],
+   "lock_rot": [
+    false,
+    false,
+    false
+   ],
+   "ik": [
+    false,
+    false,
+    false
+   ]
+  },
+  "Head": {
+   "parent": "Neck",
+   "use_deform": true,
+   "use_connect": true,
+   "inherit_scale": "FULL",
+   "use_inherit_rotation": true,
+   "use_local_location": true,
+   "head_w": [
+    0.0,
+    0.015,
+    1.5
+   ],
+   "tail_w": [
+    0.0,
+    0.015,
+    1.7
+   ],
+   "length": 0.2,
+   "roll_axes": {
+    "x": [
+     1.0,
+     0.0,
+     -0.0
+    ],
+    "y": [
+     0.0,
+     -0.0,
+     1.0
+    ],
+    "z": [
+     -0.0,
+     -1.0,
+     -0.0
+    ]
+   },
+   "rotation_mode": "QUATERNION",
+   "pose_loc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_rot_q": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_rot_e": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "constraints": [],
+   "lock_loc": [
+    false,
+    false,
+    false
+   ],
+   "lock_rot": [
+    false,
+    false,
+    false
+   ],
+   "ik": [
+    false,
+    false,
+    false
+   ]
+  },
+  "Shoulder_L": {
+   "parent": "Chest",
+   "use_deform": true,
+   "use_connect": false,
+   "inherit_scale": "FULL",
+   "use_inherit_rotation": true,
+   "use_local_location": true,
+   "head_w": [
+    0.03,
+    0.02,
+    1.4
+   ],
+   "tail_w": [
+    0.185,
+    0.02,
+    1.4
+   ],
+   "length": 0.155,
+   "roll_axes": {
+    "x": [
+     0.0,
+     -0.0,
+     -1.0
+    ],
+    "y": [
+     1.0,
+     -0.0,
+     0.0
+    ],
+    "z": [
+     -0.0,
+     -1.0,
+     0.0
+    ]
+   },
+   "rotation_mode": "QUATERNION",
+   "pose_loc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_rot_q": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_rot_e": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "constraints": [],
+   "lock_loc": [
+    false,
+    false,
+    false
+   ],
+   "lock_rot": [
+    false,
+    false,
+    false
+   ],
+   "ik": [
+    false,
+    false,
+    false
+   ]
+  },
+  "UpperArm_L": {
+   "parent": "Shoulder_L",
+   "use_deform": true,
+   "use_connect": true,
+   "inherit_scale": "FULL",
+   "use_inherit_rotation": true,
+   "use_local_location": true,
+   "head_w": [
+    0.185,
+    0.02,
+    1.4
+   ],
+   "tail_w": [
+    0.32,
+    0.02,
+    1.1662
+   ],
+   "length": 0.27,
+   "roll_axes": {
+    "x": [
+     -0.866,
+     -0.0,
+     -0.5
+    ],
+    "y": [
+     0.5,
+     0.0,
+     -0.866
+    ],
+    "z": [
+     0.0,
+     -1.0,
+     0.0
+    ]
+   },
+   "rotation_mode": "QUATERNION",
+   "pose_loc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_rot_q": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_rot_e": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "constraints": [],
+   "lock_loc": [
+    false,
+    false,
+    false
+   ],
+   "lock_rot": [
+    false,
+    false,
+    false
+   ],
+   "ik": [
+    false,
+    false,
+    false
+   ]
+  },
+  "LowerArm_L": {
+   "parent": "UpperArm_L",
+   "use_deform": true,
+   "use_connect": true,
+   "inherit_scale": "FULL",
+   "use_inherit_rotation": true,
+   "use_local_location": true,
+   "head_w": [
+    0.32,
+    0.02,
+    1.1662
+   ],
+   "tail_w": [
+    0.4441,
+    -0.0105,
+    0.9513
+   ],
+   "length": 0.25,
+   "roll_axes": {
+    "x": [
+     -0.866,
+     -0.0,
+     -0.5
+    ],
+    "y": [
+     0.496,
+     -0.122,
+     -0.86
+    ],
+    "z": [
+     -0.061,
+     -0.993,
+     0.106
+    ]
+   },
+   "rotation_mode": "QUATERNION",
+   "pose_loc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_rot_q": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_rot_e": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "constraints": [],
+   "lock_loc": [
+    false,
+    false,
+    false
+   ],
+   "lock_rot": [
+    false,
+    false,
+    false
+   ],
+   "ik": [
+    false,
+    false,
+    false
+   ]
+  },
+  "Hand_L": {
+   "parent": "LowerArm_L",
+   "use_deform": true,
+   "use_connect": true,
+   "inherit_scale": "FULL",
+   "use_inherit_rotation": true,
+   "use_local_location": true,
+   "head_w": [
+    0.4441,
+    -0.0105,
+    0.9513
+   ],
+   "tail_w": [
+    0.4887,
+    -0.0214,
+    0.8739
+   ],
+   "length": 0.09,
+   "roll_axes": {
+    "x": [
+     -0.866,
+     -0.0,
+     -0.5
+    ],
+    "y": [
+     0.496,
+     -0.122,
+     -0.86
+    ],
+    "z": [
+     -0.061,
+     -0.993,
+     0.106
+    ]
+   },
+   "rotation_mode": "QUATERNION",
+   "pose_loc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_rot_q": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_rot_e": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "constraints": [],
+   "lock_loc": [
+    false,
+    false,
+    false
+   ],
+   "lock_rot": [
+    false,
+    false,
+    false
+   ],
+   "ik": [
+    false,
+    false,
+    false
+   ]
+  },
+  "Shoulder_R": {
+   "parent": "Chest",
+   "use_deform": true,
+   "use_connect": false,
+   "inherit_scale": "FULL",
+   "use_inherit_rotation": true,
+   "use_local_location": true,
+   "head_w": [
+    -0.03,
+    0.02,
+    1.4
+   ],
+   "tail_w": [
+    -0.185,
+    0.02,
+    1.4
+   ],
+   "length": 0.155,
+   "roll_axes": {
+    "x": [
+     -0.0,
+     0.0,
+     1.0
+    ],
+    "y": [
+     -1.0,
+     0.0,
+     -0.0
+    ],
+    "z": [
+     -0.0,
+     -1.0,
+     0.0
+    ]
+   },
+   "rotation_mode": "QUATERNION",
+   "pose_loc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_rot_q": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_rot_e": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "constraints": [],
+   "lock_loc": [
+    false,
+    false,
+    false
+   ],
+   "lock_rot": [
+    false,
+    false,
+    false
+   ],
+   "ik": [
+    false,
+    false,
+    false
+   ]
+  },
+  "UpperArm_R": {
+   "parent": "Shoulder_R",
+   "use_deform": true,
+   "use_connect": true,
+   "inherit_scale": "FULL",
+   "use_inherit_rotation": true,
+   "use_local_location": true,
+   "head_w": [
+    -0.185,
+    0.02,
+    1.4
+   ],
+   "tail_w": [
+    -0.32,
+    0.02,
+    1.1662
+   ],
+   "length": 0.27,
+   "roll_axes": {
+    "x": [
+     -0.866,
+     0.0,
+     0.5
+    ],
+    "y": [
+     -0.5,
+     0.0,
+     -0.866
+    ],
+    "z": [
+     -0.0,
+     -1.0,
+     0.0
+    ]
+   },
+   "rotation_mode": "QUATERNION",
+   "pose_loc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_rot_q": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_rot_e": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "constraints": [],
+   "lock_loc": [
+    false,
+    false,
+    false
+   ],
+   "lock_rot": [
+    false,
+    false,
+    false
+   ],
+   "ik": [
+    false,
+    false,
+    false
+   ]
+  },
+  "LowerArm_R": {
+   "parent": "UpperArm_R",
+   "use_deform": true,
+   "use_connect": true,
+   "inherit_scale": "FULL",
+   "use_inherit_rotation": true,
+   "use_local_location": true,
+   "head_w": [
+    -0.32,
+    0.02,
+    1.1662
+   ],
+   "tail_w": [
+    -0.4441,
+    -0.0105,
+    0.9513
+   ],
+   "length": 0.25,
+   "roll_axes": {
+    "x": [
+     -0.866,
+     0.0,
+     0.5
+    ],
+    "y": [
+     -0.496,
+     -0.122,
+     -0.86
+    ],
+    "z": [
+     0.061,
+     -0.993,
+     0.106
+    ]
+   },
+   "rotation_mode": "QUATERNION",
+   "pose_loc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_rot_q": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_rot_e": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "constraints": [],
+   "lock_loc": [
+    false,
+    false,
+    false
+   ],
+   "lock_rot": [
+    false,
+    false,
+    false
+   ],
+   "ik": [
+    false,
+    false,
+    false
+   ]
+  },
+  "Hand_R": {
+   "parent": "LowerArm_R",
+   "use_deform": true,
+   "use_connect": true,
+   "inherit_scale": "FULL",
+   "use_inherit_rotation": true,
+   "use_local_location": true,
+   "head_w": [
+    -0.4441,
+    -0.0105,
+    0.9513
+   ],
+   "tail_w": [
+    -0.4887,
+    -0.0214,
+    0.8739
+   ],
+   "length": 0.09,
+   "roll_axes": {
+    "x": [
+     -0.866,
+     0.0,
+     0.5
+    ],
+    "y": [
+     -0.496,
+     -0.122,
+     -0.86
+    ],
+    "z": [
+     0.061,
+     -0.993,
+     0.106
+    ]
+   },
+   "rotation_mode": "QUATERNION",
+   "pose_loc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_rot_q": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_rot_e": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "constraints": [],
+   "lock_loc": [
+    false,
+    false,
+    false
+   ],
+   "lock_rot": [
+    false,
+    false,
+    false
+   ],
+   "ik": [
+    false,
+    false,
+    false
+   ]
+  },
+  "UpperLeg_L": {
+   "parent": "Hips",
+   "use_deform": true,
+   "use_connect": false,
+   "inherit_scale": "FULL",
+   "use_inherit_rotation": true,
+   "use_local_location": true,
+   "head_w": [
+    0.09,
+    0.01,
+    0.93
+   ],
+   "tail_w": [
+    0.09,
+    0.006,
+    0.5
+   ],
+   "length": 0.43,
+   "roll_axes": {
+    "x": [
+     -1.0,
+     0.0,
+     -0.0
+    ],
+    "y": [
+     -0.0,
+     -0.009,
+     -1.0
+    ],
+    "z": [
+     -0.0,
+     -1.0,
+     0.009
+    ]
+   },
+   "rotation_mode": "QUATERNION",
+   "pose_loc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_rot_q": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_rot_e": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "constraints": [],
+   "lock_loc": [
+    false,
+    false,
+    false
+   ],
+   "lock_rot": [
+    false,
+    false,
+    false
+   ],
+   "ik": [
+    false,
+    false,
+    false
+   ]
+  },
+  "LowerLeg_L": {
+   "parent": "UpperLeg_L",
+   "use_deform": true,
+   "use_connect": true,
+   "inherit_scale": "FULL",
+   "use_inherit_rotation": true,
+   "use_local_location": true,
+   "head_w": [
+    0.09,
+    0.006,
+    0.5
+   ],
+   "tail_w": [
+    0.09,
+    0.03,
+    0.09
+   ],
+   "length": 0.4107,
+   "roll_axes": {
+    "x": [
+     -1.0,
+     0.0,
+     0.0
+    ],
+    "y": [
+     0.0,
+     0.058,
+     -0.998
+    ],
+    "z": [
+     -0.0,
+     -0.998,
+     -0.058
+    ]
+   },
+   "rotation_mode": "QUATERNION",
+   "pose_loc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_rot_q": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_rot_e": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "constraints": [],
+   "lock_loc": [
+    false,
+    false,
+    false
+   ],
+   "lock_rot": [
+    false,
+    false,
+    false
+   ],
+   "ik": [
+    false,
+    false,
+    false
+   ]
+  },
+  "Foot_L": {
+   "parent": "LowerLeg_L",
+   "use_deform": true,
+   "use_connect": true,
+   "inherit_scale": "FULL",
+   "use_inherit_rotation": true,
+   "use_local_location": true,
+   "head_w": [
+    0.09,
+    0.03,
+    0.09
+   ],
+   "tail_w": [
+    0.09,
+    -0.1,
+    0.02
+   ],
+   "length": 0.1476,
+   "roll_axes": {
+    "x": [
+     -1.0,
+     -0.0,
+     0.0
+    ],
+    "y": [
+     0.0,
+     -0.88,
+     -0.474
+    ],
+    "z": [
+     0.0,
+     -0.474,
+     0.88
+    ]
+   },
+   "rotation_mode": "QUATERNION",
+   "pose_loc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_rot_q": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_rot_e": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "constraints": [],
+   "lock_loc": [
+    false,
+    false,
+    false
+   ],
+   "lock_rot": [
+    false,
+    false,
+    false
+   ],
+   "ik": [
+    false,
+    false,
+    false
+   ]
+  },
+  "Toes_L": {
+   "parent": "Foot_L",
+   "use_deform": true,
+   "use_connect": true,
+   "inherit_scale": "FULL",
+   "use_inherit_rotation": true,
+   "use_local_location": true,
+   "head_w": [
+    0.09,
+    -0.1,
+    0.02
+   ],
+   "tail_w": [
+    0.09,
+    -0.175,
+    0.02
+   ],
+   "length": 0.075,
+   "roll_axes": {
+    "x": [
+     -1.0,
+     0.0,
+     0.0
+    ],
+    "y": [
+     0.0,
+     -1.0,
+     0.0
+    ],
+    "z": [
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "rotation_mode": "QUATERNION",
+   "pose_loc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_rot_q": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_rot_e": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "constraints": [],
+   "lock_loc": [
+    false,
+    false,
+    false
+   ],
+   "lock_rot": [
+    false,
+    false,
+    false
+   ],
+   "ik": [
+    false,
+    false,
+    false
+   ]
+  },
+  "UpperLeg_R": {
+   "parent": "Hips",
+   "use_deform": true,
+   "use_connect": false,
+   "inherit_scale": "FULL",
+   "use_inherit_rotation": true,
+   "use_local_location": true,
+   "head_w": [
+    -0.09,
+    0.01,
+    0.93
+   ],
+   "tail_w": [
+    -0.09,
+    0.006,
+    0.5
+   ],
+   "length": 0.43,
+   "roll_axes": {
+    "x": [
+     -1.0,
+     0.0,
+     -0.0
+    ],
+    "y": [
+     -0.0,
+     -0.009,
+     -1.0
+    ],
+    "z": [
+     -0.0,
+     -1.0,
+     0.009
+    ]
+   },
+   "rotation_mode": "QUATERNION",
+   "pose_loc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_rot_q": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_rot_e": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "constraints": [],
+   "lock_loc": [
+    false,
+    false,
+    false
+   ],
+   "lock_rot": [
+    false,
+    false,
+    false
+   ],
+   "ik": [
+    false,
+    false,
+    false
+   ]
+  },
+  "LowerLeg_R": {
+   "parent": "UpperLeg_R",
+   "use_deform": true,
+   "use_connect": true,
+   "inherit_scale": "FULL",
+   "use_inherit_rotation": true,
+   "use_local_location": true,
+   "head_w": [
+    -0.09,
+    0.006,
+    0.5
+   ],
+   "tail_w": [
+    -0.09,
+    0.03,
+    0.09
+   ],
+   "length": 0.4107,
+   "roll_axes": {
+    "x": [
+     -1.0,
+     0.0,
+     0.0
+    ],
+    "y": [
+     0.0,
+     0.058,
+     -0.998
+    ],
+    "z": [
+     -0.0,
+     -0.998,
+     -0.058
+    ]
+   },
+   "rotation_mode": "QUATERNION",
+   "pose_loc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_rot_q": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_rot_e": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "constraints": [],
+   "lock_loc": [
+    false,
+    false,
+    false
+   ],
+   "lock_rot": [
+    false,
+    false,
+    false
+   ],
+   "ik": [
+    false,
+    false,
+    false
+   ]
+  },
+  "Foot_R": {
+   "parent": "LowerLeg_R",
+   "use_deform": true,
+   "use_connect": true,
+   "inherit_scale": "FULL",
+   "use_inherit_rotation": true,
+   "use_local_location": true,
+   "head_w": [
+    -0.09,
+    0.03,
+    0.09
+   ],
+   "tail_w": [
+    -0.09,
+    -0.1,
+    0.02
+   ],
+   "length": 0.1476,
+   "roll_axes": {
+    "x": [
+     -1.0,
+     -0.0,
+     0.0
+    ],
+    "y": [
+     0.0,
+     -0.88,
+     -0.474
+    ],
+    "z": [
+     0.0,
+     -0.474,
+     0.88
+    ]
+   },
+   "rotation_mode": "QUATERNION",
+   "pose_loc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_rot_q": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_rot_e": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "constraints": [],
+   "lock_loc": [
+    false,
+    false,
+    false
+   ],
+   "lock_rot": [
+    false,
+    false,
+    false
+   ],
+   "ik": [
+    false,
+    false,
+    false
+   ]
+  },
+  "Toes_R": {
+   "parent": "Foot_R",
+   "use_deform": true,
+   "use_connect": true,
+   "inherit_scale": "FULL",
+   "use_inherit_rotation": true,
+   "use_local_location": true,
+   "head_w": [
+    -0.09,
+    -0.1,
+    0.02
+   ],
+   "tail_w": [
+    -0.09,
+    -0.175,
+    0.02
+   ],
+   "length": 0.075,
+   "roll_axes": {
+    "x": [
+     -1.0,
+     0.0,
+     0.0
+    ],
+    "y": [
+     0.0,
+     -1.0,
+     0.0
+    ],
+    "z": [
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "rotation_mode": "QUATERNION",
+   "pose_loc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_rot_q": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_rot_e": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "pose_scale": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "constraints": [],
+   "lock_loc": [
+    false,
+    false,
+    false
+   ],
+   "lock_rot": [
+    false,
+    false,
+    false
+   ],
+   "ik": [
+    false,
+    false,
+    false
+   ]
+  }
+ },
+ "prefs": {
+  "use_relative_paths": true,
+  "save_version": 1,
+  "use_auto_save_temporary_files": true,
+  "auto_save_time": 2,
+  "temporary_directory": "",
+  "use_file_compression": true,
+  "use_load_ui": true,
+  "render_output_directory": "//",
+  "use_preferences_save": true,
+  "addons": [
+   "bl_pkg",
+   "cycles",
+   "io_anim_bvh",
+   "io_curve_svg",
+   "io_mesh_uv_layout",
+   "io_scene_fbx",
+   "io_scene_gltf2",
+   "pose_library"
+  ]
+ },
+ "is_dirty_at_end": false
+}

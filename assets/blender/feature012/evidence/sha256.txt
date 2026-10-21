@@ -1,0 +1,8 @@
+50cb78a865011fae2d18f94dec5410f1a9c39545d661c5277aec21bcec31f016  Project/Frontend/public/models/avatar/avatar-base-ready-to-go.glb
+76cbb38e92e7bedd5e74e63e06ab8481fa5375b3fd1fe72a7ab25e0862977201  assets/blender/feature012/avatar-gear-studio-ready-to-go.blend
+50b58cd3e285307c2433a6e78da27aa93f11c0058ea77e32e781e632ff235efb  Project/Frontend/public/models/avatar/avatar-base.glb
+521e74ad3f46b8ef80655f0a1aedd25c164793010cdd9f4f87abf33086217dc6  assets/blender/feature005/avatar-gear-studio.blend
+8f6736b308111228449c5f33651fb7bba21d64b73fe6cef5708e4db49eff055a  assets/blender/feature005/avatar-gear-studio.blend1
+2bcd49ab28146e9f3086b3bc49c9ce157e009d2b23b71823f245e7a7de1d7938  Project/Frontend/public/models/gear/gear-backpack.glb
+735d3a2d617b786a709105475ade696fceac314575ff4f48575af7c59140e165  Project/Frontend/public/models/gear/gear-headlamp.glb
+89f2da06305445d2f1a0eda1e298eea05d3f572790a53338c9f956c8249e3b21  Project/Frontend/public/models/gear/gear-trekking-poles.glb

@@ -1,0 +1,459 @@
+{
+ "new": {
+  "bytes": 653396,
+  "sha256": "50cb78a865011fae2d18f94dec5410f1a9c39545d661c5277aec21bcec31f016",
+  "magic": "glTF",
+  "version": 2,
+  "declared": 653396,
+  "chunks": [
+   "JSON",
+   "BIN"
+  ]
+ },
+ "orig": {
+  "bytes": 630128,
+  "sha256": "50b58cd3e285307c2433a6e78da27aa93f11c0058ea77e32e781e632ff235efb",
+  "magic": "glTF",
+  "version": 2,
+  "declared": 630128,
+  "chunks": [
+   "JSON",
+   "BIN"
+  ]
+ },
+ "generator": "Khronos glTF Blender I/O v5.2.40",
+ "node_trs_max_dev": 0.0,
+ "slots": {
+  "Slot_Head": {
+   "parent": "Head",
+   "t": [
+    -1.9813713638472563e-17,
+    0.15000009536743164,
+    -2.9802347256691064e-09
+   ],
+   "r": [
+    3.774895418473534e-08,
+    1.5543122344752192e-15,
+    -1.1102228128669197e-15,
+    1
+   ],
+   "s": [
+    0.9999999403953552,
+    1,
+    1
+   ]
+  },
+  "Slot_Back": {
+   "parent": "Chest",
+   "t": [
+    1.170269925410139e-08,
+    0.1019323319196701,
+    -0.08780534565448761
+   ],
+   "r": [
+    0.01086759939789772,
+    -6.663609042334429e-08,
+    7.242236255144974e-10,
+    0.9999409317970276
+   ],
+   "s": [
+    0.9999999403953552,
+    1,
+    0.9999999403953552
+   ]
+  },
+  "Slot_Hand_L": {
+   "parent": "Hand_L",
+   "t": [
+    0.02593603916466236,
+    0.0750001072883606,
+    0.0018249042332172394
+   ],
+   "r": [
+    -0.01580050401389599,
+    0.058968253433704376,
+    0.9641242027282715,
+    0.25833630561828613
+   ],
+   "s": [
+    1,
+    1,
+    0.9999999403953552
+   ]
+  },
+  "Slot_Hand_R": {
+   "parent": "Hand_R",
+   "t": [
+    -0.02593603916466236,
+    0.0750001072883606,
+    0.001824900507926941
+   ],
+   "r": [
+    -0.01580050401389599,
+    -0.058968253433704376,
+    -0.9641242027282715,
+    0.25833630561828613
+   ],
+   "s": [
+    1,
+    1,
+    0.9999999403953552
+   ]
+  }
+ },
+ "wear_nodes": {
+  "Wear_Shell": true,
+  "Wear_WarmLayer_Body": true,
+  "Wear_WarmLayer_Collar": true,
+  "Wear_Boots": true
+ },
+ "static_accessors_compared": 81,
+ "static_accessor_mismatches": [],
+ "accessor_counts": {
+  "new": 96,
+  "orig": 85,
+  "new_animation": 15
+ },
+ "animation_names": [
+  "Idle",
+  "ready_to_go"
+ ],
+ "idle": {
+  "channels": [
+   [
+    "Breath",
+    "translation",
+    121,
+    0.0,
+    4.0
+   ],
+   [
+    "Neck",
+    "rotation",
+    121,
+    0.0,
+    4.0
+   ],
+   [
+    "Head",
+    "rotation",
+    121,
+    0.0,
+    4.0
+   ]
+  ],
+  "max_dev_vs_orig": 0.0
+ },
+ "ready_to_go": {
+  "channels": [
+   {
+    "node": "Spine",
+    "path": "rotation",
+    "interp": "LINEAR",
+    "keys": 121,
+    "t0": 0.0,
+    "t1": 4.0,
+    "first_dev": 1.1102230246251565e-16,
+    "last_dev": 1.1102230246251565e-16,
+    "peak_from_rest": 1.9997,
+    "unit": "deg"
+   },
+   {
+    "node": "Chest",
+    "path": "rotation",
+    "interp": "LINEAR",
+    "keys": 121,
+    "t0": 0.0,
+    "t1": 4.0,
+    "first_dev": 5.551115123125783e-17,
+    "last_dev": 5.551115123125783e-17,
+    "peak_from_rest": 0.5999,
+    "unit": "deg"
+   },
+   {
+    "node": "Breath",
+    "path": "translation",
+    "interp": "LINEAR",
+    "keys": 121,
+    "t0": 0.0,
+    "t1": 4.0,
+    "first_dev": 7.450580596923828e-09,
+    "last_dev": 7.450580596923828e-09,
+    "peak_from_rest": 4.0001,
+    "unit": "mm"
+   },
+   {
+    "node": "Neck",
+    "path": "rotation",
+    "interp": "LINEAR",
+    "keys": 121,
+    "t0": 0.0,
+    "t1": 4.0,
+    "first_dev": 1.7763568394002505e-15,
+    "last_dev": 1.7763568394002505e-15,
+    "peak_from_rest": 4.0,
+    "unit": "deg"
+   },
+   {
+    "node": "Head",
+    "path": "rotation",
+    "interp": "LINEAR",
+    "keys": 121,
+    "t0": 0.0,
+    "t1": 4.0,
+    "first_dev": 0.0,
+    "last_dev": 0.0,
+    "peak_from_rest": 9.9659,
+    "unit": "deg"
+   },
+   {
+    "node": "Shoulder_L",
+    "path": "rotation",
+    "interp": "LINEAR",
+    "keys": 121,
+    "t0": 0.0,
+    "t1": 4.0,
+    "first_dev": 0.0,
+    "last_dev": 0.0,
+    "peak_from_rest": 3.4928,
+    "unit": "deg"
+   },
+   {
+    "node": "UpperArm_L",
+    "path": "rotation",
+    "interp": "LINEAR",
+    "keys": 121,
+    "t0": 0.0,
+    "t1": 4.0,
+    "first_dev": 8.881784197001252e-16,
+    "last_dev": 8.881784197001252e-16,
+    "peak_from_rest": 3.4929,
+    "unit": "deg"
+   },
+   {
+    "node": "LowerArm_L",
+    "path": "rotation",
+    "interp": "LINEAR",
+    "keys": 121,
+    "t0": 0.0,
+    "t1": 4.0,
+    "first_dev": 5.960464477539063e-08,
+    "last_dev": 5.960464477539063e-08,
+    "peak_from_rest": 1.9428,
+    "unit": "deg"
+   },
+   {
+    "node": "Shoulder_R",
+    "path": "rotation",
+    "interp": "LINEAR",
+    "keys": 121,
+    "t0": 0.0,
+    "t1": 4.0,
+    "first_dev": 0.0,
+    "last_dev": 0.0,
+    "peak_from_rest": 3.4928,
+    "unit": "deg"
+   },
+   {
+    "node": "UpperArm_R",
+    "path": "rotation",
+    "interp": "LINEAR",
+    "keys": 121,
+    "t0": 0.0,
+    "t1": 4.0,
+    "first_dev": 7.105427357601002e-15,
+    "last_dev": 7.105427357601002e-15,
+    "peak_from_rest": 3.4928,
+    "unit": "deg"
+   },
+   {
+    "node": "LowerArm_R",
+    "path": "rotation",
+    "interp": "LINEAR",
+    "keys": 121,
+    "t0": 0.0,
+    "t1": 4.0,
+    "first_dev": 5.960464477539063e-08,
+    "last_dev": 5.960464477539063e-08,
+    "peak_from_rest": 1.9428,
+    "unit": "deg"
+   }
+  ],
+  "first_last_max_dev_from_rest": 5.960464477539063e-08
+ },
+ "size_delta_bytes": 23268,
+ "checks": {
+  "header": true,
+  "generator_same": true,
+  "no_extensions_images_cameras": true,
+  "one_scene_same_roots": true,
+  "nodes_40_same_names": true,
+  "node_trs_equal_1e-6": true,
+  "hierarchy_same": true,
+  "slots_same": true,
+  "root_identity_scale1": true,
+  "skin_one_23_joints_same_order": true,
+  "materials_12_identical": true,
+  "meshes_11_same": true,
+  "non_animation_accessors_byte_identical": true,
+  "only_animation_accessors_added": true,
+  "two_animations_exact_names": true,
+  "idle_equal_1e-4": true,
+  "ready_bones_only": true,
+  "ready_no_scale": true,
+  "ready_121_samples_0_to_4s": true,
+  "ready_first_last_rest_1e-4": true,
+  "size_within_120kB": true
+ },
+ "all_pass": true,
+ "roundtrip": {
+  "import": {
+   "avatar": [
+    "FINISHED"
+   ],
+   "gear-backpack.glb": [
+    "FINISHED"
+   ],
+   "gear-trekking-poles.glb": [
+    "FINISHED"
+   ],
+   "gear-headlamp.glb": [
+    "FINISHED"
+   ]
+  },
+  "actions": [
+   "Idle",
+   "ready_to_go"
+  ],
+  "armature": "Avatar_Armature",
+  "ready_action": {
+   "name": "ready_to_go",
+   "frame_range": [
+    0.0,
+    120.0
+   ],
+   "slots": [
+    "OBAvatar_Armature"
+   ]
+  },
+  "per_frame": {
+   "1": {
+    "blender_frame": 0,
+    "joint_head_max_dev_mm": 0.00037002935553662414,
+    "slot_matrix_max_dev": 3.5762786865234375e-07,
+    "pole_tip_z_dev_mm": 0.00011920928955078125,
+    "pole_tip_z_mm": {
+     "Gear_TrekkingPole_L": 1.9999146461486816,
+     "Gear_TrekkingPole_R": 2.0000338554382324
+    }
+   },
+   "16": {
+    "blender_frame": 15,
+    "joint_head_max_dev_mm": 0.00048463954522040515,
+    "slot_matrix_max_dev": 3.702007234096527e-07,
+    "pole_tip_z_dev_mm": 0.00011920928955078125,
+    "pole_tip_z_mm": {
+     "Gear_TrekkingPole_L": 1.9999146461486816,
+     "Gear_TrekkingPole_R": 2.0000338554382324
+    }
+   },
+   "31": {
+    "blender_frame": 30,
+    "joint_head_max_dev_mm": 0.0003660844689205721,
+    "slot_matrix_max_dev": 3.5762786865234375e-07,
+    "pole_tip_z_dev_mm": 0.00011920928955078125,
+    "pole_tip_z_mm": {
+     "Gear_TrekkingPole_L": 2.033829689025879,
+     "Gear_TrekkingPole_R": 2.0338892936706543
+    }
+   },
+   "46": {
+    "blender_frame": 45,
+    "joint_head_max_dev_mm": 0.0004789282898022298,
+    "slot_matrix_max_dev": 4.76837158203125e-07,
+    "pole_tip_z_dev_mm": 0.00017881393432617188,
+    "pole_tip_z_mm": {
+     "Gear_TrekkingPole_L": 2.0192861557006836,
+     "Gear_TrekkingPole_R": 2.019345760345459
+    }
+   },
+   "61": {
+    "blender_frame": 60,
+    "joint_head_max_dev_mm": 0.0003594676516465037,
+    "slot_matrix_max_dev": 3.5762786865234375e-07,
+    "pole_tip_z_dev_mm": 0.0002384185791015625,
+    "pole_tip_z_mm": {
+     "Gear_TrekkingPole_L": 11.625230312347412,
+     "Gear_TrekkingPole_R": 11.625289916992188
+    }
+   },
+   "76": {
+    "blender_frame": 75,
+    "joint_head_max_dev_mm": 0.00036114678219736126,
+    "slot_matrix_max_dev": 4.76837158203125e-07,
+    "pole_tip_z_dev_mm": 0.0002980232238769531,
+    "pole_tip_z_mm": {
+     "Gear_TrekkingPole_L": 2.097785472869873,
+     "Gear_TrekkingPole_R": 2.0978450775146484
+    }
+   },
+   "91": {
+    "blender_frame": 90,
+    "joint_head_max_dev_mm": 0.0003686343712677045,
+    "slot_matrix_max_dev": 3.8929283618927e-07,
+    "pole_tip_z_dev_mm": 0.0002980232238769531,
+    "pole_tip_z_mm": {
+     "Gear_TrekkingPole_L": 2.018749713897705,
+     "Gear_TrekkingPole_R": 2.0189285278320312
+    }
+   },
+   "106": {
+    "blender_frame": 105,
+    "joint_head_max_dev_mm": 0.00036774861312518104,
+    "slot_matrix_max_dev": 3.702007234096527e-07,
+    "pole_tip_z_dev_mm": 0.00011920928955078125,
+    "pole_tip_z_mm": {
+     "Gear_TrekkingPole_L": 1.9999146461486816,
+     "Gear_TrekkingPole_R": 2.0000338554382324
+    }
+   },
+   "121": {
+    "blender_frame": 120,
+    "joint_head_max_dev_mm": 0.00037002935553662414,
+    "slot_matrix_max_dev": 3.5762786865234375e-07,
+    "pole_tip_z_dev_mm": 0.00011920928955078125,
+    "pole_tip_z_mm": {
+     "Gear_TrekkingPole_L": 1.9999146461486816,
+     "Gear_TrekkingPole_R": 2.0000338554382324
+    }
+   }
+  },
+  "max": {
+   "joint_head_mm": 0.00048463954522040515,
+   "slot_matrix": 3.5762786865234375e-07,
+   "pole_tip_z_mm": 0.0002980232238769531
+  },
+  "pass": true,
+  "renders": [
+   [
+    "RT-L8_q3_t1.0.png",
+    [
+     "FINISHED"
+    ]
+   ],
+   [
+    "RT-L8_q3_t2.0.png",
+    [
+     "FINISHED"
+    ]
+   ],
+   [
+    "RT-L8_q3_t4.0.png",
+    [
+     "FINISHED"
+    ]
+   ]
+  ]
+ },
+ "generated": "2026-10-19 23:57:21"
+}
