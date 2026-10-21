@@ -91,7 +91,9 @@ public interface TrailRepository
 
 
     // ------------------------------------------------
-    // Search / filter
+    // Search / filter: the curated catalog only
+    // (discover_visible). Nearby search and lookup by id
+    // also include trails outside the catalog.
     // ------------------------------------------------
 
     @Query(
@@ -100,6 +102,7 @@ public interface TrailRepository
                     FROM trails t
 
                     WHERE t.deleted = false
+                      AND t.discover_visible = true
 
                       AND (
                           :search IS NULL

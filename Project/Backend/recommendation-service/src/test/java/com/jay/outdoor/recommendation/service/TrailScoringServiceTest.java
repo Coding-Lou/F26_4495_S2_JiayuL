@@ -2,6 +2,7 @@ package com.jay.outdoor.recommendation.service;
 
 import com.jay.outdoor.recommendation.client.trail.NearbyTrailResponse;
 import com.jay.outdoor.recommendation.client.trail.TrailSummaryResponse;
+import com.jay.outdoor.recommendation.dto.DurationMode;
 import com.jay.outdoor.recommendation.dto.GearCategory;
 import com.jay.outdoor.recommendation.dto.RecommendationIntent;
 import com.jay.outdoor.recommendation.dto.ScoredTrailRecommendation;
@@ -281,6 +282,224 @@ class TrailScoringServiceTest {
         assertTrue(result.getFirst().score() > result.get(1).score());
     }
 
+    // E: MAXIMUM is a hard filter in the final ranking.
+    @Test
+    void maximumDurationNeverReturnsALongerTrail() {
+        RecommendationIntent intent =
+                durationIntent(DurationMode.MAXIMUM, 360);
+
+        List<ScoredTrailRecommendation> result =
+                scoringService.scoreTopTrails(
+                        List.of(
+                                candidateWithDuration("405 min", 405, 1.0),
+                                candidateWithDuration("360 min", 360, 5.0),
+                                candidateWithDuration("300 min", 300, 9.0)
+                        ),
+                        intent,
+                        50.0
+                );
+
+        assertEquals(
+                Set.of("360 min", "300 min"),
+                names(result)
+        );
+        result.forEach(recommendation ->
+                assertEquals(10, durationPoints(recommendation)));
+    }
+
+    // E: MAXIMUM is applied before the weather shortlist, so an over-limit
+    // trail never gets a weather lookup.
+    @Test
+    void maximumDurationExcludesLongerTrailsFromWeatherShortlist() {
+        List<TrailCandidateContext> shortlist =
+                scoringService.shortlistForWeather(
+                        List.of(
+                                candidateWithDuration("405 min", 405, 1.0),
+                                candidateWithDuration("240 min", 240, 30.0)
+                        ),
+                        durationIntent(DurationMode.MAXIMUM, 360),
+                        50.0,
+                        15
+                );
+
+        assertEquals(1, shortlist.size());
+        assertEquals(
+                "240 min",
+                shortlist.getFirst().trail().trail().name()
+        );
+    }
+
+    // F: MINIMUM excludes shorter trails, before and after the shortlist.
+    @Test
+    void minimumDurationExcludesShorterTrails() {
+        RecommendationIntent intent =
+                durationIntent(DurationMode.MINIMUM, 240);
+        List<TrailCandidateContext> candidates = List.of(
+                candidateWithDuration("120 min", 120, 1.0),
+                candidateWithDuration("239 min", 239, 2.0),
+                candidateWithDuration("240 min", 240, 3.0),
+                candidateWithDuration("405 min", 405, 4.0)
+        );
+
+        List<ScoredTrailRecommendation> result =
+                scoringService.scoreTopTrails(candidates, intent, 50.0);
+        List<TrailCandidateContext> shortlist =
+                scoringService.shortlistForWeather(
+                        candidates, intent, 50.0, 15);
+
+        assertEquals(Set.of("240 min", "405 min"), names(result));
+        assertEquals(2, shortlist.size());
+        result.forEach(recommendation ->
+                assertEquals(10, durationPoints(recommendation)));
+    }
+
+    // G: APPROXIMATE prefers the closer trail and excludes neither.
+    @Test
+    void approximateDurationRanksATrailNearTheTargetAboveAShortOne() {
+        List<ScoredTrailRecommendation> result =
+                scoringService.scoreTopTrails(
+                        List.of(
+                                candidateWithDuration("60 min", 60, 10.0),
+                                candidateWithDuration("240 min", 240, 10.0)
+                        ),
+                        durationIntent(DurationMode.APPROXIMATE, 240),
+                        50.0
+                );
+
+        assertEquals(2, result.size());
+        assertEquals("240 min", result.get(0).trail().name());
+        assertEquals("60 min", result.get(1).trail().name());
+        assertEquals(10, durationPoints(result.get(0)));
+        assertEquals(0, durationPoints(result.get(1)));
+        assertEquals(10, result.get(0).score() - result.get(1).score());
+    }
+
+    // G: the curve. Full points within ±15 %, linear to 0 at ±75 %.
+    @Test
+    void approximateDurationCurvePoints() {
+        int[][] expected = {
+                {240, 10},
+                {204, 10},
+                {276, 10},
+                {180, 8},
+                {300, 8},
+                {120, 4},
+                {360, 4},
+                {405, 1},
+                {60, 0},
+                {420, 0},
+                {600, 0}
+        };
+
+        for (int[] point : expected) {
+            List<ScoredTrailRecommendation> result =
+                    scoringService.scoreTopTrails(
+                            List.of(candidateWithDuration(
+                                    "trail", point[0], 10.0)),
+                            durationIntent(DurationMode.APPROXIMATE, 240),
+                            50.0
+                    );
+
+            assertEquals(1, result.size(), "never excluded: " + point[0]);
+            assertEquals(
+                    point[1],
+                    durationPoints(result.getFirst()),
+                    "duration points for " + point[0] + " min"
+            );
+        }
+    }
+
+    // A trail with unknown duration is not excluded and scores 0 duration points.
+    @Test
+    void unknownTrailDurationIsKeptWithZeroDurationPoints() {
+        for (DurationMode mode : DurationMode.values()) {
+            List<ScoredTrailRecommendation> result =
+                    scoringService.scoreTopTrails(
+                            List.of(candidateWithDuration(
+                                    "unknown", null, 10.0)),
+                            durationIntent(mode, 240),
+                            50.0
+                    );
+
+            assertEquals(1, result.size(), mode.name());
+            assertEquals(0, durationPoints(result.getFirst()), mode.name());
+        }
+    }
+
+    @Test
+    void noDurationPreferenceKeepsFullDurationPoints() {
+        List<ScoredTrailRecommendation> result =
+                scoringService.scoreTopTrails(
+                        List.of(candidateWithDuration("405 min", 405, 10.0)),
+                        durationIntent(null, null),
+                        50.0
+                );
+
+        assertEquals(1, result.size());
+        assertEquals(10, durationPoints(result.getFirst()));
+    }
+
+    /**
+     * Only duration varies: no difficulty, distance, elevation, or scenery
+     * preference, so those intent points are always 20 + 15 + 10.
+     */
+    private RecommendationIntent durationIntent(
+            DurationMode mode,
+            Integer durationMin
+    ) {
+        return new RecommendationIntent(
+                null,
+                null,
+                null,
+                durationMin,
+                mode,
+                List.of()
+        );
+    }
+
+    private int durationPoints(ScoredTrailRecommendation recommendation) {
+        return recommendation.breakdown().intent() - 20 - 15 - 10;
+    }
+
+    private Set<String> names(List<ScoredTrailRecommendation> result) {
+        return result.stream()
+                .map(recommendation -> recommendation.trail().name())
+                .collect(Collectors.toSet());
+    }
+
+    private TrailCandidateContext candidateWithDuration(
+            String name,
+            Integer estimatedDurationMin,
+            double distanceFromUserKm
+    ) {
+        NearbyTrailResponse trail = new NearbyTrailResponse(
+                new TrailSummaryResponse(
+                        UUID.randomUUID(),
+                        name,
+                        "Test trail",
+                        "MODERATE",
+                        5.0,
+                        200,
+                        estimatedDurationMin,
+                        49.2827,
+                        -123.1207,
+                        "TEST",
+                        Set.of("FOREST"),
+                        null,
+                        Set.of(GearCategory.FOOTWEAR)
+                ),
+                distanceFromUserKm
+        );
+
+        return new TrailCandidateContext(
+                trail,
+                GOOD_WEATHER,
+                Set.of(SceneryType.FOREST),
+                List.of(GearCategory.FOOTWEAR),
+                List.of(GearCategory.FOOTWEAR)
+        );
+    }
+
     private RecommendationIntent intent(
             TrailDifficulty difficulty,
             List<SceneryType> preferredScenery
@@ -290,6 +509,7 @@ class TrailScoringServiceTest {
                 10.0,
                 500,
                 180,
+                DurationMode.MAXIMUM,
                 preferredScenery
         );
     }

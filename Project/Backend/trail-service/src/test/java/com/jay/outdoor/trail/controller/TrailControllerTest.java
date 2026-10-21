@@ -2,6 +2,7 @@ package com.jay.outdoor.trail.controller;
 
 import com.jay.outdoor.trail.repository.TrailRepository;
 import com.jay.outdoor.trail.service.TrailService;
+import com.jay.outdoor.trail.service.TrailActivityService;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -33,7 +34,8 @@ class TrailControllerTest {
                 repository,
                 JsonMapper.builder().build()
         );
-        TrailController controller = new TrailController(trailService);
+        TrailController controller = new TrailController(
+                trailService, new TrailActivityService(repository));
         UUID trailId = UUID.randomUUID();
 
         ResponseEntity<?> response = controller.getTrailById(trailId);

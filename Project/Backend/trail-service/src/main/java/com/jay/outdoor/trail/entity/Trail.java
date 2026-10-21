@@ -119,6 +119,17 @@ public class Trail {
     )
     private String coverImageUrl;
 
+    /**
+     * Whether the trail is in the curated public catalog (GET /api/trails,
+     * Discover). Not deletion or planner eligibility: nearby search and the
+     * lookup by id ignore it.
+     */
+    @Column(
+            name = "discover_visible",
+            nullable = false
+    )
+    private boolean discoverVisible = true;
+
     public Trail() {
     }
 
@@ -295,6 +306,16 @@ public class Trail {
             String coverImageUrl
     ) {
         this.coverImageUrl = coverImageUrl;
+    }
+
+    public boolean isDiscoverVisible() {
+        return discoverVisible;
+    }
+
+    public void setDiscoverVisible(
+            boolean discoverVisible
+    ) {
+        this.discoverVisible = discoverVisible;
     }
 
     public Set<GearCategory> getBaselineGearRequirements() {

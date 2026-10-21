@@ -23,6 +23,17 @@ public class TrailScoringService {
     private static final int SCENERY_WEIGHT = 10;
     private static final int PROXIMITY_WEIGHT = 5;
 
+    /**
+     * APPROXIMATE duration: full points within this relative deviation from
+     * the target...
+     */
+    private static final double APPROXIMATE_FULL_DEVIATION = 0.15;
+
+    /**
+     * ...falling linearly to zero at this relative deviation.
+     */
+    private static final double APPROXIMATE_ZERO_DEVIATION = 0.75;
+
     public List<ScoredTrailRecommendation> scoreTopTrails(
             List<TrailCandidateContext> candidates,
             RecommendationIntent intent,
@@ -49,6 +60,45 @@ public class TrailScoringService {
                 .toList();
     }
 
+    /**
+     * The eligible candidates most worth a weather lookup, best first.
+     *
+     * <p>Candidates are expected without weather, so each is ranked by every
+     * factor that needs none: intent, scenery, proximity, and gear readiness
+     * against the trail's baseline requirements. The sort is stable, so equal
+     * scores keep the nearest-first order of the nearby list. Only the
+     * shortlist is then given weather and scored by {@link #scoreTopTrails}.
+     */
+    public List<TrailCandidateContext> shortlistForWeather(
+            List<TrailCandidateContext> candidates,
+            RecommendationIntent intent,
+            double searchRadiusKm,
+            int limit
+    ) {
+
+        return candidates.stream()
+                .filter(candidate ->
+                        isEligible(candidate, intent)
+                )
+                .sorted(
+                        Comparator.comparingInt(
+                                (TrailCandidateContext candidate) ->
+                                        scoreTrail(
+                                                candidate,
+                                                intent,
+                                                searchRadiusKm
+                                        ).score()
+                        ).reversed()
+                )
+                .limit(limit)
+                .toList();
+    }
+
+    /**
+     * The hard filters: difficulty, scenery, and a MAXIMUM or MINIMUM
+     * duration. Applied before the weather shortlist and again before the
+     * final ranking.
+     */
     private boolean isEligible(
             TrailCandidateContext candidate,
             RecommendationIntent intent
@@ -62,7 +112,34 @@ public class TrailScoringService {
         ) && matchesScenery(
                 candidate.scenery(),
                 intent.preferredScenery()
+        ) && matchesDuration(
+                trail,
+                intent
         );
+    }
+
+    /**
+     * MAXIMUM excludes longer trails and MINIMUM shorter ones; APPROXIMATE
+     * and no duration exclude nothing. A trail whose duration is unknown is
+     * not excluded (it scores 0 duration points instead): its length cannot
+     * be shown to break the limit.
+     */
+    private boolean matchesDuration(
+            TrailSummaryResponse trail,
+            RecommendationIntent intent
+    ) {
+        Integer requested = intent.maxDurationMin();
+        Integer actual = trail.estimatedDurationMin();
+
+        if (requested == null || actual == null) {
+            return true;
+        }
+
+        return switch (intent.durationMode()) {
+            case MAXIMUM -> actual <= requested;
+            case MINIMUM -> actual >= requested;
+            case APPROXIMATE -> true;
+        };
     }
 
     private boolean matchesDifficulty(
@@ -253,6 +330,21 @@ public class TrailScoringService {
             return 0;
         }
 
+        if (intent.durationMode() == DurationMode.APPROXIMATE) {
+            return scoreApproximateDuration(
+                    trail.estimatedDurationMin(),
+                    intent.maxDurationMin()
+            );
+        }
+
+        if (intent.durationMode() == DurationMode.MINIMUM) {
+            // Shorter trails were excluded as ineligible.
+            return DURATION_WEIGHT;
+        }
+
+        // MAXIMUM: the existing upper-bound scoring. Longer trails are
+        // excluded as ineligible, so the proportional branch below is only a
+        // fallback.
         if (trail.estimatedDurationMin()
                 <= intent.maxDurationMin()) {
             return DURATION_WEIGHT;
@@ -261,6 +353,35 @@ public class TrailScoringService {
         double ratio =
                 (double) intent.maxDurationMin()
                         / trail.estimatedDurationMin();
+
+        return proportionalScore(
+                DURATION_WEIGHT,
+                ratio
+        );
+    }
+
+    /**
+     * Closeness to the target, symmetric in relative terms: full points
+     * within ±15 % of the target, falling linearly to 0 at ±75 %. For a
+     * 240-minute target: 204–276 → 10, 180 or 300 → 8, 120 or 360 → 4,
+     * 60 or 420 and beyond → 0.
+     */
+    private int scoreApproximateDuration(
+            int actualMin,
+            int targetMin
+    ) {
+        if (targetMin <= 0) {
+            return 0;
+        }
+
+        double deviation =
+                Math.abs(actualMin - targetMin)
+                        / (double) targetMin;
+
+        double ratio =
+                (APPROXIMATE_ZERO_DEVIATION - deviation)
+                        / (APPROXIMATE_ZERO_DEVIATION
+                        - APPROXIMATE_FULL_DEVIATION);
 
         return proportionalScore(
                 DURATION_WEIGHT,
