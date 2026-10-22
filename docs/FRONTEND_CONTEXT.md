@@ -1,9 +1,9 @@
 # Frontend Project Context
 
-Current implementation state of the Outdoor Trip Companion: what an agent needs to change the application safely. State as of 2026-10-20: FEATURE-001 to FEATURE-014 PASS / FROZEN (014 is the final product feature; there is no FEATURE-015); the feature freeze is active; Final Full Regression is next. Paths are relative to the repository root.
+Current implementation state of the Outdoor Trip Companion: what an agent needs to change the application safely. State as of 2026-10-21: FEATURE-001 to FEATURE-014 PASS / FROZEN (014 is the final product feature; there is no FEATURE-015); Final Full Regression PASS (classification B) and release gate accepted, so functional development is complete; the feature freeze is active; demo and deployment preparation are next (deployment gaps in §11). Paths are relative to the repository root.
 
 - Product intent: `docs/PRODUCT_REQUIREMENTS.md`. Visual rules: `docs/DESIGN_SYSTEM.md`.
-- Per-feature detail (acceptance criteria, decisions, QA, repairs): `docs/features/<feature>.md`; checkpoints `.claude/state/features/`; post-freeze polish `.claude/state/polish/`; cross-feature regression `.claude/state/final-regression.md`.
+- Per-feature detail (acceptance criteria, decisions, QA, repairs): `docs/features/<feature>.md`; checkpoints `.claude/state/features/`; post-freeze polish `.claude/state/polish/`; cross-feature regressions `.claude/state/final-regression.md` (2026-10-19, 001–010) and `.claude/state/final-regression-2026-10-20.md` (final, 001–014; LOW backlog FR4-1, FR4-2).
 - Full pre-compaction version: `docs/archive/FRONTEND_CONTEXT-2026-10-19-pre-compaction.md`. Specs written up to 2026-10-19 cite its section numbers ("FC §x"); sections 1–14 here keep the same topics.
 
 ## 1. Product and Implementation Status
@@ -260,7 +260,7 @@ From spec 011 §4; each feature's spec refines them.
 
 - **FEATURE-012 Ready-to-Go 3D Completion:** PASS / FROZEN (2026-10-20); current behavior in §8. Continue goes to `/plans` since FEATURE-013 (`continueTo` in `GearStudioScreen.tsx`); it never appends `?plan=`.
 - **FEATURE-013 My Plans & Calendar:** PASS / FROZEN (2026-10-20); current behavior in §8 My Plans. Range filters, if ever needed, are additive optional params.
-- **FEATURE-014 Plan → Memory Bridge:** PASS / FROZEN (2026-10-20), the final product feature; current behavior in §8 My Plans (Memory bridge) and My Memories. Past Plans on synthetic trails have no bridge. There is no FEATURE-015; the feature freeze is active and Final Full Regression is next.
+- **FEATURE-014 Plan → Memory Bridge:** PASS / FROZEN (2026-10-20), the final product feature; current behavior in §8 My Plans (Memory bridge) and My Memories. Past Plans on synthetic trails have no bridge. There is no FEATURE-015; the Final Full Regression passed (2026-10-21) and the feature freeze is active.
 
 ## 10. Frontend Feature Boundaries
 

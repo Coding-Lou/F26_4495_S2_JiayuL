@@ -19,7 +19,8 @@ Do not scan the whole backend to answer a frontend question; `FRONTEND_CONTEXT.m
 ## Roadmap
 
 - FEATURE-001 to FEATURE-014: PASS / FROZEN (014 Plan → Memory Bridge, the final product feature, 2026-10-20). There is no FEATURE-015.
-- **Feature freeze: ACTIVE.** Next phase: **Final Full Regression** (not started; run only when the user asks), then approved final polish if necessary, demo preparation, and deployment preparation.
+- **Functional development: COMPLETE.** Final Full Regression PASS (classification B, 2026-10-21; Release / Product Gate accepted; LOW backlog FR4-1, FR4-2; record `.claude/state/final-regression-2026-10-20.md`).
+- **Feature freeze: ACTIVE.** Next phase: **Demo Preparation + Deployment Preparation**, started only on explicit instruction; no new feature number.
 
 The freeze, reopened on 2026-10-19 for 011–014 only, resumed after FEATURE-014: only fixes, polish, performance, deployment, documentation, and demo work, unless the user approves a new capability. Feature boundaries: PRD §11.2, `FRONTEND_CONTEXT.md` §9.
 

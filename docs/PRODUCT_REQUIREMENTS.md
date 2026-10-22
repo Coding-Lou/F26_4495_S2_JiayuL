@@ -25,6 +25,7 @@ Decisions that still shape current behavior. Earlier and superseded entries are 
 | 2026-10-19 | Planner polish: a "no preference" answer leaves a dimension open, each dimension is asked at most once, and durations carry a mode (around / up to / at least) | §7 |
 | 2026-10-20 | My Plans (`/plans`) accepted: the user's Plans as Upcoming / Past with a monthly calendar; Continue after Finish preparation leads there | §11 |
 | 2026-10-20 | Plan → Memory Bridge accepted (FEATURE-014, final product feature): a past Plan on a curated trail offers Add memory or View memory, derived from the user's own Memories (no stored link); past Plans on synthetic trails have no bridge. The feature freeze is active again | §11, §22, spec 014 |
+| 2026-10-21 | Final Full Regression PASS (classification B) and release / product gate accepted: functional development complete; next demo and deployment preparation | §22 |
 
 ---
 
@@ -367,7 +368,7 @@ Avoid purple-gradient AI SaaS styling, dashboard layouts, excess cards, heavy gl
 | FEATURE-013 | My Plans & Calendar | PASS / FROZEN |
 | FEATURE-014 | Plan → Memory Bridge | PASS / FROZEN; final product feature |
 
-The original roadmap ended at FEATURE-010; its final Full Regression and polish passed, and the freeze was reopened on 2026-10-19 by explicit user decision for FEATURE-011 to FEATURE-014 only. There is no FEATURE-015. **The feature freeze is active again since FEATURE-014 was accepted (2026-10-20).** The next phase is a Final Full Regression, then approved final polish if necessary, demo preparation, and deployment preparation. Work is limited to bug fixes, UI, gear-illustration and 3D polish, performance, regression, accessibility and correctness fixes, deployment and configuration (e.g. production routing for Memories and Plans), documentation, and demo and presentation preparation. Any new capability needs an explicit product decision that updates this document.
+The original roadmap ended at FEATURE-010; its final Full Regression and polish passed, and the freeze was reopened on 2026-10-19 by explicit user decision for FEATURE-011 to FEATURE-014 only. There is no FEATURE-015. **The feature freeze is active again since FEATURE-014 was accepted (2026-10-20).** The Final Full Regression passed on 2026-10-21 (classification B: no blocking, high, or medium finding; two low Community polish items in the backlog) and the release / product gate was accepted: functional development is complete. The next phase is demo preparation and deployment preparation, each started only on explicit instruction. Work is limited to bug fixes, UI, gear-illustration and 3D polish, performance, regression, accessibility and correctness fixes, deployment and configuration (e.g. production routing for Memories and Plans), documentation, and demo and presentation preparation. Any new capability needs an explicit product decision that updates this document.
 
 Delivery is incremental vertical slices: specify → close backend gaps → implement → validate → continue.
 

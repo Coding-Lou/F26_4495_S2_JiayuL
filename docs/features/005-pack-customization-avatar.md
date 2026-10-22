@@ -338,7 +338,7 @@ type StoredLoadouts = {
   trips: Record<TripKey, StoredTripLoadout>
 }
 
-type TripKey = string                 // `${trailId.toLowerCase()}/${tripDate}`  e.g. "3f2a…/2026-10-17"
+type TripKey = string                 // `${trailId.toLowerCase()}/${tripDate}`  Dockerfile.g. "3f2a…/2026-10-17"
 
 type StoredTripLoadout = {
   equipped: Record<string, string>    // GearCategory wire value → gear item id (UUID)

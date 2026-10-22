@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: activity-service
+  namespace: outdoor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: activity-service
+  template:
+    metadata:
+      labels:
+        app: activity-service
+    spec:
+      containers:
+        - name: activity-service
+          image: outdoor/activity-service:local
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8084

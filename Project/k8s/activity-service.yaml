@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: activity-service
+  namespace: outdoor
+spec:
+  type: ClusterIP
+  selector:
+    app: activity-service
+  ports:
+    - name: http
+      port: 8084
+      targetPort: 8084
+      protocol: TCP

@@ -65,7 +65,7 @@ No DB injection used in FEATURE-014. QA data kept (not cleaned for closeout).
 Known limitations (spec U5 and §30.1 A–E, accepted): offset-paging window above 50 Memories; > 500 Memories → unavailable; server accepts synthetic trail ids for Memories (UI-enforced); URL trail/date are prefills only. Unattributed "400 (Bad Request)" console resource error during Keycloak registration runs (no app flow failed). Back-from-Memory return re-requests each trail detail once more (013 trail queries; outside 014)
 
 Next:
-- FINAL FULL REGRESSION (separate explicit step; not started). Then approved final polish if necessary, demo preparation, deployment preparation
+- Final Full Regression ran 2026-10-20/21: PASS — classification B, Release / Product Gate ACCEPTED (`.claude/state/final-regression-2026-10-20.md`; 014 deferred AC-24, AC-26, AC-27 multiple match, AC-29, AC-33–AC-37 covered there). Next: Demo Preparation + Deployment Preparation, only on explicit instruction
 - FEATURE-001 to FEATURE-014 PASS / FROZEN; there is no FEATURE-015; feature freeze ACTIVE
 
 Closeout (2026-10-20, docs only): spec §30–§30.1 + status; PRD §1, §4, §11.1, §11.2, §12.1, §15, §22; FRONTEND_CONTEXT header, §1, §3, §8, §9, §10, §12, §13; CLAUDE.md roadmap. DESIGN_SYSTEM.md unchanged. No Project/** change during closeout.
