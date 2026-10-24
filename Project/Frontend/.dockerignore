@@ -1,0 +1,10 @@
+node_modules
+dist
+# Local development values must never be baked into the image.
+.env
+.env.*
+!.env.example
+*.local
+**/.DS_Store
+.idea
+.vscode

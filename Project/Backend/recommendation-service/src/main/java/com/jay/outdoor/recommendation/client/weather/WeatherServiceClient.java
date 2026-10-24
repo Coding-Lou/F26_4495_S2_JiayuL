@@ -2,6 +2,7 @@ package com.jay.outdoor.recommendation.client.weather;
 
 import com.jay.outdoor.recommendation.dto.TrailWeather;
 import com.jay.outdoor.recommendation.exception.WeatherServiceUnavailableException;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
@@ -15,10 +16,11 @@ public class WeatherServiceClient {
     private final RestClient restClient;
 
     public WeatherServiceClient(
-            RestClient.Builder builder
+            RestClient.Builder builder,
+            @Value("${weather.base-url}") String weatherBaseUrl
     ) {
         this.restClient = builder
-                .baseUrl("https://api.open-meteo.com")
+                .baseUrl(weatherBaseUrl)
                 .build();
     }
 

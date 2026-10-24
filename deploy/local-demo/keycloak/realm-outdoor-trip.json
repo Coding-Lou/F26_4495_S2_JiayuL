@@ -1,0 +1,85 @@
+{
+  "realm": "outdoor-trip",
+  "displayName": "Outdoor Trip Companion",
+  "enabled": true,
+  "sslRequired": "external",
+  "registrationAllowed": true,
+  "registrationEmailAsUsername": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "verifyEmail": false,
+  "resetPasswordAllowed": false,
+  "rememberMe": false,
+  "editUsernameAllowed": false,
+  "loginTheme": "outdoor-trip-companion",
+  "passwordPolicy": "length(8)",
+  "accessTokenLifespan": 300,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 43200,
+  "clients": [
+    {
+      "clientId": "outdoor-web",
+      "name": "Outdoor Trip Companion",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "frontchannelLogout": true,
+      "rootUrl": "${DEMO_WEB_ORIGIN}",
+      "baseUrl": "/",
+      "redirectUris": [
+        "${DEMO_WEB_ORIGIN}/auth/callback",
+        "${DEMO_WEB_ORIGIN}/silent-check-sso.html"
+      ],
+      "webOrigins": ["${DEMO_WEB_ORIGIN}"],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "${DEMO_WEB_ORIGIN}/"
+      }
+    },
+    {
+      "clientId": "demo-seeder",
+      "name": "Local Demo seeding (demo realm only)",
+      "description": "Lets scripts/demo-up.sh sign in as the demo user to add example data through the product APIs. Exists only in this Local Demo realm export.",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "${DEMO_SEEDER_CLIENT_SECRET}",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [],
+      "webOrigins": []
+    }
+  ],
+  "users": [
+    {
+      "id": "${DEMO_USER_ID}",
+      "username": "demo",
+      "email": "demo@example.com",
+      "emailVerified": true,
+      "firstName": "Demo",
+      "lastName": "Hiker",
+      "enabled": true,
+      "credentials": [
+        { "type": "password", "value": "${DEMO_USER_PASSWORD}", "temporary": false }
+      ]
+    },
+    {
+      "username": "demo2",
+      "email": "demo2@example.com",
+      "emailVerified": true,
+      "firstName": "Second",
+      "lastName": "Hiker",
+      "enabled": true,
+      "credentials": [
+        { "type": "password", "value": "${DEMO_USER_PASSWORD}", "temporary": false }
+      ]
+    }
+  ]
+}

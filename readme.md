@@ -12,6 +12,27 @@
 
 ---
 
+## Quick Demo
+
+### Requirements
+
+- Git
+- Docker Desktop
+
+### Start the complete application
+
+```bash
+git clone <repository-url>
+cd <repository>
+./scripts/demo-up.sh
+```
+
+Application     http://localhost:3000
+Demo accounts   demo / demo-password   (example gear, Plans, Memories)
+demo2 / demo-password  (empty account)
+or create a new account from the sign-in page
+Keycloak admin  http://localhost:8181/admin  (admin / admin-demo)
+
 ## 5. Work Date / Hours Log
 
 **Student Name:** Jiayu Lou

@@ -1,0 +1,6 @@
+# Only pom.xml and src/ are copied; keep everything else out of the context.
+target
+.local-storage
+.idea
+*.iml
+.DS_Store

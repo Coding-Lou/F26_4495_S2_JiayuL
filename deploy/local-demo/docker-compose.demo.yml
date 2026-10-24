@@ -1,0 +1,220 @@
+# Local Demo: the whole product on one machine with Docker only.
+#
+# Deployment-only packaging. It builds the same images a cloud deployment
+# would push to a registry (Project/Backend/<service>/Dockerfile,
+# Project/Frontend/Dockerfile) and differs only in configuration:
+#   - edge          plays the Ingress: one origin, /api/* routed per service
+#   - keycloak      imports the demo realm from ./keycloak (demo only)
+#   - external-mocks stands in for OpenAI (and, opt-in, Open-Meteo)
+#   - postgres      one PostGIS container with the service databases
+#
+# Use scripts/demo-up.sh and scripts/demo-down.sh. Values: .env.demo.
+# The project name keeps every container, network, and volume separate from
+# the development stack in Project/docker-compose.yml.
+
+name: outdoor-demo
+
+x-service-env: &service-env
+  POSTGRES_USER: ${POSTGRES_USER:-outdoor}
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-outdoor-demo}
+  # Tokens carry the browser-facing issuer; signing keys are fetched inside
+  # the network. Both are standard Spring Boot properties.
+  SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:${DEMO_KEYCLOAK_PORT:-8181}/realms/outdoor-trip
+  SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/outdoor-trip/protocol/openid-connect/certs
+  JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=60
+
+x-java-health: &java-health
+  interval: 5s
+  timeout: 3s
+  retries: 60
+  start_period: 20s
+
+services:
+  postgres:
+    image: postgis/postgis:17-3.5
+    platform: linux/amd64
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-outdoor}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-outdoor-demo}
+      POSTGRES_DB: postgres
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+      - ./db/seed:/demo-seed:ro
+    healthcheck:
+      # TCP only answers after the init scripts have created the databases.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U \"$$POSTGRES_USER\" -d plan_db"]
+      interval: 3s
+      timeout: 3s
+      retries: 60
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.7.4
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin-demo}
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak_db
+      KC_DB_USERNAME: ${POSTGRES_USER:-outdoor}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD:-outdoor-demo}
+      # One issuer for browser and services, whatever address a request used.
+      KC_HOSTNAME: http://localhost:${DEMO_KEYCLOAK_PORT:-8181}
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+      KC_HEALTH_ENABLED: "true"
+      # Read by the realm import placeholders (keycloak/realm-outdoor-trip.json).
+      DEMO_WEB_ORIGIN: http://localhost:${DEMO_WEB_PORT:-3000}
+      DEMO_USER_ID: ${DEMO_USER_ID:-0d3c2a9e-6f41-4b8a-9c2d-5e7f1a2b3c4d}
+      DEMO_USER_PASSWORD: ${DEMO_USER_PASSWORD:-demo-password}
+      DEMO_SEEDER_CLIENT_SECRET: ${DEMO_SEEDER_CLIENT_SECRET:-demo-seeder-secret}
+    ports:
+      - "${DEMO_KEYCLOAK_PORT:-8181}:8080"
+    volumes:
+      - ./keycloak/realm-outdoor-trip.json:/opt/keycloak/data/import/realm-outdoor-trip.json:ro
+      # The application's own login theme, shared with development.
+      - ../../Project/docker/keycloak/themes/outdoor-trip-companion:/opt/keycloak/themes/outdoor-trip-companion:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/9000 && printf 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && grep -q '\"UP\"' <&3"]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+      start_period: 20s
+
+  external-mocks:
+    image: python:3.12-alpine
+    command: ["python", "-u", "/app/server.py"]
+    volumes:
+      - ./mocks/server.py:/app/server.py:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8090/health')"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  user-service:
+    build: ../../Project/Backend/user-service
+    image: outdoor/user-service:${IMAGE_TAG:-local}
+    environment:
+      <<: *service-env
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/user_db
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: on-failure
+    healthcheck:
+      <<: *java-health
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8081"]
+
+  trail-service:
+    build: ../../Project/Backend/trail-service
+    image: outdoor/trail-service:${IMAGE_TAG:-local}
+    environment:
+      <<: *service-env
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/trail_db
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: on-failure
+    healthcheck:
+      <<: *java-health
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8082"]
+
+  recommendation-service:
+    build: ../../Project/Backend/recommendation-service
+    image: outdoor/recommendation-service:${IMAGE_TAG:-local}
+    environment:
+      <<: *service-env
+      SERVICES_TRAIL_BASE_URL: http://trail-service:8082
+      SERVICES_USER_BASE_URL: http://user-service:8081
+      # Read by the OpenAI SDK itself (OpenAIOkHttpClient.fromEnv()).
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-local-mock-key}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-http://external-mocks:8090/v1}
+      WEATHER_BASE_URL: ${WEATHER_BASE_URL:-https://api.open-meteo.com}
+    depends_on:
+      external-mocks:
+        condition: service_healthy
+    restart: on-failure
+    healthcheck:
+      <<: *java-health
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8083"]
+
+  memory-service:
+    build: ../../Project/Backend/memory-service
+    image: outdoor/memory-service:${IMAGE_TAG:-local}
+    environment:
+      <<: *service-env
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/memory_db
+      TRAIL_SERVICE_BASE_URL: http://trail-service:8082
+      MEMORY_STORAGE_TYPE: local
+      MEMORY_STORAGE_LOCAL_ROOT: /data/memory-photos
+      MEMORY_STORAGE_LOCAL_SIGNING_SECRET: ${MEMORY_STORAGE_LOCAL_SIGNING_SECRET:-local-demo-photo-signing-secret}
+    volumes:
+      - memory-photos:/data/memory-photos
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: on-failure
+    healthcheck:
+      <<: *java-health
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8085"]
+
+  plan-service:
+    build: ../../Project/Backend/plan-service
+    image: outdoor/plan-service:${IMAGE_TAG:-local}
+    environment:
+      <<: *service-env
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/plan_db
+      TRAIL_SERVICE_BASE_URL: http://trail-service:8082
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: on-failure
+    healthcheck:
+      <<: *java-health
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8086"]
+
+  frontend:
+    build: ../../Project/Frontend
+    image: outdoor/frontend:${IMAGE_TAG:-local}
+    environment:
+      KEYCLOAK_URL: http://localhost:${DEMO_KEYCLOAK_PORT:-8181}
+      KEYCLOAK_REALM: outdoor-trip
+      KEYCLOAK_CLIENT_ID: outdoor-web
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/healthz"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  edge:
+    image: nginx:1.27-alpine
+    ports:
+      - "${DEMO_WEB_PORT:-3000}:80"
+    volumes:
+      - ./edge/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - frontend
+
+  # One-shot: example data through the product APIs (scripts/demo-up.sh).
+  demo-seed:
+    profiles: ["seed"]
+    image: python:3.12-alpine
+    command: ["python", "-u", "/seed/seed.py"]
+    environment:
+      API_BASE_URL: http://edge
+      TOKEN_URL: http://keycloak:8080/realms/outdoor-trip/protocol/openid-connect/token
+      SEEDER_CLIENT_ID: demo-seeder
+      SEEDER_CLIENT_SECRET: ${DEMO_SEEDER_CLIENT_SECRET:-demo-seeder-secret}
+      DEMO_USERNAME: demo
+      DEMO_USER_PASSWORD: ${DEMO_USER_PASSWORD:-demo-password}
+    volumes:
+      - ./seed/seed.py:/seed/seed.py:ro
+      - seed-state:/state
+
+volumes:
+  postgres-data:
+  memory-photos:
+  seed-state:

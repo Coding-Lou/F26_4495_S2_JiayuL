@@ -2,6 +2,11 @@
  * Where the identity provider is, read from the three Vite variables
  * documented in `.env.example`. None of them is a secret: this is a public
  * client and has no client secret (FEATURE-002 §4).
+ *
+ * A container serves `/runtime-config.js`, written from its environment at
+ * start, so one built image works in every environment; a value given there
+ * wins over the build-time one. In development the file in `public/` sets
+ * nothing and the Vite variables apply.
  */
 export type AuthConfig = {
   /** Base URL of the identity provider, without a trailing slash. */
@@ -10,16 +15,34 @@ export type AuthConfig = {
   clientId: string
 }
 
-function readValue(value: string | undefined): string | null {
-  const trimmed = value?.trim() ?? ""
+type RuntimeConfig = {
+  keycloakUrl?: string
+  keycloakRealm?: string
+  keycloakClientId?: string
+}
+
+declare global {
+  interface Window {
+    __OTC_RUNTIME_CONFIG__?: RuntimeConfig
+  }
+}
+
+function readValue(value: unknown): string | null {
+  const trimmed = typeof value === "string" ? value.trim() : ""
   return trimmed === "" ? null : trimmed
 }
 
 /** The configuration, or null when any value is missing or unusable. */
 export function readAuthConfig(): AuthConfig | null {
-  const url = readValue(import.meta.env.VITE_KEYCLOAK_URL)
-  const realm = readValue(import.meta.env.VITE_KEYCLOAK_REALM)
-  const clientId = readValue(import.meta.env.VITE_KEYCLOAK_CLIENT_ID)
+  const runtime = window.__OTC_RUNTIME_CONFIG__ ?? {}
+  const url =
+    readValue(runtime.keycloakUrl) ?? readValue(import.meta.env.VITE_KEYCLOAK_URL)
+  const realm =
+    readValue(runtime.keycloakRealm) ??
+    readValue(import.meta.env.VITE_KEYCLOAK_REALM)
+  const clientId =
+    readValue(runtime.keycloakClientId) ??
+    readValue(import.meta.env.VITE_KEYCLOAK_CLIENT_ID)
 
   if (url === null || realm === null || clientId === null) {
     return null

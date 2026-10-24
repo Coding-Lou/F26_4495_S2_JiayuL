@@ -66,6 +66,8 @@ Ports: user 8081, trail 8082, recommendation 8083, memory 8085, plan 8086; Keycl
 
 Infrastructure, from `Project/`: `docker compose up -d` starts PostGIS/PostgreSQL and Keycloak only. `Project/docker/postgres/init-databases.sql` creates `user_db`, `trail_db`, `memory_db`, and `plan_db` on a fresh volume only; an older volume needs a one-time `CREATE DATABASE <name>;` (through `docker exec` and `psql`; `memory_db` and `plan_db` already exist on the development volume). **Never delete or recreate the volume or an existing database.** Memory photos are stored locally by default in `memory-service/.local-storage/` (git-ignored).
 
+Local Demo (whole product in Docker, for evaluators): `scripts/demo-up.sh` / `scripts/demo-down.sh`, files in `deploy/local-demo/` (README there). It is the separate Compose project `outdoor-demo` with its own volumes, so it never touches the development volume. It is deployment-only: the same Dockerfiles, a demo realm import, and external mocks; no demo branches in application code.
+
 ## Git and working-tree safety
 
 - Commits follow `type(scope): summary`, e.g. `feat(trail-service): add trail search`. Work happens on `Dev`; `main` is the PR target. Commit or push only when the user asks.

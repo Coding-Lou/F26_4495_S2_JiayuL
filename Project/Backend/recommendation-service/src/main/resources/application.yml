@@ -18,5 +18,8 @@ services:
   user:
     base-url: http://localhost:8081
 
+weather:
+  base-url: ${WEATHER_BASE_URL:https://api.open-meteo.com}
+
 openai:
   model: gpt-5.4-mini

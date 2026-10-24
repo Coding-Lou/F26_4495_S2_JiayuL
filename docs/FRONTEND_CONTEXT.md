@@ -43,7 +43,9 @@ Backend: Java 21 / Spring Boot 4.1.1, Maven multi-module, `Project/Backend/`.
 | `api-gateway` | 8080 | Shell only: no routes, security, or CORS |
 | `activity-service` | 8084 | Empty shell (activity is served by trail-service) |
 
-Databases (Flyway per module): `user_db`, `trail_db` (PostGIS), `memory_db`, `plan_db`; no cross-database foreign keys; recommendation-service has none. `Project/docker/postgres/init-databases.sql` creates them only on a fresh volume; an older volume needs a one-time `CREATE DATABASE …`; never delete the volume or a database. `Project/docker-compose.yml` starts PostgreSQL/PostGIS and Keycloak 26.7.4 only. External: Keycloak issuer `http://localhost:8180/realms/outdoor-trip`, OpenAI Java SDK (`OpenAIOkHttpClient.fromEnv()`), Open-Meteo.
+Databases (Flyway per module): `user_db`, `trail_db` (PostGIS), `memory_db`, `plan_db`; no cross-database foreign keys; recommendation-service has none. `Project/docker/postgres/init-databases.sql` creates them only on a fresh volume; an older volume needs a one-time `CREATE DATABASE …`; never delete the volume or a database. `Project/docker-compose.yml` starts PostgreSQL/PostGIS and Keycloak 26.7.4 only. External: Keycloak issuer `http://localhost:8180/realms/outdoor-trip`, OpenAI Java SDK (`OpenAIOkHttpClient.fromEnv()`: `OPENAI_API_KEY`, `OPENAI_BASE_URL`), Open-Meteo (`weather.base-url`, env `WEATHER_BASE_URL`, default `https://api.open-meteo.com`). Every `spring.*` and `services.*` value is overridable by environment variable (Spring relaxed binding).
+
+**Container packaging** (deployment only; no product behavior): each service's `Dockerfile` and `Project/Frontend/Dockerfile` build one image per component for every environment. The frontend image is static nginx (non-root, port 8080) with no API routing and no baked environment values. The Local Demo (`deploy/local-demo/`, `scripts/demo-up.sh`; see its README) runs these images with an `edge` reverse proxy in the Ingress role, a demo realm import, and an external OpenAI mock.
 
 ## 3. Backend Capabilities
 
@@ -149,7 +151,7 @@ Planner turn: prompt guard → OpenAI extraction into a partial delta → merge 
 
 Spec 002. Code in `src/features/auth/`; `authSession.ts` is the only importer of `keycloak-js` (26.2.x).
 
-- Public client `outdoor-web`, standard flow, PKCE S256, nonce, fragment response mode. Config `VITE_KEYCLOAK_URL`, `VITE_KEYCLOAK_REALM`, `VITE_KEYCLOAK_CLIENT_ID` (`.env.example`, local `.env.local`); missing values mean sign-in unavailable.
+- Public client `outdoor-web`, standard flow, PKCE S256, nonce, fragment response mode. Config `VITE_KEYCLOAK_URL`, `VITE_KEYCLOAK_REALM`, `VITE_KEYCLOAK_CLIENT_ID` (`.env.example`, local `.env.local`); missing values mean sign-in unavailable. `readAuthConfig()` prefers `window.__OTC_RUNTIME_CONFIG__` (`keycloakUrl`, `keycloakRealm`, `keycloakClientId`) from `/runtime-config.js`, loaded by `index.html` before the bundle: empty in development (`public/runtime-config.js`), written from `KEYCLOAK_URL` / `KEYCLOAK_REALM` / `KEYCLOAK_CLIENT_ID` by the container at start (`Frontend/docker/runtime-config.sh`).
 - Credentials only on Keycloak pages, reached only when the user activates Sign in / Create account. A signed-out visitor on a protected route goes to `/` with a sign-in gate.
 - Tokens in adapter memory only; nothing token-shaped in storage, cookies, URLs, or the console (except the adapter's short-lived `kc-callback-<state>`). Restore after reload: hidden-frame `prompt=none` (`public/silent-check-sso.html`; needs same-site cookies, fails closed). Renewal ~30 s before expiry, on protected navigation, on tab visibility, and in `getAccessToken()`; refusal → `session-expired`.
 - Exports: `getAccessToken()` (or `NotAuthenticatedError`), `getAuthenticatedSubject()` (the `sub`, to bind per-user state), `useAuth()` (states `initializing`, `unauthenticated`, `redirecting`, `callback-processing`, `authenticated`, `callback-failed`, `session-expired`, `signing-out`, `signed-out`; waits bounded at 9 s, doubt → signed-out).
@@ -169,7 +171,7 @@ Spec 002. Code in `src/features/auth/`; `authSession.ts` is the only importer of
 - Both are bound to `owner` = `sub`: read only once the subject is known, discarded whole on a bad shape or another owner, never written without an owner, removed on sign-out, expiry, and a sessionless startup (`PlannerSessionBoundary`, `LoadoutSessionBoundary` in `AppProviders`).
 - Also: return destination, sign-out notice markers, and the legacy pending prompt (read as a draft, never written).
 
-**Keycloak setup** (manual; no realm export): `outdoor-web` public, standard flow only, PKCE S256; redirect URIs `http://localhost:5173/auth/callback` and `/silent-check-sso.html`; post-logout `http://localhost:5173/`; web origin `http://localhost:5173`. Realm: registration on, access token 300 s, SSO idle 30 min, max 12 h, password ≥ 8. Login theme in `Project/docker/keycloak/themes/outdoor-trip-companion/`. The dev server is pinned to 5173; `npm run preview` cannot sign in.
+**Keycloak setup** (manual for development; the only realm export is the Local Demo's, `deploy/local-demo/keycloak/`, never used by other environments): `outdoor-web` public, standard flow only, PKCE S256; redirect URIs `http://localhost:5173/auth/callback` and `/silent-check-sso.html`; post-logout `http://localhost:5173/`; web origin `http://localhost:5173`. Realm: registration on, access token 300 s, SSO idle 30 min, max 12 h, password ≥ 8. Login theme in `Project/docker/keycloak/themes/outdoor-trip-companion/`. The dev server is pinned to 5173; `npm run preview` cannot sign in.
 
 **Development proxy** (`vite.config.ts`; the only browser path, no gateway): `/api/planner/**`, `/api/recommendations/pack` → 8083; `/api/trails/**` → 8082; `/api/users/me/gear/**` → 8081; `/api/memories/**` → 8085; `/api/plans/**` → 8086. Nothing else.
 
@@ -279,7 +281,7 @@ src/lib/  src/pages/ (LazyRoutes.tsx)  src/services/apiClient.ts
 
 ## 11. Known Missing Backend Capabilities
 
-- Production routing: no gateway routes or general CORS, so a deployed build reaches no API; Memories also need an S3 bucket.
+- Production routing: no gateway routes or general CORS. A deployment routes `/api/*` same-origin per service, as the Local Demo edge does (`deploy/local-demo/edge/nginx.conf`); a cloud deployment needs the equivalent Ingress rules. Memories also need an S3 bucket. Services have no health endpoint (no actuator); the demo checks their ports.
 - `/query` does not validate `tripDate`; recommendation errors other than unsafe prompts and user-service outage can surface as `500`.
 - Recommendations omit weather, distance, derived gear, and intent; pack returns category booleans, not item ids.
 - Equipped gear per trip is session-only (Plans store no gear by design).

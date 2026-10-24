@@ -18,3 +18,6 @@ frontend/dist/
 
 # Local memory photo storage (development only)
 .local-storage/
+
+# Local Demo: the template is committed, the local copy is not.
+!deploy/local-demo/.env.demo.example
