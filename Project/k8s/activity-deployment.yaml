@@ -15,7 +15,35 @@ spec:
     spec:
       containers:
         - name: activity-service
-          image: outdoor/activity-service:local
+          image: outdoor/activity-service:metrics-v1
           imagePullPolicy: IfNotPresent
+
           ports:
-            - containerPort: 8084
+            - name: http
+              containerPort: 8084
+
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 3
+
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 384Mi

@@ -1,0 +1,16 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: activity-route
+  namespace: outdoor
+spec:
+  parentRefs:
+    - name: outdoor-gateway
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /activity
+      backendRefs:
+        - name: activity-service
+          port: 8084

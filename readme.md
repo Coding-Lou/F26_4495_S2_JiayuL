@@ -72,3 +72,4 @@ The work log will be updated regularly throughout the project. Each entry will r
 | Oct. 20, 2026 | 2 | Completed **FEATURE-013 – My Plans & Calendar**, building the authenticated `/plans` page with Upcoming/Past Plan lists, monthly calendar, Plan-to-calendar selection, trail details, Review Gear, Plan deletion, pagination handling, account isolation, and the Ready-to-Go → My Plans flow. |
 | Oct. 21, 2026 | 4 | Study and learn how to compose a Docker setup for the microservice. |
 | Oct. 23, 2026 | 4 | Midterm report |
+| Oct. 26, 2026 | 4 | Prepare the aws deployment, learn how to delpoy the k8s |
