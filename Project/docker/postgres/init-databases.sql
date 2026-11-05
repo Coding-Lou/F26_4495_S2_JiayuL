@@ -2,3 +2,4 @@ CREATE DATABASE user_db;
 CREATE DATABASE trail_db;
 CREATE DATABASE memory_db;
 CREATE DATABASE plan_db;
+CREATE DATABASE activity_db;

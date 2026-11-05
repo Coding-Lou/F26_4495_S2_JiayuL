@@ -1,0 +1,22 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+
+metadata:
+  name: activity-service
+  namespace: monitoring
+  labels:
+    release: monitoring
+
+spec:
+  namespaceSelector:
+    matchNames:
+      - outdoor
+
+  selector:
+    matchLabels:
+      app: activity-service
+
+  endpoints:
+    - port: http
+      path: /actuator/prometheus
+      interval: 15s

@@ -46,6 +46,11 @@ public class SecurityConfig {
                     // callers (as on trail-service). A direct /error request stays
                     // protected.
                     auth.dispatcherTypeMatchers(DispatcherType.ERROR).permitAll();
+                    auth.requestMatchers(
+                                    "/actuator/health",
+                                    "/actuator/health/**",
+                                    "/actuator/prometheus")
+                            .permitAll();
                     auth.requestMatchers(HttpMethod.GET, "/api/memories/public")
                             .permitAll();
                     // RegexRequestMatcher sees the query string, so allow one.

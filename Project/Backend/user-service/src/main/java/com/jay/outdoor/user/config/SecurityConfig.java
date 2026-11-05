@@ -30,6 +30,11 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth ->
                         auth
+                                .requestMatchers(
+                                        "/actuator/health",
+                                        "/actuator/health/**",
+                                        "/actuator/prometheus"
+                                ).permitAll()
                                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                                 .anyRequest().authenticated()
                 )

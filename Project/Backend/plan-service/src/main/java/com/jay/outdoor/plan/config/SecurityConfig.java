@@ -37,6 +37,11 @@ public class SecurityConfig {
                     // its REQUEST dispatch keep their real status (as memory-service
                     // and trail-service). A direct /error request stays protected.
                     auth.dispatcherTypeMatchers(DispatcherType.ERROR).permitAll();
+                    auth.requestMatchers(
+                                    "/actuator/health",
+                                    "/actuator/health/**",
+                                    "/actuator/prometheus")
+                            .permitAll();
                     auth.anyRequest().authenticated();
                 })
 
