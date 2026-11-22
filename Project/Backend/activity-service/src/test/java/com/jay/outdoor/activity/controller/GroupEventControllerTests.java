@@ -43,7 +43,7 @@ class GroupEventControllerTests extends AbstractIntegrationTest {
         mockMvc.perform(post("/api/group-events")
                         .with(jwt().jwt(token -> token.subject("user-a")))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(request(start, start.plus(4, ChronoUnit.HOURS), 12)))
+                        .content(request(start.minus(72, ChronoUnit.HOURS), start.minus(48, ChronoUnit.HOURS),  start, start.plus(4, ChronoUnit.HOURS), 12)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").isNotEmpty())
                 .andExpect(jsonPath("$.status").value("OPEN"))
@@ -61,7 +61,7 @@ class GroupEventControllerTests extends AbstractIntegrationTest {
 
         mockMvc.perform(post("/api/group-events")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(request(start, start.plus(4, ChronoUnit.HOURS), 12)))
+                        .content(request(start.minus(72, ChronoUnit.HOURS), start.minus(48, ChronoUnit.HOURS), start, start.plus(4, ChronoUnit.HOURS), 12)))
                 .andExpect(status().isUnauthorized());
 
         assertEquals(0, repository.count());
@@ -74,7 +74,7 @@ class GroupEventControllerTests extends AbstractIntegrationTest {
         mockMvc.perform(post("/api/group-events")
                         .with(jwt().jwt(token -> token.subject("user-a")))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(request(start, start.plus(4, ChronoUnit.HOURS), 12)))
+                        .content(request(start.minus(72, ChronoUnit.HOURS), start.minus(48, ChronoUnit.HOURS), start, start.plus(4, ChronoUnit.HOURS), 12)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
                 .andExpect(jsonPath("$.errors[0].field").value("startsAt"));
@@ -90,7 +90,7 @@ class GroupEventControllerTests extends AbstractIntegrationTest {
         mockMvc.perform(post("/api/group-events")
                         .with(jwt().jwt(token -> token.subject("user-a")))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(request(start, start.plus(4, ChronoUnit.HOURS), 12)))
+                        .content(request(start.minus(72, ChronoUnit.HOURS), start.minus(48, ChronoUnit.HOURS), start, start.plus(4, ChronoUnit.HOURS), 12)))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("TRAIL_NOT_FOUND"));
 
@@ -106,24 +106,26 @@ class GroupEventControllerTests extends AbstractIntegrationTest {
         mockMvc.perform(post("/api/group-events")
                         .with(jwt().jwt(token -> token.subject("user-a")))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(request(start, start.plus(4, ChronoUnit.HOURS), 12)))
+                        .content(request(start.minus(72, ChronoUnit.HOURS), start.minus(48, ChronoUnit.HOURS), start, start.plus(4, ChronoUnit.HOURS), 12)))
                 .andExpect(status().isServiceUnavailable())
                 .andExpect(jsonPath("$.code").value("TRAIL_SERVICE_UNAVAILABLE"));
 
         assertEquals(0, repository.count());
     }
 
-    private static String request(Instant start, Instant end, int capacity) {
+    private static String request(Instant opensAt, Instant closesAt, Instant start, Instant end, int capacity) {
         return """
                 {
                   "trailId": "%s",
                   "title": "Weekend hike",
                   "description": "Meet at the trailhead",
                   "capacity": %d,
+                  "registrationOpensAt": "%s",
+                  "registrationClosesAt": "%s",
                   "startsAt": "%s",
                   "endsAt": "%s",
                   "organizerSubject": "attacker-supplied-value"
                 }
-                """.formatted(TRAIL_ID, capacity, start, end);
+                """.formatted(TRAIL_ID, capacity, opensAt, closesAt, start, end);
     }
 }

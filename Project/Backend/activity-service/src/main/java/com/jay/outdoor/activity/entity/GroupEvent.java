@@ -34,6 +34,9 @@ public class GroupEvent {
     @Column(nullable = false)
     private int capacity;
 
+    @Column(name = "seats_taken", nullable = false, updatable = false, insertable = false)
+    private int seatsTaken = 0;
+
     @Column(name = "starts_at", nullable = false)
     private Instant startsAt;
 
@@ -50,6 +53,12 @@ public class GroupEvent {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
+    @Column(name = "registration_opens_at", nullable = false)
+    private Instant registrationOpensAt;
+
+    @Column(name = "registration_closes_at", nullable = false)
+    private Instant registrationClosesAt;
+
     protected GroupEvent() {
         // Required by JPA.
     }
@@ -60,6 +69,9 @@ public class GroupEvent {
             String title,
             String description,
             int capacity,
+            int seatsTaken,
+            Instant registrationOpensAt,
+            Instant registrationClosesAt,
             Instant startsAt,
             Instant endsAt,
             Instant now
@@ -90,6 +102,9 @@ public class GroupEvent {
         this.status = GroupEventStatus.OPEN;
         this.createdAt = Objects.requireNonNull(now, "now").truncatedTo(ChronoUnit.MICROS);
         this.updatedAt = createdAt;
+        this.seatsTaken = seatsTaken;
+        this.registrationOpensAt = registrationOpensAt;
+        this.registrationClosesAt = registrationClosesAt;
     }
 
     public UUID getId() {
@@ -116,6 +131,10 @@ public class GroupEvent {
         return capacity;
     }
 
+    public int getSeatsTaken() {
+        return seatsTaken;
+    }
+
     public Instant getStartsAt() {
         return startsAt;
     }
@@ -134,5 +153,17 @@ public class GroupEvent {
 
     public Instant getUpdatedAt() {
         return updatedAt;
+    }
+
+    public Instant getRegistrationOpensAt() {
+        return registrationOpensAt;
+    }
+
+    public Instant getRegistrationClosesAt() {
+        return registrationClosesAt;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 }

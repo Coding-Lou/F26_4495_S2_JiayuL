@@ -15,7 +15,10 @@ public record CreateGroupEventRequest(
         @NotBlank @Size(max = 160) String title,
         @Size(max = 2000) String description,
         @NotNull @Min(1) Integer capacity,
+        @NotNull Instant registrationOpensAt,
+        @NotNull Instant registrationClosesAt,
         @NotNull Instant startsAt,
         @NotNull Instant endsAt
 ) {
+
 }

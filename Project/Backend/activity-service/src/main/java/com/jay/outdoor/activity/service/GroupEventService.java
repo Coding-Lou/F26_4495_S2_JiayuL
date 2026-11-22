@@ -31,12 +31,22 @@ public class GroupEventService {
     public GroupEvent create(String organizerSubject, CreateGroupEventRequest request) {
         Objects.requireNonNull(request, "request");
         Instant now = clock.instant();
+
         if (request.startsAt() == null || !request.startsAt().isAfter(now)) {
             throw new GroupEventValidationException("startsAt", "must be in the future");
         }
         if (request.endsAt() == null || !request.endsAt().isAfter(request.startsAt())) {
             throw new GroupEventValidationException("endsAt", "must be after startsAt");
         }
+
+        if (request.registrationOpensAt() == null) {
+            throw new GroupEventValidationException("registrationOpensAt", "must be in the future");
+        }
+
+        if (request.registrationClosesAt() == null) {
+            throw new GroupEventValidationException("registrationClosesAt", "must be in the future");
+        }
+
         if (!trailCatalogClient.trailExists(request.trailId())) {
             throw new TrailNotFoundException();
         }
@@ -47,10 +57,15 @@ public class GroupEventService {
                 request.title(),
                 request.description(),
                 request.capacity(),
+                0,
+                request.registrationOpensAt(),
+                request.registrationClosesAt(),
                 request.startsAt(),
                 request.endsAt(),
                 now
         );
         return repository.save(event);
     }
+
+
 }

@@ -10,11 +10,13 @@ import com.jay.outdoor.activity.support.AbstractIntegrationTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -29,6 +31,9 @@ class GroupEventServiceTests extends AbstractIntegrationTest {
 
     @Autowired
     private GroupEventRepository repository;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     @BeforeEach
     void clearEvents() {
@@ -76,14 +81,39 @@ class GroupEventServiceTests extends AbstractIntegrationTest {
         assertEquals(0, repository.count());
     }
 
+
+    @Test
+    void savingStaleEventShouldNotOverwriteSeatsTaken() {
+        Instant start = Instant.now().plus(2, ChronoUnit.DAYS);
+        GroupEvent event = service.create("user-a", command(start));
+        UUID eventId = event.getId();
+        jdbcTemplate.update(
+                "UPDATE group_events SET seats_taken = 1 WHERE id = ?",
+                eventId
+        );
+
+        event.setDescription("Updated description");
+
+        repository.save(event);
+
+        GroupEvent reloaded = repository.findById(eventId)
+                .orElseThrow();
+
+        assertThat(reloaded.getSeatsTaken()).isEqualTo(1);
+    }
+
     private static CreateGroupEventRequest command(Instant start) {
         return new CreateGroupEventRequest(
                 TRAIL_ID,
                 "Weekend hike",
                 "Meet at the trailhead",
                 12,
+                start.minus(72, ChronoUnit.HOURS),
+                start.minus(48, ChronoUnit.HOURS),
                 start,
                 start.plus(4, ChronoUnit.HOURS)
         );
     }
+
+
 }
