@@ -69,7 +69,6 @@ public class GroupEvent {
             String title,
             String description,
             int capacity,
-            int seatsTaken,
             Instant registrationOpensAt,
             Instant registrationClosesAt,
             Instant startsAt,
@@ -102,7 +101,6 @@ public class GroupEvent {
         this.status = GroupEventStatus.OPEN;
         this.createdAt = Objects.requireNonNull(now, "now").truncatedTo(ChronoUnit.MICROS);
         this.updatedAt = createdAt;
-        this.seatsTaken = seatsTaken;
         this.registrationOpensAt = registrationOpensAt;
         this.registrationClosesAt = registrationClosesAt;
     }
@@ -163,7 +161,4 @@ public class GroupEvent {
         return registrationClosesAt;
     }
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
 }

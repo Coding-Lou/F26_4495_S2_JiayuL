@@ -39,13 +39,14 @@ public class GroupEventService {
             throw new GroupEventValidationException("endsAt", "must be after startsAt");
         }
 
-        if (request.registrationOpensAt() == null) {
-            throw new GroupEventValidationException("registrationOpensAt", "must be in the future");
+        if (request.registrationClosesAt() == null || request.registrationClosesAt().isAfter(request.startsAt())) {
+            throw new GroupEventValidationException("registrationClosesAt", "must be before the event start date");
         }
 
-        if (request.registrationClosesAt() == null) {
-            throw new GroupEventValidationException("registrationClosesAt", "must be in the future");
+        if (request.registrationOpensAt() == null ||  !request.registrationOpensAt().isBefore(request.registrationClosesAt())) {
+            throw new GroupEventValidationException("registrationOpensAt", "must be before the registration closes date");
         }
+
 
         if (!trailCatalogClient.trailExists(request.trailId())) {
             throw new TrailNotFoundException();
@@ -57,7 +58,6 @@ public class GroupEventService {
                 request.title(),
                 request.description(),
                 request.capacity(),
-                0,
                 request.registrationOpensAt(),
                 request.registrationClosesAt(),
                 request.startsAt(),

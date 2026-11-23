@@ -2,6 +2,7 @@ package com.jay.outdoor.activity.controller;
 
 import com.jay.outdoor.activity.entity.GroupEvent;
 import com.jay.outdoor.activity.exception.TrailServiceUnavailableException;
+import com.jay.outdoor.activity.repository.EventRegistrationRepository;
 import com.jay.outdoor.activity.repository.GroupEventRepository;
 import com.jay.outdoor.activity.support.AbstractIntegrationTest;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,8 +32,12 @@ class GroupEventControllerTests extends AbstractIntegrationTest {
     @Autowired
     private GroupEventRepository repository;
 
+    @Autowired
+    private EventRegistrationRepository eventRegistrationRepository;
+
     @BeforeEach
     void clearEvents() {
+        eventRegistrationRepository.deleteAll();
         repository.deleteAll();
     }
 

@@ -36,7 +36,7 @@ CREATE TABLE event_registrations (
 
 CREATE UNIQUE INDEX idx_event_registrations
     ON event_registrations (event_id, participant_subject)
-    WHERE status in ('CONFIRMED', 'PENDING', 'WAITLISTED');
+    WHERE status in ('CONFIRMED', 'PENDING', 'WAITLISTED', 'REVIEW');
 
 CREATE INDEX idx_event_registrations_participant_created_at
     ON event_registrations (participant_subject, created_at DESC);
