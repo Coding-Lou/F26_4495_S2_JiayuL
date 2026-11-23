@@ -2,6 +2,9 @@ package com.jay.outdoor.activity.controller;
 
 import com.jay.outdoor.activity.exception.TrailNotFoundException;
 import com.jay.outdoor.activity.exception.TrailServiceUnavailableException;
+import com.jay.outdoor.activity.service.EventNotFoundException;
+import com.jay.outdoor.activity.service.EventRegistrationException;
+import com.jay.outdoor.activity.service.EventRegistrationValidationException;
 import com.jay.outdoor.activity.service.GroupEventValidationException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
@@ -78,5 +81,29 @@ public class GroupEventExceptionHandler {
         problem.setInstance(URI.create(request.getRequestURI()));
         problem.setProperty("code", code);
         return problem;
+    }
+
+    @ExceptionHandler(EventNotFoundException.class)
+    ResponseEntity<ProblemDetail> handleEventNotFound(
+            EventNotFoundException ex, HttpServletRequest request) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(problem(HttpStatus.NOT_FOUND, ex.getMessage(),
+                        "EVENT_NOT_FOUND", request));
+    }
+
+    @ExceptionHandler(EventRegistrationException.class)
+    ResponseEntity<ProblemDetail> handleJoinConflict(
+            EventRegistrationException ex, HttpServletRequest request) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(problem(HttpStatus.CONFLICT, ex.getMessage(),
+                        ex.getReason().name(), request));
+    }
+
+    @ExceptionHandler(EventRegistrationValidationException.class)
+    ResponseEntity<ProblemDetail> handleRegistrationValidation(
+            EventRegistrationValidationException ex, HttpServletRequest request) {
+        ProblemDetail problem = validationProblem(request);
+        problem.setProperty("errors", new Object[]{Map.of("field", ex.getField(), "message", ex.getMessage())});
+        return ResponseEntity.badRequest().body(problem);
     }
 }

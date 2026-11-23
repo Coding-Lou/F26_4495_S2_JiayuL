@@ -1,15 +1,19 @@
 package com.jay.outdoor.activity.controller;
 
+import com.jay.outdoor.activity.dto.EventRegistrationResponse;
 import com.jay.outdoor.activity.entity.GroupEvent;
 import com.jay.outdoor.activity.exception.TrailServiceUnavailableException;
 import com.jay.outdoor.activity.repository.EventRegistrationRepository;
 import com.jay.outdoor.activity.repository.GroupEventRepository;
 import com.jay.outdoor.activity.support.AbstractIntegrationTest;
+import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -58,6 +62,59 @@ class GroupEventControllerTests extends AbstractIntegrationTest {
         assertEquals("user-a", stored.getOrganizerSubject());
         assertEquals(TRAIL_ID, stored.getTrailId());
         assertEquals(1, repository.count());
+    }
+
+    @Test
+    void firstJoinReturnsCreatedAndConfirmedRegistration() throws Exception {
+        Instant start = Instant.now().plus(2, ChronoUnit.DAYS);
+
+        mockMvc.perform(post("/api/group-events")
+                        .with(jwt().jwt(token -> token.subject("organizer-a")))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(request(start.minus(72, ChronoUnit.HOURS),
+                                start.minus(24, ChronoUnit.HOURS), start,
+                                start.plus(4, ChronoUnit.HOURS), 12)))
+                .andExpect(status().isCreated());
+
+        GroupEvent event = repository.findAll().getFirst();
+        mockMvc.perform(post("/api/group-events/{eventId}/registrations", event.getId())
+                        .with(jwt().jwt(token -> token.subject("user-a"))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").isNotEmpty())
+                .andExpect(jsonPath("$.eventId").value(event.getId().toString()))
+                .andExpect(jsonPath("$.status").value("CONFIRMED"))
+                .andExpect(jsonPath("$.createdAt").isNotEmpty())
+                .andExpect(jsonPath("$.participantSubject").doesNotExist());
+    }
+
+    @Test
+    void sameUserRegisterForTheSameEventTwice() throws Exception {
+        Instant start = Instant.now().plus(2, ChronoUnit.DAYS);
+
+        mockMvc.perform(post("/api/group-events")
+                        .with(jwt().jwt(token -> token.subject("organizer-a")))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(request(start.minus(72, ChronoUnit.HOURS),
+                                start.minus(24, ChronoUnit.HOURS), start,
+                                start.plus(4, ChronoUnit.HOURS), 12)))
+                .andExpect(status().isCreated());
+
+        GroupEvent event = repository.findAll().getFirst();
+        MvcResult first =  mockMvc.perform(post("/api/group-events/{eventId}/registrations", event.getId())
+                        .with(jwt().jwt(token -> token.subject("user-a"))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").isNotEmpty())
+                .andExpect(jsonPath("$.eventId").value(event.getId().toString()))
+                .andExpect(jsonPath("$.status").value("CONFIRMED"))
+                .andExpect(jsonPath("$.createdAt").isNotEmpty())
+                .andExpect(jsonPath("$.participantSubject").doesNotExist()).andReturn();
+
+        String firstId = JsonPath.read(first.getResponse().getContentAsString(), "$.id") ;
+
+        mockMvc.perform(post("/api/group-events/{eventId}/registrations", event.getId())
+                        .with(jwt().jwt(token -> token.subject("user-a"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(firstId));
     }
 
     @Test

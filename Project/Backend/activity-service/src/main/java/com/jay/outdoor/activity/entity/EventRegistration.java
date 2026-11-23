@@ -54,7 +54,7 @@ public class EventRegistration {
             throw new IllegalStateException("Cannot confirm registration");
         }
         this.status = RegistrationStatus.CONFIRMED;
-        this.updatedAt = now;
+        this.updatedAt = Objects.requireNonNull(now, "now").truncatedTo(ChronoUnit.MICROS);
     }
 
     public UUID getId() {

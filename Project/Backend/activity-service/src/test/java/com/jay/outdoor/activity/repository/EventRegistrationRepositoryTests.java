@@ -18,6 +18,7 @@ import org.springframework.stereotype.Repository;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -71,25 +72,27 @@ public class EventRegistrationRepositoryTests extends AbstractIntegrationTest {
 
 
     @Test
-    void pendingEventRegistrationTest() {
+    void finderIgnoresCancelledRegistrations() {
         Instant start = Instant.now().plus(1, ChronoUnit.DAYS);
         GroupEvent event = groupEventService.create("organizer-a", command(start));
         EventRegistration eventRegistration = new EventRegistration("user-a", event.getId(), Instant.now());
         eventRegistrationRepository.saveAndFlush(eventRegistration);
-
-        assertEquals(1,  eventRegistrationRepository.findAll().size());
-
-        jdbcTemplate.update("update event_registrations set status = 'CANCELLED' where id = ?", eventRegistration.getId());
-
-        assertTrue( eventRegistrationRepository.findByEventIdAndParticipantSubjectAndStatusIn(
+        Optional<EventRegistration> found = eventRegistrationRepository.findByEventIdAndParticipantSubjectAndStatusIn(
                 eventRegistration.getEventId(),
                 "user-a",
-                List.of(
-                        RegistrationStatus.CONFIRMED,
-                        RegistrationStatus.PENDING,
-                        RegistrationStatus.REVIEW,
-                        RegistrationStatus.WAITLISTED)
-                ).isEmpty());
+                RegistrationStatus.ACTIVE_STATUSES
+        );
+
+        assertTrue(found.isPresent());
+
+        jdbcTemplate.update("update event_registrations set status = 'CANCELLED' where id = ?", eventRegistration.getId());
+        found = eventRegistrationRepository.findByEventIdAndParticipantSubjectAndStatusIn(
+                eventRegistration.getEventId(),
+                "user-a",
+                RegistrationStatus.ACTIVE_STATUSES
+        );
+
+        assertTrue(found.isEmpty());
     }
 
     private static CreateGroupEventRequest command(Instant start) {
