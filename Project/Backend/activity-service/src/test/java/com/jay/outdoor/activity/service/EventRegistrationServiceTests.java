@@ -142,6 +142,104 @@ public class EventRegistrationServiceTests extends AbstractIntegrationTest {
     }
 
     @Test
+    void joiningCompletedEventReturnsClosed() {
+        GroupEvent event = groupEventService.create("organizer-a", command(Instant.now().plus(2, ChronoUnit.DAYS)));
+        jdbcTemplate.update("UPDATE group_events SET status = 'COMPLETED' WHERE id = ?", event.getId());
+
+        EventRegistrationException exception = assertThrows(EventRegistrationException.class,
+                () -> eventRegistrationService.join(event.getId(), "user-a"));
+        assertEquals(EventJoinReason.CLOSED, exception.getReason());
+        assertEquals(0, jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM event_registrations WHERE event_id = ?", Integer.class, event.getId()));
+    }
+
+    @Test
+    void cancelReleasesOneSeatAndMarksRegistrationCancelled() {
+        GroupEvent event = groupEventService.create("organizer-a", command(Instant.now().plus(2, ChronoUnit.DAYS)));
+        eventRegistrationService.join(event.getId(), "user-a");
+
+        assertTrue(eventRegistrationService.cancel(event.getId(), "user-a"));
+        assertEquals("CANCELLED", jdbcTemplate.queryForObject(
+                "SELECT status FROM event_registrations WHERE event_id = ? AND participant_subject = ?",
+                String.class, event.getId(), "user-a"));
+        assertEquals(0, seatsTaken(event.getId()));
+    }
+
+    @Test
+    void cancellingTwiceDoesNotReleaseTwoSeats() {
+        GroupEvent event = groupEventService.create("organizer-a", command(Instant.now().plus(2, ChronoUnit.DAYS)));
+        eventRegistrationService.join(event.getId(), "user-a");
+
+        assertTrue(eventRegistrationService.cancel(event.getId(), "user-a"));
+        assertFalse(eventRegistrationService.cancel(event.getId(), "user-a"));
+        assertEquals(0, seatsTaken(event.getId()));
+    }
+
+    @Test
+    void failingToReleaseSeatRollsBackCancellation() {
+        GroupEvent event = groupEventService.create("organizer-a", command(Instant.now().plus(2, ChronoUnit.DAYS)));
+        eventRegistrationService.join(event.getId(), "user-a");
+        jdbcTemplate.update("UPDATE group_events SET seats_taken = 0 WHERE id = ?", event.getId());
+
+        assertThrows(IllegalStateException.class, () -> eventRegistrationService.cancel(event.getId(), "user-a"));
+        assertEquals("CONFIRMED", jdbcTemplate.queryForObject(
+                "SELECT status FROM event_registrations WHERE event_id = ? AND participant_subject = ?",
+                String.class, event.getId(), "user-a"));
+        assertEquals(0, seatsTaken(event.getId()));
+    }
+
+    @Test
+    void cancelledUserCanJoinAgain() {
+        GroupEvent event = groupEventService.create("organizer-a", command(Instant.now().plus(2, ChronoUnit.DAYS)));
+        UUID oldId = eventRegistrationService.join(event.getId(), "user-a").registration().getId();
+        assertTrue(eventRegistrationService.cancel(event.getId(), "user-a"));
+
+        JoinEventResult again = eventRegistrationService.join(event.getId(), "user-a");
+        assertTrue(again.created());
+        assertNotEquals(oldId, again.registration().getId());
+        assertEquals(1, seatsTaken(event.getId()));
+        assertEquals(2, jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM event_registrations WHERE event_id = ? AND participant_subject = ?",
+                Integer.class, event.getId(), "user-a"));
+    }
+
+    @Test
+    void concurrentCancelsReleaseExactlyOneSeat() throws Exception {
+        GroupEvent event = groupEventService.create("organizer-a", command(Instant.now().plus(2, ChronoUnit.DAYS)));
+        eventRegistrationService.join(event.getId(), "user-a");
+        CountDownLatch gate = new CountDownLatch(1);
+        ExecutorService pool = Executors.newFixedThreadPool(20);
+        List<Future<Boolean>> futures = new ArrayList<>();
+        try {
+            for (int i = 0; i < 20; i++) {
+                futures.add(pool.submit(() -> {
+                    gate.await();
+                    return eventRegistrationService.cancel(event.getId(), "user-a");
+                }));
+            }
+            gate.countDown();
+            int released = 0;
+            for (Future<Boolean> future : futures) {
+                if (future.get(30, TimeUnit.SECONDS)) released++;
+            }
+            assertEquals(1, released);
+            assertEquals(0, seatsTaken(event.getId()));
+            assertEquals("CANCELLED", jdbcTemplate.queryForObject(
+                    "SELECT status FROM event_registrations WHERE event_id = ? AND participant_subject = ?",
+                    String.class, event.getId(), "user-a"));
+            assertEquals(1, jdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM event_registrations WHERE event_id = ?", Integer.class, event.getId()));
+        } finally {
+            gate.countDown();
+            pool.shutdownNow();
+        }
+    }
+
+    private int seatsTaken(UUID eventId) {
+        return jdbcTemplate.queryForObject("SELECT seats_taken FROM group_events WHERE id = ?", Integer.class, eventId);
+    }
+
+    @Test
     void sameUserJoiningConcurrentlyCreatesOneRegistration() throws ExecutionException, InterruptedException, TimeoutException {
         Instant start = Instant.now().plus(2, ChronoUnit.DAYS);
         GroupEvent event = groupEventService.create("organizer-a", command(start));

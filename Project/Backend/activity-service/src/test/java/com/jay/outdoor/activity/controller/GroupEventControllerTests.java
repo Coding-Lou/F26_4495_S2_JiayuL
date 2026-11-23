@@ -1,6 +1,5 @@
 package com.jay.outdoor.activity.controller;
 
-import com.jay.outdoor.activity.dto.EventRegistrationResponse;
 import com.jay.outdoor.activity.entity.GroupEvent;
 import com.jay.outdoor.activity.exception.TrailServiceUnavailableException;
 import com.jay.outdoor.activity.repository.EventRegistrationRepository;
@@ -11,7 +10,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -22,6 +20,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.mockito.Mockito.when;
@@ -115,6 +114,79 @@ class GroupEventControllerTests extends AbstractIntegrationTest {
                         .with(jwt().jwt(token -> token.subject("user-a"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(firstId));
+    }
+
+    @Test
+    void joiningAFullEventReturnsConflict() throws Exception {
+        Instant start = Instant.now().plus(2, ChronoUnit.DAYS);
+
+        mockMvc.perform(post("/api/group-events")
+                        .with(jwt().jwt(token -> token.subject("organizer-a")))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(request(start.minus(72, ChronoUnit.HOURS),
+                                start.minus(24, ChronoUnit.HOURS), start,
+                                start.plus(4, ChronoUnit.HOURS), 1)))
+                .andExpect(status().isCreated());
+
+        GroupEvent event = repository.findAll().getFirst();
+        mockMvc.perform(post("/api/group-events/{eventId}/registrations", event.getId())
+                        .with(jwt().jwt(token -> token.subject("user-a"))))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(post("/api/group-events/{eventId}/registrations", event.getId())
+                        .with(jwt().jwt(token -> token.subject("user-b"))))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("FULL"));
+    }
+
+    @Test
+    void userRegisterForTheNonExistEvent() throws Exception {
+
+        UUID eventId = UUID.randomUUID();
+        mockMvc.perform(post("/api/group-events/{eventId}/registrations", eventId)
+                        .with(jwt().jwt(token -> token.subject("user-a"))))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("EVENT_NOT_FOUND"));
+    }
+
+    @Test
+    void cancellingRegistrationReturnsNoContentAndCanBeRepeated() throws Exception {
+        Instant start = Instant.now().plus(2, ChronoUnit.DAYS);
+        mockMvc.perform(post("/api/group-events")
+                        .with(jwt().jwt(token -> token.subject("organizer-a")))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(request(start.minus(72, ChronoUnit.HOURS),
+                                start.minus(24, ChronoUnit.HOURS), start,
+                                start.plus(4, ChronoUnit.HOURS), 12)))
+                .andExpect(status().isCreated());
+        UUID eventId = repository.findAll().getFirst().getId();
+        mockMvc.perform(post("/api/group-events/{eventId}/registrations", eventId)
+                        .with(jwt().jwt(token -> token.subject("user-a"))))
+                .andExpect(status().isCreated());
+
+        for (int i = 0; i < 2; i++) {
+            mockMvc.perform(delete("/api/group-events/{eventId}/registrations", eventId)
+                            .with(jwt().jwt(token -> token.subject("user-a"))))
+                    .andExpect(status().isNoContent())
+                    .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().string(""));
+        }
+        mockMvc.perform(delete("/api/group-events/{eventId}/registrations", eventId)
+                        .with(jwt().jwt(token -> token.subject("user-b"))))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void cancellingUnknownEventReturnsNotFound() throws Exception {
+        mockMvc.perform(delete("/api/group-events/{eventId}/registrations", UUID.randomUUID())
+                        .with(jwt().jwt(token -> token.subject("user-a"))))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("EVENT_NOT_FOUND"));
+    }
+
+    @Test
+    void cancellingWithoutAuthenticationReturnsUnauthorized() throws Exception {
+        mockMvc.perform(delete("/api/group-events/{eventId}/registrations", UUID.randomUUID()))
+                .andExpect(status().isUnauthorized());
     }
 
     @Test

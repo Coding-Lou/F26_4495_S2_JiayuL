@@ -24,4 +24,16 @@ public interface GroupEventRepository extends JpaRepository<GroupEvent, UUID> {
         """, nativeQuery = true)
     int tryReserveSeat(@Param("eventId") UUID eventId,
                        @Param("now") Instant now);
+
+    @Modifying
+    @Transactional
+    @Query(value = """
+        UPDATE group_events
+        SET seats_taken = seats_taken - 1,
+            updated_at = :now
+        WHERE id = :eventId
+          AND seats_taken > 0
+        """, nativeQuery = true)
+    int tryReleaseSeat(@Param("eventId") UUID eventId,
+                       @Param("now") Instant now);
 }

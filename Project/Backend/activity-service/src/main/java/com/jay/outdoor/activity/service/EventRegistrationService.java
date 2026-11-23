@@ -82,8 +82,11 @@ public class EventRegistrationService {
 
         if (result == null) {
             GroupEvent groupEvent = groupEventRepository.findById(eventId).orElseThrow(EventNotFoundException::new);
-            if (!groupEvent.getStatus().equals(GroupEventStatus.OPEN)) {
-                throw new EventRegistrationException(EventJoinReason.CANCELLED, "Event not open");
+            if (groupEvent.getStatus() == GroupEventStatus.CANCELLED) {
+                throw new EventRegistrationException(EventJoinReason.CANCELLED, "Event was cancelled");
+            }
+            if (groupEvent.getStatus() == GroupEventStatus.COMPLETED) {
+                throw new EventRegistrationException(EventJoinReason.CLOSED, "Event has completed");
             }
             if (now.isBefore( groupEvent.getRegistrationOpensAt() )) {
                 throw new EventRegistrationException(EventJoinReason.NOT_OPEN, "Event not open for registration");
@@ -98,6 +101,27 @@ public class EventRegistrationService {
         }
         return result;
 
+    }
+
+    public boolean cancel(UUID eventId, String participantSubject) {
+        if (eventId == null) {
+            throw new EventRegistrationValidationException("eventId", "Event id is null");
+        }
+        if (participantSubject == null || participantSubject.isBlank()) {
+            throw new EventRegistrationValidationException("participantSubject", "Participant subject is required");
+        }
+        return Boolean.TRUE.equals(transactionTemplate.execute(status -> {
+            groupEventRepository.findById(eventId).orElseThrow(EventNotFoundException::new);
+            Instant now = clock.instant();
+            int cancelled = eventRegistrationRepository.tryCancelRegistration(eventId, participantSubject, now);
+            if (cancelled == 0) {
+                return false;
+            }
+            if (cancelled != 1 || groupEventRepository.tryReleaseSeat(eventId, now) != 1) {
+                throw new IllegalStateException("Cancelled registration could not release its seat");
+            }
+            return true;
+        }));
     }
 
 

@@ -55,6 +55,15 @@ public class GroupEventController {
                 .body(EventRegistrationResponse.from(result.registration()));
     }
 
+    @DeleteMapping("/{eventId}/registrations")
+    public ResponseEntity<Void> cancel(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable UUID eventId
+    ) {
+        eventRegistrationService.cancel(eventId, validate(jwt));
+        return ResponseEntity.noContent().build();
+    }
+
     private String validate(Jwt jwt) {
         String subject = jwt == null ? null : jwt.getSubject();
         if (subject == null || subject.isBlank()) {
