@@ -8,6 +8,10 @@ spring:
     url: ${ACTIVITY_DB_URL:jdbc:postgresql://localhost:5432/activity_db}
     username: ${ACTIVITY_DB_USERNAME:${POSTGRES_USER:}}
     password: ${ACTIVITY_DB_PASSWORD:${POSTGRES_PASSWORD:}}
+  data:
+    redis:
+      host: ${ACTIVITY_REDIS_HOST:localhost}
+      port: ${ACTIVITY_REDIS_PORT:6379}
   jpa:
     hibernate:
       ddl-auto: validate
