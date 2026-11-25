@@ -15,7 +15,8 @@ public interface GroupEventRepository extends JpaRepository<GroupEvent, UUID> {
     @Transactional
     @Query(value = """
         UPDATE group_events
-        SET seats_taken = seats_taken + 1
+        SET seats_taken = seats_taken + 1,
+            updated_at = :now
         WHERE id = :eventId
           AND status = 'OPEN'
           AND seats_taken < capacity

@@ -15,6 +15,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.sql.Timestamp;
 import java.util.UUID;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -22,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
+import static com.jay.outdoor.activity.support.GroupEventTestRequests.command;
 
 class GroupEventServiceTests extends AbstractIntegrationTest {
 
@@ -227,18 +229,46 @@ class GroupEventServiceTests extends AbstractIntegrationTest {
 
     }
 
-    private static CreateGroupEventRequest command(Instant start) {
-        return new CreateGroupEventRequest(
-                TRAIL_ID,
-                "Weekend hike",
-                "Meet at the trailhead",
-                12,
-                start.minus(72, ChronoUnit.HOURS),
-                start.minus(48, ChronoUnit.HOURS),
-                start,
-                start.plus(4, ChronoUnit.HOURS)
-        );
+    @Test
+    void claimExactlyWhenRegistrationOpensChangesOneRow() {
+        Instant start = Instant.now().plus(4, ChronoUnit.DAYS);
+        UUID eventId = service.create("organizer", command(start)).getId();
+        assertEquals(1, repository.tryReserveSeat(eventId, start.minus(72, ChronoUnit.HOURS)));
+        assertEquals(1, jdbcTemplate.queryForObject(
+                "SELECT seats_taken FROM group_events WHERE id = ?", Integer.class, eventId));
     }
 
+    @Test
+    void claimExactlyWhenRegistrationClosesChangesNothing() {
+        Instant start = Instant.now().plus(4, ChronoUnit.DAYS);
+        UUID eventId = service.create("organizer", command(start)).getId();
+        assertEquals(0, repository.tryReserveSeat(eventId, start.minus(48, ChronoUnit.HOURS)));
+        assertEquals(0, jdbcTemplate.queryForObject(
+                "SELECT seats_taken FROM group_events WHERE id = ?", Integer.class, eventId));
+    }
+
+    @Test
+    void claimAfterRegistrationClosesChangesNothing() {
+        Instant start = Instant.now().plus(4, ChronoUnit.DAYS);
+        UUID eventId = service.create("organizer", command(start)).getId();
+        assertEquals(0, repository.tryReserveSeat(eventId, start.minus(47, ChronoUnit.HOURS)));
+        assertEquals(0, jdbcTemplate.queryForObject(
+                "SELECT seats_taken FROM group_events WHERE id = ?", Integer.class, eventId));
+    }
+
+    @Test
+    void seatChangesUpdateTheEventTimestamp() {
+        Instant start = Instant.now().plus(4, ChronoUnit.DAYS);
+        UUID eventId = service.create("organizer", command(start)).getId();
+        Instant reservedAt = start.minus(60, ChronoUnit.HOURS).truncatedTo(ChronoUnit.MICROS);
+        Instant releasedAt = start.minus(59, ChronoUnit.HOURS).truncatedTo(ChronoUnit.MICROS);
+
+        assertEquals(1, repository.tryReserveSeat(eventId, reservedAt));
+        assertEquals(reservedAt, jdbcTemplate.queryForObject(
+                "SELECT updated_at FROM group_events WHERE id = ?", Timestamp.class, eventId).toInstant());
+        assertEquals(1, repository.tryReleaseSeat(eventId, releasedAt));
+        assertEquals(releasedAt, jdbcTemplate.queryForObject(
+                "SELECT updated_at FROM group_events WHERE id = ?", Timestamp.class, eventId).toInstant());
+    }
 
 }

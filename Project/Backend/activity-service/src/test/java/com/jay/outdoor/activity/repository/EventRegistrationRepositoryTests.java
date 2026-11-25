@@ -22,6 +22,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static com.jay.outdoor.activity.support.GroupEventTestRequests.command;
 
 public class EventRegistrationRepositoryTests extends AbstractIntegrationTest {
 
@@ -95,16 +96,4 @@ public class EventRegistrationRepositoryTests extends AbstractIntegrationTest {
         assertTrue(found.isEmpty());
     }
 
-    private static CreateGroupEventRequest command(Instant start) {
-        return new CreateGroupEventRequest(
-                TRAIL_ID,
-                "Weekend hike",
-                "Meet at the trailhead",
-                12,
-                start.minus(72, ChronoUnit.HOURS),
-                start.minus(48, ChronoUnit.HOURS),
-                start,
-                start.plus(4, ChronoUnit.HOURS)
-        );
-    }
 }

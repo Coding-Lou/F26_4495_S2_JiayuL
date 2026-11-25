@@ -154,6 +154,18 @@ public class EventRegistrationServiceTests extends AbstractIntegrationTest {
     }
 
     @Test
+    void joiningCancelledEventReturnsCancelledWithoutRegistration() {
+        GroupEvent event = groupEventService.create("organizer-a", command(Instant.now().plus(2, ChronoUnit.DAYS)));
+        jdbcTemplate.update("UPDATE group_events SET status = 'CANCELLED' WHERE id = ?", event.getId());
+
+        EventRegistrationException exception = assertThrows(EventRegistrationException.class,
+                () -> eventRegistrationService.join(event.getId(), "user-a"));
+        assertEquals(EventJoinReason.CANCELLED, exception.getReason());
+        assertEquals(0, jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM event_registrations WHERE event_id = ?", Integer.class, event.getId()));
+    }
+
+    @Test
     void cancelReleasesOneSeatAndMarksRegistrationCancelled() {
         GroupEvent event = groupEventService.create("organizer-a", command(Instant.now().plus(2, ChronoUnit.DAYS)));
         eventRegistrationService.join(event.getId(), "user-a");
@@ -391,15 +403,6 @@ public class EventRegistrationServiceTests extends AbstractIntegrationTest {
     }
 
     private static CreateGroupEventRequest command(Instant start) {
-        return new CreateGroupEventRequest(
-                TRAIL_ID,
-                "Weekend hike",
-                "Meet at the trailhead",
-                CAPACITY,
-                start.minus(72, ChronoUnit.HOURS),
-                start.minus(24, ChronoUnit.HOURS),
-                start,
-                start.plus(4, ChronoUnit.HOURS)
-        );
+        return com.jay.outdoor.activity.support.GroupEventTestRequests.command(start, CAPACITY, 24);
     }
 }
