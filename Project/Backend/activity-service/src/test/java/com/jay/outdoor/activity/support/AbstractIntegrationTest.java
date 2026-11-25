@@ -7,6 +7,7 @@ import org.springframework.boot.testcontainers.service.connection.ServiceConnect
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.util.UUID;
@@ -20,6 +21,9 @@ public abstract class AbstractIntegrationTest {
 
     @ServiceConnection
     static final PostgreSQLContainer postgres = TestPostgres.INSTANCE;
+
+    @ServiceConnection(name = "redis")
+    static final GenericContainer<?> redis = TestRedis.INSTANCE;
 
     @MockitoBean
     protected JwtDecoder jwtDecoder;
