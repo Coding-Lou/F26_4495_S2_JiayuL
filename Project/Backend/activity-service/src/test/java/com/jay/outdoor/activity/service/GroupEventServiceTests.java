@@ -5,6 +5,7 @@ import com.jay.outdoor.activity.entity.GroupEvent;
 import com.jay.outdoor.activity.entity.GroupEventStatus;
 import com.jay.outdoor.activity.exception.TrailNotFoundException;
 import com.jay.outdoor.activity.exception.TrailServiceUnavailableException;
+import com.jay.outdoor.activity.redis.GroupEventSeatStore;
 import com.jay.outdoor.activity.repository.EventRegistrationRepository;
 import com.jay.outdoor.activity.repository.GroupEventRepository;
 import com.jay.outdoor.activity.support.AbstractIntegrationTest;
@@ -28,18 +29,26 @@ import static com.jay.outdoor.activity.support.GroupEventTestRequests.command;
 class GroupEventServiceTests extends AbstractIntegrationTest {
 
     private static final UUID TRAIL_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
+    private final GroupEventSeatStore seatStore;
+    private final GroupEventService service;
+    private final GroupEventRepository repository;
+    private final EventRegistrationRepository eventRegistrationRepository;
+    private final JdbcTemplate jdbcTemplate;
 
     @Autowired
-    private GroupEventService service;
-
-    @Autowired
-    private GroupEventRepository repository;
-
-    @Autowired
-    private EventRegistrationRepository eventRegistrationRepository;
-
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
+    GroupEventServiceTests(
+            GroupEventSeatStore seatStore,
+            GroupEventService service,
+            GroupEventRepository repository,
+            EventRegistrationRepository eventRegistrationRepository,
+            JdbcTemplate jdbcTemplate
+    ) {
+        this.seatStore = seatStore;
+        this.service = service;
+        this.repository = repository;
+        this.eventRegistrationRepository = eventRegistrationRepository;
+        this.jdbcTemplate = jdbcTemplate;
+    }
 
     @BeforeEach
     void clearEvents() {
@@ -56,6 +65,7 @@ class GroupEventServiceTests extends AbstractIntegrationTest {
         assertEquals("user-a", stored.getOrganizerSubject());
         assertEquals(TRAIL_ID, stored.getTrailId());
         assertEquals(12, stored.getCapacity());
+        assertEquals(12L, seatStore.getRemainingSeats(event.getId()));
         assertEquals(GroupEventStatus.OPEN, stored.getStatus());
         assertEquals(1, repository.count());
     }

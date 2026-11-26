@@ -4,7 +4,11 @@ import com.jay.outdoor.activity.client.TrailCatalogClient;
 import com.jay.outdoor.activity.dto.CreateGroupEventRequest;
 import com.jay.outdoor.activity.entity.GroupEvent;
 import com.jay.outdoor.activity.exception.TrailNotFoundException;
+import com.jay.outdoor.activity.redis.GroupEventSeatStore;
 import com.jay.outdoor.activity.repository.GroupEventRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
@@ -17,15 +21,19 @@ public class GroupEventService {
     private final GroupEventRepository repository;
     private final Clock clock;
     private final TrailCatalogClient trailCatalogClient;
+    private static final Logger log = LoggerFactory.getLogger(GroupEventService.class);
+
+    private final GroupEventSeatStore seatStore;
 
     public GroupEventService(
             GroupEventRepository repository,
             Clock clock,
-            TrailCatalogClient trailCatalogClient
+            TrailCatalogClient trailCatalogClient, GroupEventSeatStore seatStore
     ) {
         this.repository = repository;
         this.clock = clock;
         this.trailCatalogClient = trailCatalogClient;
+        this.seatStore = seatStore;
     }
 
     public GroupEvent create(String organizerSubject, CreateGroupEventRequest request) {
@@ -64,7 +72,16 @@ public class GroupEventService {
                 request.endsAt(),
                 now
         );
-        return repository.save(event);
+
+        GroupEvent saved = repository.save(event);
+
+        try {
+            seatStore.setRemainingSeats(saved.getId(), saved.getCapacity());
+        } catch (DataAccessException e) {
+            log.warn("Failed to load Redis seat counter for event {}", saved.getId(), e);
+        }
+
+        return saved;
     }
 
 

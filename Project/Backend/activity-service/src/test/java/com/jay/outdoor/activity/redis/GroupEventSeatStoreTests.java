@@ -17,6 +17,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class GroupEventSeatStoreTests extends AbstractIntegrationTest {
@@ -78,6 +79,50 @@ public class GroupEventSeatStoreTests extends AbstractIntegrationTest {
         assertEquals(AdmissionResult.DUPLICATE, seatStore.admit(eventId, "user-1"));
         assertEquals(AdmissionResult.FULL, seatStore.admit(eventId, "user-2"));
         assertEquals(0L, seatStore.getRemainingSeats(eventId));
+    }
+
+    @Test
+    void releaseAfterAdmissionRestoresSeatAndRemovesUser() {
+        UUID eventId = UUID.randomUUID();
+        seatStore.setRemainingSeats(eventId, 10);
+        assertEquals(AdmissionResult.ADMITTED, seatStore.admit(eventId, "user-1"));
+        assertEquals(9L, seatStore.getRemainingSeats(eventId));
+
+        assertTrue(seatStore.release(eventId, "user-1"));
+        assertEquals(10L, seatStore.getRemainingSeats(eventId));
+        assertFalse(Boolean.TRUE.equals(redis.opsForSet().isMember(seatStore.admittedKey(eventId), "user-1")));
+    }
+
+    @Test
+    void releasingTwiceRestoresOnlyOneSeat() {
+        UUID eventId = UUID.randomUUID();
+        seatStore.setRemainingSeats(eventId, 10);
+        assertEquals(AdmissionResult.ADMITTED, seatStore.admit(eventId, "user-1"));
+
+        assertTrue(seatStore.release(eventId, "user-1"));
+        assertFalse(seatStore.release(eventId, "user-1"));
+        assertEquals(10L, seatStore.getRemainingSeats(eventId));
+        assertFalse(Boolean.TRUE.equals(redis.opsForSet().isMember(seatStore.admittedKey(eventId), "user-1")));
+    }
+
+    @Test
+    void releasingUserNotInSetDoesNotChangeCounter() {
+        UUID eventId = UUID.randomUUID();
+        seatStore.setRemainingSeats(eventId, 10);
+
+        assertFalse(seatStore.release(eventId, "user-1"));
+        assertEquals(10L, seatStore.getRemainingSeats(eventId));
+        assertFalse(Boolean.TRUE.equals(redis.hasKey(seatStore.admittedKey(eventId))));
+    }
+
+    @Test
+    void releaseWithMissingCounterDoesNotCreateOneOrRemoveUser() {
+        UUID eventId = UUID.randomUUID();
+        redis.opsForSet().add(seatStore.admittedKey(eventId), "user-1");
+
+        assertThrows(IllegalStateException.class, () -> seatStore.release(eventId, "user-1"));
+        assertNull(seatStore.getRemainingSeats(eventId));
+        assertTrue(Boolean.TRUE.equals(redis.opsForSet().isMember(seatStore.admittedKey(eventId), "user-1")));
     }
 
     @Test

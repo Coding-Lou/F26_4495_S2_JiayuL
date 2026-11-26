@@ -2,10 +2,7 @@ package com.jay.outdoor.activity.controller;
 
 import com.jay.outdoor.activity.exception.TrailNotFoundException;
 import com.jay.outdoor.activity.exception.TrailServiceUnavailableException;
-import com.jay.outdoor.activity.service.EventNotFoundException;
-import com.jay.outdoor.activity.service.EventRegistrationException;
-import com.jay.outdoor.activity.service.EventRegistrationValidationException;
-import com.jay.outdoor.activity.service.GroupEventValidationException;
+import com.jay.outdoor.activity.service.*;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -91,6 +88,22 @@ public class GroupEventExceptionHandler {
                         "EVENT_NOT_FOUND", request));
     }
 
+    @ExceptionHandler(SeatCounterNotReadyException.class)
+    ResponseEntity<ProblemDetail> handleSeatCounterNotReady(
+            SeatCounterNotReadyException ex, HttpServletRequest request) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(problem(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage(),
+                        "SEAT_COUNTER_NOT_READY", request));
+    }
+
+    @ExceptionHandler(RedisAdmissionUnavailableException.class)
+    ResponseEntity<ProblemDetail> handleRedisAdmissionUnavailable(
+            RedisAdmissionUnavailableException ex, HttpServletRequest request) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(problem(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage(),
+                        "REDIS_ADMISSION_UNAVAILABLE", request));
+    }
+
     @ExceptionHandler(EventRegistrationException.class)
     ResponseEntity<ProblemDetail> handleJoinConflict(
             EventRegistrationException ex, HttpServletRequest request) {
@@ -105,5 +118,17 @@ public class GroupEventExceptionHandler {
         ProblemDetail problem = validationProblem(request);
         problem.setProperty("errors", new Object[]{Map.of("field", ex.getField(), "message", ex.getMessage())});
         return ResponseEntity.badRequest().body(problem);
+    }
+
+    @ExceptionHandler(RegistrationPendingException.class)
+    ResponseEntity<ProblemDetail> handleRegistrationPending(
+            RegistrationPendingException ex, HttpServletRequest request) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(problem(
+                        HttpStatus.SERVICE_UNAVAILABLE,
+                        ex.getMessage(),
+                        "REGISTRATION_PENDING",
+                        request
+                ));
     }
 }

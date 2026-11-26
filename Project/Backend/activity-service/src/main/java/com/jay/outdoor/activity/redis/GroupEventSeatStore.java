@@ -10,6 +10,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class GroupEventSeatStore {
     private static final DefaultRedisScript<Long> ADMIT_SCRIPT = admissionScript();
+    private static final DefaultRedisScript<Long> RELEASE_SCRIPT = releaseScript();
+
     private final StringRedisTemplate redis;
 
     public GroupEventSeatStore(StringRedisTemplate redis) {
@@ -47,6 +49,36 @@ public class GroupEventSeatStore {
             return AdmissionResult.NOT_READY;
         }
         throw new IllegalStateException("Unknown Redis admission result: " + result);
+    }
+
+
+    public boolean release(UUID eventId, String participantSubject) {
+        Long result = redis.execute(
+                RELEASE_SCRIPT,
+                List.of(seatKey(eventId), admittedKey(eventId)),
+                participantSubject
+        );
+
+        if (result == null) {
+            throw new IllegalStateException("Redis did not return a release result");
+        }
+        if (result == 1L) {
+            return true;  // 用户被移除，座位加回去了
+        }
+        if (result == 0L) {
+            return false; // 用户原本不在 set，counter 未变化
+        }
+        if (result == 2L) {
+            throw new IllegalStateException("Seat counter is missing for event " + eventId);
+        }
+        throw new IllegalStateException("Unknown Redis release result: " + result);
+    }
+
+    private static DefaultRedisScript<Long> releaseScript() {
+        DefaultRedisScript<Long> script = new DefaultRedisScript<>();
+        script.setLocation(new ClassPathResource("redis/release-group-event.lua"));
+        script.setResultType(Long.class);
+        return script;
     }
 
     private static DefaultRedisScript<Long> admissionScript() {
