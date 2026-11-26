@@ -49,8 +49,8 @@ public class EventRegistrationService {
             throw new EventRegistrationValidationException("eventId", "Event id is null");
         }
 
-        if (participantSubject == null) {
-            throw new EventRegistrationValidationException("participantSubject", "Participant subject is null");
+        if (participantSubject == null || participantSubject.isBlank()) {
+            throw new EventRegistrationValidationException("participantSubject", "Participant subject is required");
         }
 
         AdmissionResult admissionResult;
@@ -60,52 +60,49 @@ public class EventRegistrationService {
             throw new RedisAdmissionUnavailableException(eventId, e);
         }
 
-        if (admissionResult == AdmissionResult.NOT_READY) {
-            if (!groupEventRepository.existsById(eventId)) {
-                throw new EventNotFoundException(); // 404
+        return switch (admissionResult) {
+            case NOT_READY -> {
+                if (!groupEventRepository.existsById(eventId)) {
+                    throw new EventNotFoundException();
+                }
+                throw new SeatCounterNotReadyException(eventId);
             }
-            throw new SeatCounterNotReadyException(eventId); // 503
-        }
-
-        if (admissionResult == AdmissionResult.FULL) {
-            throw new EventRegistrationException(EventJoinReason.FULL, "Event is full");
-        }
-
-        if (admissionResult == AdmissionResult.DUPLICATE) {
-            Optional<EventRegistration> check = eventRegistrationRepository.findByEventIdAndParticipantSubjectAndStatusIn( eventId, participantSubject, RegistrationStatus.ACTIVE_STATUSES );
-            if (check.isPresent()) {
-                return new JoinEventResult(check.get(), false);
+            case FULL -> throw new EventRegistrationException(EventJoinReason.FULL, "Event is full");
+            case DUPLICATE -> {
+                Optional<EventRegistration> check = eventRegistrationRepository
+                        .findByEventIdAndParticipantSubjectAndStatusIn(
+                                eventId, participantSubject, RegistrationStatus.ACTIVE_STATUSES);
+                if (check.isPresent()) {
+                    yield new JoinEventResult(check.get(), false);
+                }
+                log.debug("Redis admission is pending without a visible registration for event {} and subject {}",
+                        eventId, participantSubject);
+                throw new RegistrationPendingException(eventId);
             }
-            log.error("Redis admission exists without a confirmed registration for event {} and subject {}",
-                    eventId, participantSubject);
-            throw new RegistrationPendingException(eventId);
-        }
-
-        if (admissionResult == AdmissionResult.ADMITTED) {
-            JoinEventResult result;
-            try {
-                result = joinInPostgres(eventId, participantSubject);
-            } catch (RuntimeException e) {
-                undoAdmission(eventId, participantSubject);
-                throw e;
+            case ADMITTED -> {
+                JoinEventResult result;
+                try {
+                    result = joinInPostgres(eventId, participantSubject);
+                } catch (RuntimeException e) {
+                    releaseRedisSeat(eventId, participantSubject);
+                    throw e;
+                }
+                if (!result.created()) {
+                    releaseRedisSeat(eventId, participantSubject);
+                }
+                yield result;
             }
-            if (!result.created()) {
-                undoAdmission(eventId, participantSubject);
-            }
-            return result;
-        }
-
-        throw new IllegalStateException("Unexpected Redis admission result: " + admissionResult);
+        };
     }
 
-    private void undoAdmission(UUID eventId, String participantSubject) {
+    private void releaseRedisSeat(UUID eventId, String participantSubject) {
         try {
             if (!groupEventSeatStore.release(eventId, participantSubject)) {
-                log.error("Redis admission undo removed no user for event {} and subject {}",
+                log.error("Redis seat release removed no user for event {} and subject {}",
                         eventId, participantSubject);
             }
         } catch (RuntimeException e) {
-            log.error("Redis admission undo failed for event {} and subject {}",
+            log.error("Redis seat release failed for event {} and subject {}",
                     eventId, participantSubject, e);
         }
     }
@@ -178,7 +175,8 @@ public class EventRegistrationService {
         if (participantSubject == null || participantSubject.isBlank()) {
             throw new EventRegistrationValidationException("participantSubject", "Participant subject is required");
         }
-        return Boolean.TRUE.equals(transactionTemplate.execute(status -> {
+
+        Boolean result = transactionTemplate.execute(status -> {
             groupEventRepository.findById(eventId).orElseThrow(EventNotFoundException::new);
             Instant now = clock.instant();
             int cancelled = eventRegistrationRepository.tryCancelRegistration(eventId, participantSubject, now);
@@ -188,10 +186,14 @@ public class EventRegistrationService {
             if (cancelled != 1 || groupEventRepository.tryReleaseSeat(eventId, now) != 1) {
                 throw new IllegalStateException("Cancelled registration could not release its seat");
             }
-
-            undoAdmission(eventId, participantSubject);
             return true;
-        }));
+        });
+
+        if (Boolean.TRUE.equals(result)) {
+            releaseRedisSeat(eventId, participantSubject);
+        }
+
+        return Boolean.TRUE.equals(result);
     }
 
 

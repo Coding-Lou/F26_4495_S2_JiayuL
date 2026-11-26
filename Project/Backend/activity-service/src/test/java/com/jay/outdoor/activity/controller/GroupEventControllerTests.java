@@ -1,7 +1,6 @@
 package com.jay.outdoor.activity.controller;
 
 import com.jay.outdoor.activity.entity.GroupEvent;
-import com.jay.outdoor.activity.exception.TrailServiceUnavailableException;
 import com.jay.outdoor.activity.repository.EventRegistrationRepository;
 import com.jay.outdoor.activity.repository.GroupEventRepository;
 import com.jay.outdoor.activity.support.AbstractIntegrationTest;
@@ -9,6 +8,7 @@ import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -23,7 +23,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.mockito.Mockito.when;
 
 class GroupEventControllerTests extends AbstractIntegrationTest {
 
@@ -37,6 +36,9 @@ class GroupEventControllerTests extends AbstractIntegrationTest {
 
     @Autowired
     private EventRegistrationRepository eventRegistrationRepository;
+
+    @Autowired
+    private StringRedisTemplate redis;
 
     @BeforeEach
     void clearEvents() {
@@ -147,6 +149,47 @@ class GroupEventControllerTests extends AbstractIntegrationTest {
                         .with(jwt().jwt(token -> token.subject("user-a"))))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("EVENT_NOT_FOUND"));
+    }
+
+    @Test
+    void missingCounterForExistingEventReturnsUnavailable() throws Exception {
+        Instant start = Instant.now().plus(2, ChronoUnit.DAYS);
+        mockMvc.perform(post("/api/group-events")
+                        .with(jwt().jwt(token -> token.subject("organizer-a")))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(request(start.minus(72, ChronoUnit.HOURS),
+                                start.minus(24, ChronoUnit.HOURS), start,
+                                start.plus(4, ChronoUnit.HOURS), 12)))
+                .andExpect(status().isCreated());
+        UUID eventId = repository.findAll().getFirst().getId();
+        redis.delete("groupevent:" + eventId + ":seats");
+
+        mockMvc.perform(post("/api/group-events/{eventId}/registrations", eventId)
+                        .with(jwt().jwt(token -> token.subject("user-a"))))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.code").value("SEAT_COUNTER_NOT_READY"));
+        assertEquals(0, eventRegistrationRepository.count());
+    }
+
+    @Test
+    void ghostAdmissionReturnsPendingWithoutCreatingRegistration() throws Exception {
+        Instant start = Instant.now().plus(2, ChronoUnit.DAYS);
+        mockMvc.perform(post("/api/group-events")
+                        .with(jwt().jwt(token -> token.subject("organizer-a")))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(request(start.minus(72, ChronoUnit.HOURS),
+                                start.minus(24, ChronoUnit.HOURS), start,
+                                start.plus(4, ChronoUnit.HOURS), 12)))
+                .andExpect(status().isCreated());
+        UUID eventId = repository.findAll().getFirst().getId();
+        redis.opsForValue().decrement("groupevent:" + eventId + ":seats");
+        redis.opsForSet().add("groupevent:" + eventId + ":admitted", "user-a");
+
+        mockMvc.perform(post("/api/group-events/{eventId}/registrations", eventId)
+                        .with(jwt().jwt(token -> token.subject("user-a"))))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.code").value("REGISTRATION_PENDING"));
+        assertEquals(0, eventRegistrationRepository.count());
     }
 
     @Test

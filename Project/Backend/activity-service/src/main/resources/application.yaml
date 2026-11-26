@@ -12,6 +12,8 @@ spring:
     redis:
       host: ${ACTIVITY_REDIS_HOST:localhost}
       port: ${ACTIVITY_REDIS_PORT:6379}
+      connect-timeout: ${ACTIVITY_REDIS_CONNECT_TIMEOUT:1s}
+      timeout: ${ACTIVITY_REDIS_TIMEOUT:2s}
   jpa:
     hibernate:
       ddl-auto: validate
