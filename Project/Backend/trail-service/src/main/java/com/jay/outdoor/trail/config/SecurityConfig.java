@@ -40,6 +40,12 @@ public class SecurityConfig {
                         // the real status. A direct request to /error stays protected.
                         .dispatcherTypeMatchers(DispatcherType.ERROR)
                         .permitAll()
+                        .requestMatchers(
+                                "/actuator/health",
+                                "/actuator/health/**",
+                                "/actuator/prometheus"
+                        )
+                        .permitAll()
                         // Nearby returns only trail data that is already public by
                         // id. Its lat/lon are a point the caller supplies, not an
                         // authenticated user's location; radiusKm is bounded in

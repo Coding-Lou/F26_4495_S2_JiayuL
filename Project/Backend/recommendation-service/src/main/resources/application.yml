@@ -23,3 +23,16 @@ weather:
 
 openai:
   model: gpt-5.4-mini
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}

@@ -4,6 +4,32 @@ server:
 spring:
   application:
     name: activity-service
+  datasource:
+    url: ${ACTIVITY_DB_URL:jdbc:postgresql://localhost:5432/activity_db}
+    username: ${ACTIVITY_DB_USERNAME:${POSTGRES_USER:}}
+    password: ${ACTIVITY_DB_PASSWORD:${POSTGRES_PASSWORD:}}
+  data:
+    redis:
+      host: ${ACTIVITY_REDIS_HOST:localhost}
+      port: ${ACTIVITY_REDIS_PORT:6379}
+      connect-timeout: ${ACTIVITY_REDIS_CONNECT_TIMEOUT:1s}
+      timeout: ${ACTIVITY_REDIS_TIMEOUT:2s}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${ACTIVITY_JWT_ISSUER_URI:http://localhost:8180/realms/outdoor-trip}
+          jwk-set-uri: ${ACTIVITY_JWT_JWK_SET_URI:http://localhost:8180/realms/outdoor-trip/protocol/openid-connect/certs}
+
+services:
+  trail:
+    base-url: ${TRAIL_SERVICE_BASE_URL:http://localhost:8082}
 
 management:
   endpoint:
@@ -18,3 +44,6 @@ management:
   metrics:
     tags:
       application: ${spring.application.name}
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
