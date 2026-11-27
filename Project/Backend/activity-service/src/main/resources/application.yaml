@@ -1,6 +1,10 @@
 server:
   port: 8084
 
+logging:
+  level:
+    org.hibernate.orm.jdbc.error: "OFF"
+
 spring:
   application:
     name: activity-service

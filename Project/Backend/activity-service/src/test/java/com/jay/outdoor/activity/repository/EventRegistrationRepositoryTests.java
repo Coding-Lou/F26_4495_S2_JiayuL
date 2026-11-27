@@ -9,7 +9,10 @@ import com.jay.outdoor.activity.support.AbstractIntegrationTest;
 import jakarta.servlet.Registration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -69,6 +72,19 @@ public class EventRegistrationRepositoryTests extends AbstractIntegrationTest {
 
         assertThrows( DataIntegrityViolationException.class, ()-> eventRegistrationRepository.saveAndFlush(secondEventRegistration));
         assertEquals(1,  eventRegistrationRepository.findAll().size());
+    }
+
+    @Test
+    @ExtendWith(OutputCaptureExtension.class)
+    void uniqueConstraintErrorDoesNotLogParticipantSubject(CapturedOutput output) {
+        String subject = "test-private-subject-unique-conflict-12345";
+        GroupEvent event = groupEventService.create("organizer-a",
+                command(Instant.now().plus(1, ChronoUnit.DAYS)));
+        eventRegistrationRepository.saveAndFlush(new EventRegistration(subject, event.getId(), Instant.now()));
+
+        assertThrows(DataIntegrityViolationException.class, () -> eventRegistrationRepository
+                .saveAndFlush(new EventRegistration(subject, event.getId(), Instant.now())));
+        assertFalse(output.toString().contains(subject));
     }
 
 
