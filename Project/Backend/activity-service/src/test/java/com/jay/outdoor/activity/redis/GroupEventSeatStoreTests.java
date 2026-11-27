@@ -12,13 +12,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.IntFunction;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Range;
+import org.springframework.data.redis.connection.stream.ReadOffset;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class GroupEventSeatStoreTests extends AbstractIntegrationTest {
 
@@ -151,6 +149,74 @@ public class GroupEventSeatStoreTests extends AbstractIntegrationTest {
         assertEquals(1L, redis.opsForSet().size(seatStore.admittedKey(eventId)));
     }
 
+    @Test
+    void admittedAddsOneStreamMessageWithEventIdAndSubject() {
+        UUID eventId = UUID.randomUUID();
+        seatStore.setRemainingSeats(eventId, 10);
+
+        assertEquals(AdmissionResult.ADMITTED, seatStore.admit(eventId, "user-a"));
+
+        var entries = redis.opsForStream()
+                .range(seatStore.streamKey(), Range.unbounded());
+
+        int messageCountForEvent = 0;
+
+        for (var entry : entries) {
+            var fields = entry.getValue();
+
+            if (eventId.toString().equals(fields.get("eventId"))) {
+                messageCountForEvent++;
+                assertEquals("user-a", fields.get("participantSubject"));
+            }
+        }
+
+        assertEquals(1, messageCountForEvent);
+
+    }
+
+    @Test
+    void fullDuplicateAndNotReadyAddNothingToTheStream() {
+        UUID eventId = UUID.randomUUID();
+        seatStore.setRemainingSeats(eventId, 0);
+
+        assertEquals(AdmissionResult.FULL, seatStore.admit(eventId, "user-a"));
+        Long count = countMessagesForEvent(eventId);
+        assertEquals(0L, count);
+
+        eventId = UUID.randomUUID();
+        seatStore.setRemainingSeats(eventId, 1);
+        seatStore.admit(eventId, "user-a");
+        count = countMessagesForEvent(eventId);
+        assertEquals(1L, count);
+
+        assertEquals(AdmissionResult.DUPLICATE, seatStore.admit(eventId, "user-a"));
+        count = countMessagesForEvent(eventId);
+        assertEquals(1L, count);
+
+        eventId = UUID.randomUUID();
+        assertEquals(AdmissionResult.NOT_READY, seatStore.admit(eventId, "user-a"));
+        count = countMessagesForEvent(eventId);
+        assertEquals(0L, count);
+
+    }
+
+    @Test
+    void createGroupTwiceStreamExperiment() {
+        String key = "test:create-group:" + UUID.randomUUID();
+        String group = "experiment-group";
+
+        redis.opsForStream().createGroup(key, ReadOffset.from("0"), group);
+
+        RuntimeException error = assertThrows(RuntimeException.class,
+                () -> redis.opsForStream()
+                        .createGroup(key, ReadOffset.from("0"), group));
+
+        System.out.println("Second create failed: " + error);
+
+        redis.delete(key);
+
+    }
+
     private List<AdmissionResult> admitConcurrently(UUID eventId, int count,
             IntFunction<String> participant) throws Exception {
         ExecutorService executor = Executors.newFixedThreadPool(Math.min(count, 32));
@@ -173,5 +239,19 @@ public class GroupEventSeatStoreTests extends AbstractIntegrationTest {
         } finally {
             executor.shutdownNow();
         }
+    }
+
+    private long countMessagesForEvent(UUID eventId) {
+        var entries = redis.opsForStream()
+                .range(seatStore.streamKey(), Range.unbounded());
+
+        long count = 0;
+        for (var entry : entries) {
+            var fields = entry.getValue();
+            if (eventId.toString().equals(fields.get("eventId"))) {
+                count++;
+            }
+        }
+        return count;
     }
 }

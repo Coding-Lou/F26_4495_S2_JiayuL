@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 public class GroupEventSeatStore {
     private static final DefaultRedisScript<Long> ADMIT_SCRIPT = admissionScript();
     private static final DefaultRedisScript<Long> RELEASE_SCRIPT = releaseScript();
+    private static final String STREAM_KEY = "groupevent:registrations";
 
     private final StringRedisTemplate redis;
 
@@ -32,7 +33,10 @@ public class GroupEventSeatStore {
 
     public AdmissionResult admit(UUID eventId, String participantSubject) {
         Long result = redis.execute(ADMIT_SCRIPT,
-                List.of(seatKey(eventId), admittedKey(eventId)), participantSubject);
+                List.of(seatKey(eventId), admittedKey(eventId),STREAM_KEY),
+                participantSubject,
+                eventId.toString()
+        );
         if (result == null) {
             throw new IllegalStateException("Redis did not return an admission result");
         }
@@ -99,4 +103,6 @@ public class GroupEventSeatStore {
     private String eventKey(UUID eventId, String suffix) {
         return "groupevent:" + eventId + ":" + suffix;
     }
+
+    String streamKey() {return STREAM_KEY;}
 }
