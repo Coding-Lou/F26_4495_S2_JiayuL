@@ -15,7 +15,7 @@ import java.util.UUID;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-@SpringBootTest
+@SpringBootTest(properties = "activity.registration.poller.enabled=false")
 @AutoConfigureMockMvc
 public abstract class AbstractIntegrationTest {
 

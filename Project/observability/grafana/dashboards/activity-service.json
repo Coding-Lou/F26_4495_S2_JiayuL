@@ -59,11 +59,11 @@
     },
     {
       "id": 6,
-      "title": "Registration pending / minute",
-      "description": "Includes normal in-flight duplicate requests and persistent ghost admissions; volume alone cannot tell them apart.",
+      "title": "Queued admission responses / minute",
+      "description": "HTTP 202 includes newly admitted users and duplicate requests still waiting for a visible registration.",
       "type": "timeseries",
       "datasource": {"type": "prometheus", "uid": "outdoor-prometheus"},
-      "targets": [{"refId": "A", "expr": "sum(rate(groupevent_registration_pending_total{job=\"activity-service\"}[5m])) * 60", "legendFormat": "pending / minute"}],
+      "targets": [{"refId": "A", "expr": "sum(rate(http_server_requests_seconds_count{job=\"activity-service\",method=\"POST\",uri=\"/api/group-events/{eventId}/registrations\",status=\"202\"}[5m])) * 60", "legendFormat": "queued / minute"}],
       "fieldConfig": {"defaults": {"unit": "none", "min": 0}, "overrides": []},
       "gridPos": {"h": 7, "w": 12, "x": 0, "y": 23}
     },

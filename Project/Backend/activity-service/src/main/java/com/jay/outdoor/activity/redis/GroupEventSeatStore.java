@@ -31,6 +31,14 @@ public class GroupEventSeatStore {
         return value == null ? null : Long.valueOf(value);
     }
 
+    public boolean isAdmitted(UUID eventId, String participantSubject) {
+        Boolean admitted = redis.opsForSet().isMember(admittedKey(eventId), participantSubject);
+        if (admitted == null) {
+            throw new IllegalStateException("Redis did not return an admission membership result");
+        }
+        return admitted;
+    }
+
     public AdmissionResult admit(UUID eventId, String participantSubject) {
         Long result = redis.execute(ADMIT_SCRIPT,
                 List.of(seatKey(eventId), admittedKey(eventId),STREAM_KEY),

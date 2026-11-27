@@ -41,13 +41,15 @@ Backend: Java 21 / Spring Boot 4.1.1, Maven multi-module, `Project/Backend/`.
 | `memory-service` | 8085 | Memories: owner CRUD, public reads, photos |
 | `plan-service` | 8086 | Plans: idempotent create, list, read, soft delete |
 | `api-gateway` | 8080 | Shell only: no routes, security, or CORS |
-| `activity-service` | 8084 | Empty shell (activity is served by trail-service) |
+| `activity-service` | 8084 | Group event creation, admission, registration, cancellation, and registration status |
 
 Databases (Flyway per module): `user_db`, `trail_db` (PostGIS), `memory_db`, `plan_db`; no cross-database foreign keys; recommendation-service has none. `Project/docker/postgres/init-databases.sql` creates them only on a fresh volume; an older volume needs a one-time `CREATE DATABASE …`; never delete the volume or a database. `Project/docker-compose.yml` starts PostgreSQL/PostGIS and Keycloak 26.7.4 only. External: Keycloak issuer `http://localhost:8180/realms/outdoor-trip`, OpenAI Java SDK (`OpenAIOkHttpClient.fromEnv()`: `OPENAI_API_KEY`, `OPENAI_BASE_URL`), Open-Meteo (`weather.base-url`, env `WEATHER_BASE_URL`, default `https://api.open-meteo.com`). Every `spring.*` and `services.*` value is overridable by environment variable (Spring relaxed binding).
 
 **Container packaging** (deployment only; no product behavior): each service's `Dockerfile` and `Project/Frontend/Dockerfile` build one image per component for every environment. The frontend image is static nginx (non-root, port 8080) with no API routing and no baked environment values. The Local Demo (`deploy/local-demo/`, `scripts/demo-up.sh`; see its README) runs these images with an `edge` reverse proxy in the Ingress role, a demo realm import, and an external OpenAI mock.
 
 ## 3. Backend Capabilities
+
+**Activity service (group events).** `GET /api/group-events/{eventId}/registrations/me` requires a bearer JWT and uses only its subject; clients cannot choose a subject. It returns `200` with `{ "status": "CONFIRMED", "registration": { "id": "...", "eventId": "...", "status": "CONFIRMED", "createdAt": "..." } }` for an existing confirmed registration, `{ "status": "QUEUED", "registration": null }` when Redis has admitted the user but Postgres has no registration, or `{ "status": "NOT_REGISTERED", "registration": null }` when neither store has the user. Active Postgres rows with status `PENDING`, `REVIEW`, or `WAITLISTED` return that status and registration details; `REVIEW` and `WAITLISTED` have no producers yet. `POST /api/group-events/{eventId}/registrations` returns `202` with the same `QUEUED` body when Redis admits or recognizes an unconfirmed user; a duplicate with a visible registration returns `200` and that registration. A consumer writes newly admitted users to Postgres asynchronously. An unknown event returns `404 EVENT_NOT_FOUND`; missing authentication returns `401`; Redis unavailable after no Postgres registration returns `503 REDIS_ADMISSION_UNAVAILABLE`. Confirmed registrations remain readable when Redis is unavailable.
 
 **User service.** Validates JWTs; auto-creates the profile from `sub`, `email`, `name` → `preferred_username`; CRUD on the caller's gear only (soft delete). No registration, password, or profile-editing endpoints.
 

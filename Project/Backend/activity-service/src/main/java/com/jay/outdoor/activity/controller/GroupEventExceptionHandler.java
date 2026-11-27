@@ -120,15 +120,4 @@ public class GroupEventExceptionHandler {
         return ResponseEntity.badRequest().body(problem);
     }
 
-    @ExceptionHandler(RegistrationPendingException.class)
-    ResponseEntity<ProblemDetail> handleRegistrationPending(
-            RegistrationPendingException ex, HttpServletRequest request) {
-        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-                .body(problem(
-                        HttpStatus.SERVICE_UNAVAILABLE,
-                        ex.getMessage(),
-                        "REGISTRATION_PENDING",
-                        request
-                ));
-    }
 }

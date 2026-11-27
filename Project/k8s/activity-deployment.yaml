@@ -18,6 +18,10 @@ spec:
           image: outdoor/activity-service:metrics-v1
           imagePullPolicy: IfNotPresent
 
+          env:
+            - name: ACTIVITY_REGISTRATION_POLLER_ENABLED
+              value: "true"
+
           ports:
             - name: http
               containerPort: 8084

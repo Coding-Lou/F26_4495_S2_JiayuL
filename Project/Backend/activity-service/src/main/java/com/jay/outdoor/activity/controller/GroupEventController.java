@@ -1,11 +1,10 @@
 package com.jay.outdoor.activity.controller;
 
 import com.jay.outdoor.activity.dto.CreateGroupEventRequest;
-import com.jay.outdoor.activity.dto.EventRegistrationResponse;
 import com.jay.outdoor.activity.dto.GroupEventResponse;
+import com.jay.outdoor.activity.dto.MyRegistrationStatusResponse;
 import com.jay.outdoor.activity.service.EventRegistrationService;
 import com.jay.outdoor.activity.service.GroupEventService;
-import com.jay.outdoor.activity.service.JoinEventResult;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -44,15 +43,15 @@ public class GroupEventController {
     }
 
     @PostMapping("/{eventId}/registrations")
-    public ResponseEntity<EventRegistrationResponse> join(
+    public ResponseEntity<MyRegistrationStatusResponse> join(
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable UUID eventId
     ) {
         String subject = validate(jwt);
-        JoinEventResult result = eventRegistrationService.join(eventId, subject);
-        HttpStatus status = result.created() ? HttpStatus.CREATED : HttpStatus.OK;
-        return ResponseEntity.status(status)
-                .body(EventRegistrationResponse.from(result.registration()));
+        MyRegistrationStatusResponse result = eventRegistrationService.join(eventId, subject);
+        HttpStatus status = result.status() == MyRegistrationStatusResponse.Status.QUEUED
+                ? HttpStatus.ACCEPTED : HttpStatus.OK;
+        return ResponseEntity.status(status).body(result);
     }
 
     @DeleteMapping("/{eventId}/registrations")
@@ -62,6 +61,15 @@ public class GroupEventController {
     ) {
         eventRegistrationService.cancel(eventId, validate(jwt));
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{eventId}/registrations/me")
+    public ResponseEntity<MyRegistrationStatusResponse> getMyRegistrationStatus(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable UUID eventId
+    ) {
+        String subject = validate(jwt);
+        return ResponseEntity.ok(eventRegistrationService.getMyRegistrationStatus(eventId, subject));
     }
 
     private String validate(Jwt jwt) {

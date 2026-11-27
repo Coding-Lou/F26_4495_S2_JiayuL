@@ -1,5 +1,6 @@
 package com.jay.outdoor.activity.service;
 
+import com.jay.outdoor.activity.dto.MyRegistrationStatusResponse;
 import com.jay.outdoor.activity.entity.EventRegistration;
 import com.jay.outdoor.activity.entity.GroupEvent;
 import com.jay.outdoor.activity.entity.RegistrationStatus;
@@ -14,9 +15,6 @@ import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.springframework.boot.test.system.CapturedOutput;
-import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.dao.QueryTimeoutException;
 import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -25,7 +23,7 @@ import org.springframework.transaction.TransactionStatus;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -59,18 +57,65 @@ class EventRegistrationGateTests {
     }
 
     @Test
-    void admittedAndCreatedKeepsTheRedisSeat() {
-        when(seats.admit(eventId, subject)).thenReturn(AdmissionResult.ADMITTED);
-        transactionCanCommit();
+    void searchForUnknownEventReturnsNotFoundWithoutCheckingRegistration() {
+        assertThrows(EventNotFoundException.class, () -> service.getMyRegistrationStatus(eventId, subject));
+        verifyNoInteractions(registrations, seats);
+    }
+
+    @Test
+    void searchReturnsConfirmedRegistrationWithoutAccessingRedis() {
+        EventRegistration existing = new EventRegistration(subject, eventId, Instant.now());
+        existing.confirm(Instant.now());
+        when(events.existsById(eventId)).thenReturn(true);
         when(registrations.findByEventIdAndParticipantSubjectAndStatusIn(
-                eventId, subject, RegistrationStatus.ACTIVE_STATUSES)).thenReturn(Optional.empty());
-        when(registrations.saveAndFlush(any(EventRegistration.class))).thenAnswer(call -> call.getArgument(0));
-        when(events.tryReserveSeat(eq(eventId), any(Instant.class))).thenReturn(1);
+                eventId, subject, RegistrationStatus.ACTIVE_STATUSES)).thenReturn(Optional.of(existing));
 
-        JoinEventResult result = service.join(eventId, subject);
+        MyRegistrationStatusResponse result = service.getMyRegistrationStatus(eventId, subject);
 
-        assertTrue(result.created());
-        assertEquals(subject, result.registration().getParticipantSubject());
+        assertEquals(MyRegistrationStatusResponse.Status.CONFIRMED, result.status());
+        assertEquals(existing.getId(), result.registration().id());
+        verifyNoInteractions(seats);
+    }
+
+    @Test
+    void searchReturnsQueuedWhenRedisHasAdmissionButPostgresHasNoRow() {
+        when(events.existsById(eventId)).thenReturn(true);
+        when(seats.isAdmitted(eventId, subject)).thenReturn(true);
+
+        MyRegistrationStatusResponse result = service.getMyRegistrationStatus(eventId, subject);
+
+        assertEquals(MyRegistrationStatusResponse.Status.QUEUED, result.status());
+        assertNull(result.registration());
+    }
+
+    @Test
+    void searchReturnsNotRegisteredWhenNeitherStoreHasAdmission() {
+        when(events.existsById(eventId)).thenReturn(true);
+
+        MyRegistrationStatusResponse result = service.getMyRegistrationStatus(eventId, subject);
+
+        assertEquals(MyRegistrationStatusResponse.Status.NOT_REGISTERED, result.status());
+        assertNull(result.registration());
+    }
+
+    @Test
+    void searchMapsRedisConnectionFailureToUnavailableWhenPostgresHasNoRow() {
+        when(events.existsById(eventId)).thenReturn(true);
+        when(seats.isAdmitted(eventId, subject)).thenThrow(new RedisConnectionFailureException("offline"));
+
+        assertThrows(RedisAdmissionUnavailableException.class,
+                () -> service.getMyRegistrationStatus(eventId, subject));
+    }
+
+    @Test
+    void admittedIsQueuedWithoutAccessingPostgresOrReleasingSeat() {
+        when(seats.admit(eventId, subject)).thenReturn(AdmissionResult.ADMITTED);
+
+        MyRegistrationStatusResponse result = service.join(eventId, subject);
+
+        assertEquals(MyRegistrationStatusResponse.Status.QUEUED, result.status());
+        assertNull(result.registration());
+        verifyNoInteractions(events, registrations, transactionManager);
         verify(seats, never()).release(eventId, subject);
     }
 
@@ -110,88 +155,25 @@ class EventRegistrationGateTests {
         when(registrations.findByEventIdAndParticipantSubjectAndStatusIn(
                 eventId, subject, RegistrationStatus.ACTIVE_STATUSES)).thenReturn(Optional.of(existing));
 
-        JoinEventResult result = service.join(eventId, subject);
+        when(existing.getStatus()).thenReturn(RegistrationStatus.CONFIRMED);
+        MyRegistrationStatusResponse result = service.join(eventId, subject);
 
-        assertSame(existing, result.registration());
-        assertFalse(result.created());
+        assertEquals(MyRegistrationStatusResponse.Status.CONFIRMED, result.status());
         verify(seats, never()).release(eventId, subject);
         verifyNoInteractions(events);
     }
 
     @Test
-    void admittedButAlreadyRegisteredReleasesSeatAndReturnsExistingRegistration() {
-        EventRegistration existing = mock(EventRegistration.class);
-        when(seats.admit(eventId, subject)).thenReturn(AdmissionResult.ADMITTED);
-        when(registrations.findByEventIdAndParticipantSubjectAndStatusIn(
-                eventId, subject, RegistrationStatus.ACTIVE_STATUSES)).thenReturn(Optional.of(existing));
-        when(seats.release(eventId, subject)).thenReturn(true);
-
-        JoinEventResult result = service.join(eventId, subject);
-
-        assertSame(existing, result.registration());
-        assertFalse(result.created());
-        verify(seats).release(eventId, subject);
-        assertEquals(0.0, metrics.get("groupevent.redis.release.failed").counter().count());
-    }
-
-    @Test
-    @ExtendWith(OutputCaptureExtension.class)
-    void failedReleaseDoesNotReplaceExistingRegistrationResult(CapturedOutput output) {
-        EventRegistration existing = mock(EventRegistration.class);
-        when(seats.admit(eventId, subject)).thenReturn(AdmissionResult.ADMITTED);
-        when(registrations.findByEventIdAndParticipantSubjectAndStatusIn(
-                eventId, subject, RegistrationStatus.ACTIVE_STATUSES)).thenReturn(Optional.of(existing));
-        when(seats.release(eventId, subject)).thenThrow(new RedisConnectionFailureException("Redis down"));
-
-        JoinEventResult result = service.join(eventId, subject);
-
-        assertSame(existing, result.registration());
-        assertFalse(result.created());
-        verify(seats).release(eventId, subject);
-        assertEquals(1.0, metrics.get("groupevent.redis.release.failed").counter().count());
-        assertTrue(output.toString().contains("subject fingerprint "));
-        assertFalse(output.toString().contains(subject));
-    }
-
-    @Test
-    void postgresFailureReleasesSeatAndPreservesOriginalException() {
-        EventRegistrationException failure = new EventRegistrationException(EventJoinReason.CLOSED, "Closed");
-        when(seats.admit(eventId, subject)).thenReturn(AdmissionResult.ADMITTED);
-        when(registrations.findByEventIdAndParticipantSubjectAndStatusIn(
-                eventId, subject, RegistrationStatus.ACTIVE_STATUSES)).thenThrow(failure);
-        when(seats.release(eventId, subject)).thenReturn(true);
-
-        assertSame(failure, assertThrows(EventRegistrationException.class,
-                () -> service.join(eventId, subject)));
-        verify(seats).release(eventId, subject);
-    }
-
-    @Test
-    void failedUndoDoesNotReplacePostgresFailure() {
-        EventRegistrationException failure = new EventRegistrationException(EventJoinReason.CLOSED, "Closed");
-        when(seats.admit(eventId, subject)).thenReturn(AdmissionResult.ADMITTED);
-        when(registrations.findByEventIdAndParticipantSubjectAndStatusIn(
-                eventId, subject, RegistrationStatus.ACTIVE_STATUSES)).thenThrow(failure);
-        when(seats.release(eventId, subject)).thenThrow(new RedisConnectionFailureException("Redis down"));
-
-        assertSame(failure, assertThrows(EventRegistrationException.class,
-                () -> service.join(eventId, subject)));
-        verify(seats).release(eventId, subject);
-    }
-
-    @Test
-    @ExtendWith(OutputCaptureExtension.class)
-    void duplicateWithoutActiveRegistrationIsPendingWithoutCreatingOne(CapturedOutput output) {
+    void duplicateWithoutActiveRegistrationIsQueuedWithoutCreatingOne() {
         when(seats.admit(eventId, subject)).thenReturn(AdmissionResult.DUPLICATE);
         when(registrations.findByEventIdAndParticipantSubjectAndStatusIn(
                 eventId, subject, RegistrationStatus.ACTIVE_STATUSES)).thenReturn(Optional.empty());
 
-        assertThrows(RegistrationPendingException.class, () -> service.join(eventId, subject));
+        MyRegistrationStatusResponse result = service.join(eventId, subject);
+        assertEquals(MyRegistrationStatusResponse.Status.QUEUED, result.status());
+        assertNull(result.registration());
         verifyNoInteractions(events);
-        assertEquals(1.0, metrics.get("groupevent.registration.pending").counter().count());
-        assertTrue(output.toString().contains("subject fingerprint "));
-        assertTrue(output.toString().contains(eventId.toString()));
-        assertFalse(output.toString().contains(subject));
+        verify(seats, never()).release(eventId, subject);
     }
 
     @Test
@@ -244,22 +226,6 @@ class EventRegistrationGateTests {
         assertTrue(service.cancel(eventId, subject));
         verify(transactionManager).commit(any(TransactionStatus.class));
         assertEquals(1.0, metrics.get("groupevent.redis.release.failed").counter().count());
-    }
-
-    @Test
-    @ExtendWith(OutputCaptureExtension.class)
-    void releaseThatRemovesNoUserIncrementsFailureMetricWithoutLoggingSubject(CapturedOutput output) {
-        when(seats.admit(eventId, subject)).thenReturn(AdmissionResult.ADMITTED);
-        EventRegistration existing = mock(EventRegistration.class);
-        when(registrations.findByEventIdAndParticipantSubjectAndStatusIn(
-                eventId, subject, RegistrationStatus.ACTIVE_STATUSES)).thenReturn(Optional.of(existing));
-
-        JoinEventResult result = service.join(eventId, subject);
-
-        assertFalse(result.created());
-        assertEquals(1.0, metrics.get("groupevent.redis.release.failed").counter().count());
-        assertTrue(output.toString().contains("subject fingerprint "));
-        assertFalse(output.toString().contains(subject));
     }
 
     private void transactionCanCommit() {

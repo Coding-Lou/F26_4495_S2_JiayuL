@@ -40,6 +40,9 @@ spec:
           {{- end }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: ACTIVITY_REGISTRATION_POLLER_ENABLED
+              value: {{ .Values.registrationPoller.enabled | quote }}
           ports:
             - name: http
               containerPort: {{ .Values.service.port }}

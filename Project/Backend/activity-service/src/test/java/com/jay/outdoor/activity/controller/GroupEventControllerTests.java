@@ -4,16 +4,16 @@ import com.jay.outdoor.activity.entity.GroupEvent;
 import com.jay.outdoor.activity.exception.TrailServiceUnavailableException;
 import com.jay.outdoor.activity.repository.EventRegistrationRepository;
 import com.jay.outdoor.activity.repository.GroupEventRepository;
+import com.jay.outdoor.activity.redis.GroupEventRegistrationConsumer;
+import com.jay.outdoor.activity.redis.GroupEventSeatStore;
+import com.jay.outdoor.activity.redis.RegistrationStreamTestSupport;
 import com.jay.outdoor.activity.support.AbstractIntegrationTest;
-import com.jayway.jsonpath.JsonPath;
-import io.micrometer.core.instrument.MeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -24,6 +24,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -44,12 +45,31 @@ class GroupEventControllerTests extends AbstractIntegrationTest {
     private StringRedisTemplate redis;
 
     @Autowired
-    private MeterRegistry metrics;
+    private GroupEventSeatStore seatStore;
+
+    @Autowired
+    private GroupEventRegistrationConsumer consumer;
+
 
     @BeforeEach
     void clearEvents() {
         eventRegistrationRepository.deleteAll();
         repository.deleteAll();
+        RegistrationStreamTestSupport.clearAndEnsureGroup(redis, seatStore, consumer);
+    }
+
+    @Test
+    void statusForUnknownEventReturnsNotFound() throws Exception {
+        mockMvc.perform(get("/api/group-events/{eventId}/registrations/me", UUID.randomUUID())
+                        .with(jwt().jwt(token -> token.subject("user-a"))))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("EVENT_NOT_FOUND"));
+    }
+
+    @Test
+    void statusWithoutAuthenticationReturnsUnauthorized() throws Exception {
+        mockMvc.perform(get("/api/group-events/{eventId}/registrations/me", UUID.randomUUID()))
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -72,7 +92,7 @@ class GroupEventControllerTests extends AbstractIntegrationTest {
     }
 
     @Test
-    void firstJoinReturnsCreatedAndConfirmedRegistration() throws Exception {
+    void firstJoinReturnsAcceptedThenConsumerConfirmsRegistration() throws Exception {
         Instant start = Instant.now().plus(2, ChronoUnit.DAYS);
 
         mockMvc.perform(post("/api/group-events")
@@ -86,12 +106,13 @@ class GroupEventControllerTests extends AbstractIntegrationTest {
         GroupEvent event = repository.findAll().getFirst();
         mockMvc.perform(post("/api/group-events/{eventId}/registrations", event.getId())
                         .with(jwt().jwt(token -> token.subject("user-a"))))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").isNotEmpty())
-                .andExpect(jsonPath("$.eventId").value(event.getId().toString()))
-                .andExpect(jsonPath("$.status").value("CONFIRMED"))
-                .andExpect(jsonPath("$.createdAt").isNotEmpty())
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.status").value("QUEUED"))
+                .andExpect(jsonPath("$.registration").value(org.hamcrest.Matchers.nullValue()))
                 .andExpect(jsonPath("$.participantSubject").doesNotExist());
+        assertEquals(0, eventRegistrationRepository.count());
+        RegistrationStreamTestSupport.pollOnce(consumer);
+        assertEquals(1, eventRegistrationRepository.count());
     }
 
     @Test
@@ -107,21 +128,23 @@ class GroupEventControllerTests extends AbstractIntegrationTest {
                 .andExpect(status().isCreated());
 
         GroupEvent event = repository.findAll().getFirst();
-        MvcResult first =  mockMvc.perform(post("/api/group-events/{eventId}/registrations", event.getId())
+        mockMvc.perform(post("/api/group-events/{eventId}/registrations", event.getId())
                         .with(jwt().jwt(token -> token.subject("user-a"))))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").isNotEmpty())
-                .andExpect(jsonPath("$.eventId").value(event.getId().toString()))
-                .andExpect(jsonPath("$.status").value("CONFIRMED"))
-                .andExpect(jsonPath("$.createdAt").isNotEmpty())
-                .andExpect(jsonPath("$.participantSubject").doesNotExist()).andReturn();
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.status").value("QUEUED"));
 
-        String firstId = JsonPath.read(first.getResponse().getContentAsString(), "$.id") ;
+        mockMvc.perform(post("/api/group-events/{eventId}/registrations", event.getId())
+                        .with(jwt().jwt(token -> token.subject("user-a"))))
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.status").value("QUEUED"));
+        RegistrationStreamTestSupport.pollOnce(consumer);
+        UUID firstId = eventRegistrationRepository.findAll().getFirst().getId();
 
         mockMvc.perform(post("/api/group-events/{eventId}/registrations", event.getId())
                         .with(jwt().jwt(token -> token.subject("user-a"))))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(firstId));
+                .andExpect(jsonPath("$.status").value("CONFIRMED"))
+                .andExpect(jsonPath("$.registration.id").value(firstId.toString()));
     }
 
     @Test
@@ -139,7 +162,7 @@ class GroupEventControllerTests extends AbstractIntegrationTest {
         GroupEvent event = repository.findAll().getFirst();
         mockMvc.perform(post("/api/group-events/{eventId}/registrations", event.getId())
                         .with(jwt().jwt(token -> token.subject("user-a"))))
-                .andExpect(status().isCreated());
+                .andExpect(status().isAccepted());
 
         mockMvc.perform(post("/api/group-events/{eventId}/registrations", event.getId())
                         .with(jwt().jwt(token -> token.subject("user-b"))))
@@ -178,7 +201,7 @@ class GroupEventControllerTests extends AbstractIntegrationTest {
     }
 
     @Test
-    void ghostAdmissionReturnsPendingWithoutCreatingRegistration() throws Exception {
+    void duplicateWithoutVisibleRegistrationReturnsQueuedWithoutCreatingRegistration() throws Exception {
         Instant start = Instant.now().plus(2, ChronoUnit.DAYS);
         mockMvc.perform(post("/api/group-events")
                         .with(jwt().jwt(token -> token.subject("organizer-a")))
@@ -190,14 +213,12 @@ class GroupEventControllerTests extends AbstractIntegrationTest {
         UUID eventId = repository.findAll().getFirst().getId();
         redis.opsForValue().decrement("groupevent:" + eventId + ":seats");
         redis.opsForSet().add("groupevent:" + eventId + ":admitted", "user-a");
-        double pendingBefore = metrics.get("groupevent.registration.pending").counter().count();
 
         mockMvc.perform(post("/api/group-events/{eventId}/registrations", eventId)
                         .with(jwt().jwt(token -> token.subject("user-a"))))
-                .andExpect(status().isServiceUnavailable())
-                .andExpect(jsonPath("$.code").value("REGISTRATION_PENDING"));
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.status").value("QUEUED"));
         assertEquals(0, eventRegistrationRepository.count());
-        assertEquals(pendingBefore + 1, metrics.get("groupevent.registration.pending").counter().count());
     }
 
     @Test
@@ -213,7 +234,8 @@ class GroupEventControllerTests extends AbstractIntegrationTest {
         UUID eventId = repository.findAll().getFirst().getId();
         mockMvc.perform(post("/api/group-events/{eventId}/registrations", eventId)
                         .with(jwt().jwt(token -> token.subject("user-a"))))
-                .andExpect(status().isCreated());
+                .andExpect(status().isAccepted());
+        RegistrationStreamTestSupport.pollOnce(consumer);
 
         for (int i = 0; i < 2; i++) {
             mockMvc.perform(delete("/api/group-events/{eventId}/registrations", eventId)

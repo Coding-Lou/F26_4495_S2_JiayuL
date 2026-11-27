@@ -1,5 +1,6 @@
 package com.jay.outdoor.activity.service;
 
+import com.jay.outdoor.activity.dto.MyRegistrationStatusResponse;
 import com.jay.outdoor.activity.entity.EventRegistration;
 import com.jay.outdoor.activity.entity.GroupEvent;
 import com.jay.outdoor.activity.entity.GroupEventStatus;
@@ -37,7 +38,6 @@ public class EventRegistrationService {
     private final GroupEventRepository groupEventRepository;
     private final TransactionTemplate transactionTemplate;
     private final GroupEventSeatStore groupEventSeatStore;
-    private final Counter registrationPending;
     private final Counter redisReleaseFailed;
 
     public EventRegistrationService(EventRegistrationRepository eventRegistrationRepository,
@@ -51,11 +51,10 @@ public class EventRegistrationService {
         this.groupEventRepository = groupEventRepository;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
         this.groupEventSeatStore = groupEventSeatStore;
-        this.registrationPending = meterRegistry.counter("groupevent.registration.pending");
         this.redisReleaseFailed = meterRegistry.counter("groupevent.redis.release.failed");
     }
 
-    public JoinEventResult join(UUID eventId, String participantSubject) {
+    public MyRegistrationStatusResponse join(UUID eventId, String participantSubject) {
         if (eventId == null) {
             throw new EventRegistrationValidationException("eventId", "Event id is null");
         }
@@ -84,26 +83,11 @@ public class EventRegistrationService {
                         .findByEventIdAndParticipantSubjectAndStatusIn(
                                 eventId, participantSubject, RegistrationStatus.ACTIVE_STATUSES);
                 if (check.isPresent()) {
-                    yield new JoinEventResult(check.get(), false);
+                    yield MyRegistrationStatusResponse.fromRegistration(check.get());
                 }
-                registrationPending.increment();
-                log.warn("Redis admission is pending without a visible registration for event {} and subject fingerprint {}",
-                        eventId, subjectFingerprint(participantSubject));
-                throw new RegistrationPendingException(eventId);
+                yield MyRegistrationStatusResponse.queued();
             }
-            case ADMITTED -> {
-                JoinEventResult result;
-                try {
-                    result = joinInPostgres(eventId, participantSubject);
-                } catch (RuntimeException e) {
-                    releaseRedisSeat(eventId, participantSubject);
-                    throw e;
-                }
-                if (!result.created()) {
-                    releaseRedisSeat(eventId, participantSubject);
-                }
-                yield result;
-            }
+            case ADMITTED -> MyRegistrationStatusResponse.queued();
         };
     }
 
@@ -129,6 +113,10 @@ public class EventRegistrationService {
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException("SHA-256 is unavailable", e);
         }
+    }
+
+    public JoinEventResult joinAfterAdmission(UUID eventId, String subject) {
+        return joinInPostgres(eventId, subject);
     }
 
 
@@ -218,6 +206,35 @@ public class EventRegistrationService {
         }
 
         return Boolean.TRUE.equals(result);
+    }
+
+    public MyRegistrationStatusResponse getMyRegistrationStatus(UUID eventId, String participantSubject) {
+        if (eventId == null) {
+            throw new EventRegistrationValidationException("eventId", "Event id is null");
+        }
+        if (participantSubject == null || participantSubject.isBlank()) {
+            throw new EventRegistrationValidationException("participantSubject", "Participant subject is required");
+        }
+        if (!groupEventRepository.existsById(eventId)) {
+            throw new EventNotFoundException();
+        }
+
+        Optional<EventRegistration> registration = eventRegistrationRepository
+                .findByEventIdAndParticipantSubjectAndStatusIn(
+                        eventId, participantSubject, RegistrationStatus.ACTIVE_STATUSES);
+        if (registration.isPresent()) {
+            return MyRegistrationStatusResponse.fromRegistration(registration.get());
+        }
+
+        try {
+            if (groupEventSeatStore.isAdmitted(eventId, participantSubject)) {
+                return MyRegistrationStatusResponse.queued();
+            }
+        } catch (RedisConnectionFailureException | QueryTimeoutException e) {
+            throw new RedisAdmissionUnavailableException(eventId, e);
+        }
+
+        return MyRegistrationStatusResponse.notRegistered();
     }
 
 

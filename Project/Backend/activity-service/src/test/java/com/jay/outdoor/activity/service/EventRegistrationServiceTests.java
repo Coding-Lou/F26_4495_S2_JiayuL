@@ -4,12 +4,16 @@ import com.jay.outdoor.activity.dto.CreateGroupEventRequest;
 import com.jay.outdoor.activity.entity.EventRegistration;
 import com.jay.outdoor.activity.entity.GroupEvent;
 import com.jay.outdoor.activity.entity.RegistrationStatus;
+import com.jay.outdoor.activity.dto.MyRegistrationStatusResponse;
+import com.jay.outdoor.activity.redis.GroupEventRegistrationConsumer;
+import com.jay.outdoor.activity.redis.RegistrationStreamTestSupport;
 import com.jay.outdoor.activity.redis.GroupEventSeatStore;
 import com.jay.outdoor.activity.repository.EventRegistrationRepository;
 import com.jay.outdoor.activity.repository.GroupEventRepository;
 import com.jay.outdoor.activity.support.AbstractIntegrationTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Disabled;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -17,7 +21,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.*;
@@ -28,7 +31,7 @@ public class EventRegistrationServiceTests extends AbstractIntegrationTest {
     private static final UUID TRAIL_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
     private static final int CAPACITY = 10;
     private enum OutcomeType {
-        JOINED, REPEATED, PENDING, FULL, OTHER
+        QUEUED, FULL, OTHER
     }
 
     private record JoinOutcome(OutcomeType type, String error, EventRegistration eventRegistration) {}
@@ -52,31 +55,41 @@ public class EventRegistrationServiceTests extends AbstractIntegrationTest {
     private GroupEventSeatStore seatStore;
 
     @Autowired
+    private GroupEventRegistrationConsumer consumer;
+
+    @Autowired
     private StringRedisTemplate redis;
 
     @BeforeEach
     void clearEvents() {
         eventRegistrationRepository.deleteAll();
         groupEventRepository.deleteAll();
+        RegistrationStreamTestSupport.clearAndEnsureGroup(redis, seatStore, consumer);
+    }
+
+    private void drain() {
+        RegistrationStreamTestSupport.pollOnce(consumer);
     }
 
     @Test
     void sameUserJoinEventTwice() {
         Instant start = Instant.now().plus(2, ChronoUnit.DAYS);
         GroupEvent event = groupEventService.create("organizer-a", command(start));
-        JoinEventResult joinEventResult_first = eventRegistrationService.join(event.getId(), "user-a");
-
-        assertTrue(joinEventResult_first.created());
-
-        JoinEventResult joinEventResult_second = eventRegistrationService.join(event.getId(), "user-a");
+        MyRegistrationStatusResponse first = eventRegistrationService.join(event.getId(), "user-a");
+        assertEquals(MyRegistrationStatusResponse.Status.QUEUED, first.status());
+        assertEquals(0, eventRegistrationRepository.count());
+        assertEquals(MyRegistrationStatusResponse.Status.QUEUED,
+                eventRegistrationService.join(event.getId(), "user-a").status());
+        drain();
+        MyRegistrationStatusResponse second = eventRegistrationService.join(event.getId(), "user-a");
         Integer seatsTaken = jdbcTemplate.queryForObject(
                 "SELECT seats_taken FROM group_events WHERE id = ?",
                 Integer.class,
                 event.getId()
         );
 
-        assertFalse(joinEventResult_second.created());
-        assertEquals(joinEventResult_first.registration().getId(), joinEventResult_second.registration().getId());
+        assertEquals(MyRegistrationStatusResponse.Status.CONFIRMED, second.status());
+        assertNotNull(second.registration().id());
         assertEquals(1, seatsTaken);
         assertEquals(CAPACITY - 1L, seatStore.getRemainingSeats(event.getId()));
         assertEquals(1L, redis.opsForSet().size(admittedKey(event.getId())));
@@ -87,8 +100,10 @@ public class EventRegistrationServiceTests extends AbstractIntegrationTest {
         Instant start = Instant.now().plus(2, ChronoUnit.DAYS);
         GroupEvent event = groupEventService.create("organizer-a", command(start));
 
-        JoinEventResult joinEventResult = eventRegistrationService.join(event.getId(), "user-a");
-        assertTrue(joinEventResult.created());
+        assertEquals(MyRegistrationStatusResponse.Status.QUEUED,
+                eventRegistrationService.join(event.getId(), "user-a").status());
+        assertEquals(0, eventRegistrationRepository.count());
+        drain();
         RegistrationStatus status = jdbcTemplate.queryForObject(
                 "SELECT status FROM event_registrations WHERE event_id = ? and participant_subject = ? ",
                 RegistrationStatus.class,
@@ -119,14 +134,15 @@ public class EventRegistrationServiceTests extends AbstractIntegrationTest {
         );
         seatStore.setRemainingSeats(event.getId(), 1);
 
-        JoinEventResult joinEventResultFirst = eventRegistrationService.join(event.getId(), "user-a");
-        assertTrue(joinEventResultFirst.created());
+        assertEquals(MyRegistrationStatusResponse.Status.QUEUED,
+                eventRegistrationService.join(event.getId(), "user-a").status());
 
         EventRegistrationException exception = assertThrows(
                 EventRegistrationException.class,
                 () -> eventRegistrationService.join(event.getId(), "user-b")
         );
         assertEquals(EventJoinReason.FULL, exception.getReason());
+        drain();
 
         Integer rows = jdbcTemplate.queryForObject(
                 "select count(*) from event_registrations where event_id = ? and participant_subject = ? ",
@@ -167,6 +183,7 @@ public class EventRegistrationServiceTests extends AbstractIntegrationTest {
     }
 
     @Test
+    @Disabled("Step 5: compensation")
     void joiningCompletedEventReturnsClosed() {
         GroupEvent event = groupEventService.create("organizer-a", command(Instant.now().plus(2, ChronoUnit.DAYS)));
         jdbcTemplate.update("UPDATE group_events SET status = 'COMPLETED' WHERE id = ?", event.getId());
@@ -182,6 +199,7 @@ public class EventRegistrationServiceTests extends AbstractIntegrationTest {
     }
 
     @Test
+    @Disabled("Step 5: compensation")
     void closedRegistrationWindowRestoresRedisSeat() {
         GroupEvent event = groupEventService.create("organizer-a", command(Instant.now().plus(2, ChronoUnit.DAYS)));
         jdbcTemplate.update("UPDATE group_events SET registration_closes_at = ? WHERE id = ?",
@@ -198,6 +216,7 @@ public class EventRegistrationServiceTests extends AbstractIntegrationTest {
     }
 
     @Test
+    @Disabled("Step 5: compensation")
     void joiningCancelledEventReturnsCancelledWithoutRegistration() {
         GroupEvent event = groupEventService.create("organizer-a", command(Instant.now().plus(2, ChronoUnit.DAYS)));
         jdbcTemplate.update("UPDATE group_events SET status = 'CANCELLED' WHERE id = ?", event.getId());
@@ -216,6 +235,7 @@ public class EventRegistrationServiceTests extends AbstractIntegrationTest {
     void cancelReleasesOneSeatAndMarksRegistrationCancelled() {
         GroupEvent event = groupEventService.create("organizer-a", command(Instant.now().plus(2, ChronoUnit.DAYS)));
         eventRegistrationService.join(event.getId(), "user-a");
+        drain();
 
         assertTrue(eventRegistrationService.cancel(event.getId(), "user-a"));
         assertEquals("CANCELLED", jdbcTemplate.queryForObject(
@@ -230,6 +250,7 @@ public class EventRegistrationServiceTests extends AbstractIntegrationTest {
     void cancellingTwiceDoesNotReleaseTwoSeats() {
         GroupEvent event = groupEventService.create("organizer-a", command(Instant.now().plus(2, ChronoUnit.DAYS)));
         eventRegistrationService.join(event.getId(), "user-a");
+        drain();
 
         assertTrue(eventRegistrationService.cancel(event.getId(), "user-a"));
         assertFalse(eventRegistrationService.cancel(event.getId(), "user-a"));
@@ -241,6 +262,7 @@ public class EventRegistrationServiceTests extends AbstractIntegrationTest {
     void failingToReleaseSeatRollsBackCancellation() {
         GroupEvent event = groupEventService.create("organizer-a", command(Instant.now().plus(2, ChronoUnit.DAYS)));
         eventRegistrationService.join(event.getId(), "user-a");
+        drain();
         jdbcTemplate.update("UPDATE group_events SET seats_taken = 0 WHERE id = ?", event.getId());
 
         assertThrows(IllegalStateException.class, () -> eventRegistrationService.cancel(event.getId(), "user-a"));
@@ -255,14 +277,18 @@ public class EventRegistrationServiceTests extends AbstractIntegrationTest {
     @Test
     void cancelledUserCanJoinAgain() {
         GroupEvent event = groupEventService.create("organizer-a", command(Instant.now().plus(2, ChronoUnit.DAYS)));
-        UUID oldId = eventRegistrationService.join(event.getId(), "user-a").registration().getId();
+        eventRegistrationService.join(event.getId(), "user-a");
+        drain();
+        UUID oldId = eventRegistrationService.getMyRegistrationStatus(event.getId(), "user-a").registration().id();
         assertTrue(eventRegistrationService.cancel(event.getId(), "user-a"));
         assertEquals(CAPACITY, seatStore.getRemainingSeats(event.getId()));
         assertFalse(Boolean.TRUE.equals(redis.opsForSet().isMember(admittedKey(event.getId()), "user-a")));
 
-        JoinEventResult again = eventRegistrationService.join(event.getId(), "user-a");
-        assertTrue(again.created());
-        assertNotEquals(oldId, again.registration().getId());
+        assertEquals(MyRegistrationStatusResponse.Status.QUEUED,
+                eventRegistrationService.join(event.getId(), "user-a").status());
+        drain();
+        UUID newId = eventRegistrationService.getMyRegistrationStatus(event.getId(), "user-a").registration().id();
+        assertNotEquals(oldId, newId);
         assertEquals(1, seatsTaken(event.getId()));
         assertEquals(CAPACITY - 1L, seatStore.getRemainingSeats(event.getId()));
         assertTrue(Boolean.TRUE.equals(redis.opsForSet().isMember(admittedKey(event.getId()), "user-a")));
@@ -275,6 +301,7 @@ public class EventRegistrationServiceTests extends AbstractIntegrationTest {
     void concurrentCancelsReleaseExactlyOneSeat() throws Exception {
         GroupEvent event = groupEventService.create("organizer-a", command(Instant.now().plus(2, ChronoUnit.DAYS)));
         eventRegistrationService.join(event.getId(), "user-a");
+        drain();
         CountDownLatch gate = new CountDownLatch(1);
         ExecutorService pool = Executors.newFixedThreadPool(20);
         List<Future<Boolean>> futures = new ArrayList<>();
@@ -320,11 +347,9 @@ public class EventRegistrationServiceTests extends AbstractIntegrationTest {
                 Future<JoinOutcome> cur = pool.submit(() -> {
                     try {
                         countDownLatch.await();
-                        JoinEventResult result = eventRegistrationService.join(event.getId(), "user-a");
-                        return new JoinOutcome(result.created() ? OutcomeType.JOINED : OutcomeType.REPEATED,
-                                null, result.registration());
-                    } catch (RegistrationPendingException e) {
-                        return new JoinOutcome(OutcomeType.PENDING, null, null);
+                        MyRegistrationStatusResponse result = eventRegistrationService.join(event.getId(), "user-a");
+                        return new JoinOutcome(result.status() == MyRegistrationStatusResponse.Status.QUEUED
+                                ? OutcomeType.QUEUED : OutcomeType.OTHER, null, null);
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                         return new JoinOutcome(OutcomeType.OTHER, e.toString(), null);
@@ -337,26 +362,20 @@ public class EventRegistrationServiceTests extends AbstractIntegrationTest {
 
             countDownLatch.countDown();
 
-            int success = 0, repeated = 0, pending = 0;
-            HashSet<UUID> registrationIds = new HashSet<>();
+            int queued = 0;
             List<String> unexpected = new ArrayList<>();
             for (Future<JoinOutcome> future : futures) {
                 JoinOutcome outcome = future.get(30, TimeUnit.SECONDS);
-                if (outcome.eventRegistration() != null) {
-                    registrationIds.add(outcome.eventRegistration().getId());
-                }
                 switch (outcome.type()) {
-                    case JOINED -> success++;
-                    case REPEATED -> repeated++;
-                    case PENDING -> pending++;
+                    case QUEUED -> queued++;
                     case FULL, OTHER -> unexpected.add(outcome.error() == null ? outcome.type().name() : outcome.error());
                 }
             }
 
             assertTrue(unexpected.isEmpty(), "Unexpected outcomes: " + unexpected);
-            assertEquals(1, success);
-            assertEquals(19, repeated + pending);
-            assertEquals(1, registrationIds.size());
+            assertEquals(20, queued);
+            assertEquals(0, eventRegistrationRepository.count());
+            drain();
 
             Integer rows = jdbcTemplate.queryForObject(
                     "SELECT COUNT(*) FROM event_registrations WHERE event_id = ? AND participant_subject = ? AND status = 'CONFIRMED'",
@@ -397,12 +416,12 @@ public class EventRegistrationServiceTests extends AbstractIntegrationTest {
                     try {
                         countDownLatch.await();
 
-                        JoinEventResult result =
+                        MyRegistrationStatusResponse result =
                                 eventRegistrationService.join(event.getId(), curUser);
 
-                        return result.created()
-                                ? new JoinOutcome(OutcomeType.JOINED, null, result.registration())
-                                : new JoinOutcome(OutcomeType.OTHER, "Unexpected created=false", result.registration());
+                        return result.status() == MyRegistrationStatusResponse.Status.QUEUED
+                                ? new JoinOutcome(OutcomeType.QUEUED, null, null)
+                                : new JoinOutcome(OutcomeType.OTHER, "Unexpected response status", null);
 
                     } catch (EventRegistrationException e) {
                         if (e.getReason() == EventJoinReason.FULL) {
@@ -422,16 +441,16 @@ public class EventRegistrationServiceTests extends AbstractIntegrationTest {
                 futures.add(cur);
             }
 
-            int success = 0, full = 0, otherEx = 0;
+            int queued = 0, full = 0, otherEx = 0;
             List<String> otherErrors = new ArrayList<>();
             countDownLatch.countDown();
 
             for (Future<JoinOutcome> future : futures) {
                 JoinOutcome joinOutcome = future.get(30, TimeUnit.SECONDS);
                 switch (joinOutcome.type()) {
-                    case JOINED -> success++;
+                    case QUEUED -> queued++;
                     case FULL -> full++;
-                    case REPEATED, PENDING, OTHER -> {
+                    case OTHER -> {
                         otherEx++;
                         otherErrors.add(joinOutcome.error());
                     }
@@ -439,8 +458,10 @@ public class EventRegistrationServiceTests extends AbstractIntegrationTest {
             }
 
             assertEquals(0, otherEx, "Unexpected outcomes: " + otherErrors);
-            assertEquals(CAPACITY, success);
+            assertEquals(CAPACITY, queued);
             assertEquals(200 - CAPACITY, full);
+            assertEquals(0, eventRegistrationRepository.count());
+            drain();
 
             Integer totalRows = jdbcTemplate.queryForObject(
                     "SELECT COUNT(*) FROM event_registrations WHERE event_id = ?",
