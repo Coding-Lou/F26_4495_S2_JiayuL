@@ -1,10 +1,12 @@
 package com.jay.outdoor.activity.controller;
 
 import com.jay.outdoor.activity.entity.GroupEvent;
+import com.jay.outdoor.activity.exception.TrailServiceUnavailableException;
 import com.jay.outdoor.activity.repository.EventRegistrationRepository;
 import com.jay.outdoor.activity.repository.GroupEventRepository;
 import com.jay.outdoor.activity.support.AbstractIntegrationTest;
 import com.jayway.jsonpath.JsonPath;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +20,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -39,6 +42,9 @@ class GroupEventControllerTests extends AbstractIntegrationTest {
 
     @Autowired
     private StringRedisTemplate redis;
+
+    @Autowired
+    private MeterRegistry metrics;
 
     @BeforeEach
     void clearEvents() {
@@ -184,12 +190,14 @@ class GroupEventControllerTests extends AbstractIntegrationTest {
         UUID eventId = repository.findAll().getFirst().getId();
         redis.opsForValue().decrement("groupevent:" + eventId + ":seats");
         redis.opsForSet().add("groupevent:" + eventId + ":admitted", "user-a");
+        double pendingBefore = metrics.get("groupevent.registration.pending").counter().count();
 
         mockMvc.perform(post("/api/group-events/{eventId}/registrations", eventId)
                         .with(jwt().jwt(token -> token.subject("user-a"))))
                 .andExpect(status().isServiceUnavailable())
                 .andExpect(jsonPath("$.code").value("REGISTRATION_PENDING"));
         assertEquals(0, eventRegistrationRepository.count());
+        assertEquals(pendingBefore + 1, metrics.get("groupevent.registration.pending").counter().count());
     }
 
     @Test

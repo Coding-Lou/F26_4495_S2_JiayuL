@@ -7,12 +7,16 @@ import com.jay.outdoor.activity.redis.AdmissionResult;
 import com.jay.outdoor.activity.redis.GroupEventSeatStore;
 import com.jay.outdoor.activity.repository.EventRegistrationRepository;
 import com.jay.outdoor.activity.repository.GroupEventRepository;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.dao.QueryTimeoutException;
 import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -41,6 +45,7 @@ class EventRegistrationGateTests {
     private GroupEventSeatStore seats;
     private PlatformTransactionManager transactionManager;
     private EventRegistrationService service;
+    private SimpleMeterRegistry metrics;
 
     @BeforeEach
     void setUp() {
@@ -48,8 +53,9 @@ class EventRegistrationGateTests {
         events = mock(GroupEventRepository.class);
         seats = mock(GroupEventSeatStore.class);
         transactionManager = mock(PlatformTransactionManager.class);
+        metrics = new SimpleMeterRegistry();
         service = new EventRegistrationService(registrations, Clock.systemUTC(), events,
-                transactionManager, seats);
+                transactionManager, seats, metrics);
     }
 
     @Test
@@ -125,10 +131,12 @@ class EventRegistrationGateTests {
         assertSame(existing, result.registration());
         assertFalse(result.created());
         verify(seats).release(eventId, subject);
+        assertEquals(0.0, metrics.get("groupevent.redis.release.failed").counter().count());
     }
 
     @Test
-    void failedReleaseDoesNotReplaceExistingRegistrationResult() {
+    @ExtendWith(OutputCaptureExtension.class)
+    void failedReleaseDoesNotReplaceExistingRegistrationResult(CapturedOutput output) {
         EventRegistration existing = mock(EventRegistration.class);
         when(seats.admit(eventId, subject)).thenReturn(AdmissionResult.ADMITTED);
         when(registrations.findByEventIdAndParticipantSubjectAndStatusIn(
@@ -140,6 +148,9 @@ class EventRegistrationGateTests {
         assertSame(existing, result.registration());
         assertFalse(result.created());
         verify(seats).release(eventId, subject);
+        assertEquals(1.0, metrics.get("groupevent.redis.release.failed").counter().count());
+        assertTrue(output.toString().contains("subject fingerprint "));
+        assertFalse(output.toString().contains(subject));
     }
 
     @Test
@@ -169,13 +180,18 @@ class EventRegistrationGateTests {
     }
 
     @Test
-    void duplicateWithoutActiveRegistrationIsPendingWithoutCreatingOne() {
+    @ExtendWith(OutputCaptureExtension.class)
+    void duplicateWithoutActiveRegistrationIsPendingWithoutCreatingOne(CapturedOutput output) {
         when(seats.admit(eventId, subject)).thenReturn(AdmissionResult.DUPLICATE);
         when(registrations.findByEventIdAndParticipantSubjectAndStatusIn(
                 eventId, subject, RegistrationStatus.ACTIVE_STATUSES)).thenReturn(Optional.empty());
 
         assertThrows(RegistrationPendingException.class, () -> service.join(eventId, subject));
         verifyNoInteractions(events);
+        assertEquals(1.0, metrics.get("groupevent.registration.pending").counter().count());
+        assertTrue(output.toString().contains("subject fingerprint "));
+        assertTrue(output.toString().contains(eventId.toString()));
+        assertFalse(output.toString().contains(subject));
     }
 
     @Test
@@ -227,6 +243,23 @@ class EventRegistrationGateTests {
 
         assertTrue(service.cancel(eventId, subject));
         verify(transactionManager).commit(any(TransactionStatus.class));
+        assertEquals(1.0, metrics.get("groupevent.redis.release.failed").counter().count());
+    }
+
+    @Test
+    @ExtendWith(OutputCaptureExtension.class)
+    void releaseThatRemovesNoUserIncrementsFailureMetricWithoutLoggingSubject(CapturedOutput output) {
+        when(seats.admit(eventId, subject)).thenReturn(AdmissionResult.ADMITTED);
+        EventRegistration existing = mock(EventRegistration.class);
+        when(registrations.findByEventIdAndParticipantSubjectAndStatusIn(
+                eventId, subject, RegistrationStatus.ACTIVE_STATUSES)).thenReturn(Optional.of(existing));
+
+        JoinEventResult result = service.join(eventId, subject);
+
+        assertFalse(result.created());
+        assertEquals(1.0, metrics.get("groupevent.redis.release.failed").counter().count());
+        assertTrue(output.toString().contains("subject fingerprint "));
+        assertFalse(output.toString().contains(subject));
     }
 
     private void transactionCanCommit() {

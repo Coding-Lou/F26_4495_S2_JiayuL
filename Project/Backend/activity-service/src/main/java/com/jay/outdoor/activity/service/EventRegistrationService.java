@@ -8,6 +8,8 @@ import com.jay.outdoor.activity.redis.AdmissionResult;
 import com.jay.outdoor.activity.redis.GroupEventSeatStore;
 import com.jay.outdoor.activity.repository.EventRegistrationRepository;
 import com.jay.outdoor.activity.repository.GroupEventRepository;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -17,8 +19,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.HexFormat;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -31,17 +37,22 @@ public class EventRegistrationService {
     private final GroupEventRepository groupEventRepository;
     private final TransactionTemplate transactionTemplate;
     private final GroupEventSeatStore groupEventSeatStore;
+    private final Counter registrationPending;
+    private final Counter redisReleaseFailed;
 
     public EventRegistrationService(EventRegistrationRepository eventRegistrationRepository,
                                     Clock clock,
                                     GroupEventRepository groupEventRepository,
                                     PlatformTransactionManager transactionManager,
-                                    GroupEventSeatStore groupEventSeatStore) {
+                                    GroupEventSeatStore groupEventSeatStore,
+                                    MeterRegistry meterRegistry) {
         this.eventRegistrationRepository = eventRegistrationRepository;
         this.clock = clock;
         this.groupEventRepository = groupEventRepository;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
         this.groupEventSeatStore = groupEventSeatStore;
+        this.registrationPending = meterRegistry.counter("groupevent.registration.pending");
+        this.redisReleaseFailed = meterRegistry.counter("groupevent.redis.release.failed");
     }
 
     public JoinEventResult join(UUID eventId, String participantSubject) {
@@ -75,8 +86,9 @@ public class EventRegistrationService {
                 if (check.isPresent()) {
                     yield new JoinEventResult(check.get(), false);
                 }
-                log.debug("Redis admission is pending without a visible registration for event {} and subject {}",
-                        eventId, participantSubject);
+                registrationPending.increment();
+                log.warn("Redis admission is pending without a visible registration for event {} and subject fingerprint {}",
+                        eventId, subjectFingerprint(participantSubject));
                 throw new RegistrationPendingException(eventId);
             }
             case ADMITTED -> {
@@ -98,12 +110,24 @@ public class EventRegistrationService {
     private void releaseRedisSeat(UUID eventId, String participantSubject) {
         try {
             if (!groupEventSeatStore.release(eventId, participantSubject)) {
-                log.error("Redis seat release removed no user for event {} and subject {}",
-                        eventId, participantSubject);
+                redisReleaseFailed.increment();
+                log.error("Redis seat release removed no user for event {} and subject fingerprint {}",
+                        eventId, subjectFingerprint(participantSubject));
             }
         } catch (RuntimeException e) {
-            log.error("Redis seat release failed for event {} and subject {}",
-                    eventId, participantSubject, e);
+            redisReleaseFailed.increment();
+            log.error("Redis seat release failed for event {} and subject fingerprint {} (cause: {})",
+                    eventId, subjectFingerprint(participantSubject), e.getClass().getSimpleName());
+        }
+    }
+
+    private static String subjectFingerprint(String subject) {
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256")
+                    .digest(subject.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(digest, 0, 6);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 is unavailable", e);
         }
     }
 

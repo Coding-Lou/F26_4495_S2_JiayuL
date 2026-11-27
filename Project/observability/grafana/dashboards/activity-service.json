@@ -56,6 +56,26 @@
       "targets": [{"refId": "A", "expr": "sum(jvm_memory_used_bytes{job=\"activity-service\",area=\"heap\"})", "legendFormat": "heap"}],
       "fieldConfig": {"defaults": {"unit": "bytes", "min": 0}, "overrides": []},
       "gridPos": {"h": 7, "w": 12, "x": 0, "y": 16}
+    },
+    {
+      "id": 6,
+      "title": "Registration pending / minute",
+      "description": "Includes normal in-flight duplicate requests and persistent ghost admissions; volume alone cannot tell them apart.",
+      "type": "timeseries",
+      "datasource": {"type": "prometheus", "uid": "outdoor-prometheus"},
+      "targets": [{"refId": "A", "expr": "sum(rate(groupevent_registration_pending_total{job=\"activity-service\"}[5m])) * 60", "legendFormat": "pending / minute"}],
+      "fieldConfig": {"defaults": {"unit": "none", "min": 0}, "overrides": []},
+      "gridPos": {"h": 7, "w": 12, "x": 0, "y": 23}
+    },
+    {
+      "id": 7,
+      "title": "Redis seat release failures (5m)",
+      "description": "Any failed or no-op release can leave Redis out of sync with Postgres and requires investigation.",
+      "type": "timeseries",
+      "datasource": {"type": "prometheus", "uid": "outdoor-prometheus"},
+      "targets": [{"refId": "A", "expr": "sum(increase(groupevent_redis_release_failed_total{job=\"activity-service\"}[5m]))", "legendFormat": "failures / 5m"}],
+      "fieldConfig": {"defaults": {"unit": "none", "min": 0}, "overrides": []},
+      "gridPos": {"h": 7, "w": 12, "x": 12, "y": 23}
     }
   ]
 }
